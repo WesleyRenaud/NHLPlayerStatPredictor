@@ -11,6 +11,7 @@
       "lint": "npm run lint:py",
       "lint:py": "python3 tools/lint/pythonImportStyle.py && python3 tools/lint/pythonHouseStyle.py && python3 tools/lint/pythonOneClassPerFile.py && python3 tools/lint/pythonNamespaceStyle.py && python3 tools/lint/pythonUnitTestStyle.py && ruff check . && echo 'All checks passed!'",
       "lookup": "python3 -m api lookup",
+      "pull": "python3 -m api pull",
       "run": "npm start",
       "start": "python3 -m api",
       "test:api": "python3 -m pytest tests/api -n auto",

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 
+from .ingest_artifact_puller import IngestArtifactPuller
 from .position import Position
 from .server_runner import ServerRunner
 from .skater_season_finder import SkaterSeasonFinder
@@ -26,7 +27,7 @@ class AppRunner():
       method = getattr( cls, name, None )
 
       if method is None:
-         print( 'Usage: python3 -m api [ start | ingest | lookup ]' )
+         print( 'Usage: python3 -m api [ start | ingest | pull | lookup ]' )
          raise SystemExit( Position.SECOND )
 
       method()
@@ -34,12 +35,18 @@ class AppRunner():
 
    @classmethod
    def start( cls ) -> None:
+      IngestArtifactPuller.sync()
       ServerRunner.run()
 
 
    @classmethod
    def ingest( cls ) -> None:
       SkaterSeasonIngester.main( force=True )
+
+
+   @classmethod
+   def pull( cls ) -> None:
+      IngestArtifactPuller.main()
 
 
    @classmethod
