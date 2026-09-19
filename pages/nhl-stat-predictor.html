@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>{{ page.title }}</title>
+      <link rel="stylesheet" href="../styles/styles.css">
+      <script type="module" src="../scripts/pages/lookupBootstrap.js"></script>
+   </head>
+   <body>
+      <main>
+         <p class="eyebrow">{{ page.eyebrow }}</p>
+         <h1>{{ page.heading }}</h1>
+         <p class="lede">{{ page.lede }}</p>
+
+         <form id="lookup-form">
+            <label for="player-name">{{ page.playerNameLabel }}</label>
+            <div class="lookup-row">
+               <input
+                  id="player-name"
+                  name="player-name"
+                  type="search"
+                  placeholder="{{ page.placeholder }}"
+                  autocomplete="off"
+                  spellcheck="false"
+               >
+               <button type="submit">{{ page.submit }}</button>
+            </div>
+         </form>
+
+         <section id="projection" hidden>
+            <h2 data-player-name></h2>
+            <p class="season">{{ page.seasonLabel }}</p>
+            <div class="statline">
+               <div>
+                  <span class="label">G</span>
+                  <span class="value">—</span>
+               </div>
+               <div>
+                  <span class="label">A</span>
+                  <span class="value">—</span>
+               </div>
+               <div>
+                  <span class="label">P</span>
+                  <span class="value">—</span>
+               </div>
+            </div>
+         </section>
+      </main>
+   </body>
+</html>

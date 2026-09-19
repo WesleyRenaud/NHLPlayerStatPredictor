@@ -2,22 +2,26 @@ from __future__ import annotations
 
 from datetime import date
 
+import pytest
+
 from api.position import Position
 from api.season_length import SeasonLength
 from api.skater_bio import SkaterBio
 from api.skater_position import SkaterPosition
+import api.skater_season_ingester as skater_season_ingester
 from api.skater_season_ingester import SkaterSeasonIngester
 from api.skater_summary import SkaterSummary
 from api.team import Team
 
 
 def Test_BuildRows_TestRegularSeason_ExpectPacedTotals() -> None:
+   team = list( Team )[ Position.FIRST ]
    rows = SkaterSeasonIngester.build_rows(
       [ SkaterSummary(
          8478402,
          'Connor McDavid',
-         SkaterPosition.CENTER,
-         [ Team.EDMONTON_OILERS ],
+         list( SkaterPosition )[ Position.FIRST ],
+         [ team ],
          82,
          44,
          79,
@@ -32,7 +36,7 @@ def Test_BuildRows_TestRegularSeason_ExpectPacedTotals() -> None:
    assert row.a_pace == 79 / 82 * 84
    assert row.p_pace == 123 / 82 * 84
    assert row.pace_games == 84
-   assert row.team == Team.EDMONTON_OILERS
+   assert row.team == team
 
 
 def Test_BuildRows_TestShortSeason_ExpectPacedTotals() -> None:
@@ -40,8 +44,8 @@ def Test_BuildRows_TestShortSeason_ExpectPacedTotals() -> None:
       [ SkaterSummary(
          1,
          'Sample Player',
-         SkaterPosition.DEFENSE,
-         [ Team.BUFFALO_SABRES ],
+         list( SkaterPosition )[ Position.SECOND ],
+         [ list( Team )[ Position.SECOND ] ],
          4,
          1,
          1,
@@ -53,12 +57,14 @@ def Test_BuildRows_TestShortSeason_ExpectPacedTotals() -> None:
    assert rows[ Position.FIRST ].p_pace == 2 / 4 * 84
 
 
-def Test_Seasons_TestBeforeFirstSeason_ExpectExcluded() -> None:
+def Test_Seasons_TestBeforeFirstSeason_ExpectExcluded(
+      monkeypatch: pytest.MonkeyPatch ) -> None:
+   monkeypatch.setattr( skater_season_ingester.Config, 'FIRST_SEASON_ID', 20102011 )
    meta = SkaterSeasonIngester._seasons(
       [
-         SeasonLength( 20042005, 82, date( 2004, 10, 1 ), date( 2005, 4, 15 ) ),
-         SeasonLength( 20252026, 82, date( 2025, 10, 7 ), date( 2026, 4, 17 ) ),
-         SeasonLength( 20262027, 84, date( 2026, 9, 29 ), date( 2027, 4, 10 ) ),
+         SeasonLength( 20092010, 82, date( 2009, 10, 1 ), date( 2010, 4, 15 ) ),
+         SeasonLength( 20102011, 82, date( 2010, 10, 7 ), date( 2011, 4, 17 ) ),
+         SeasonLength( 20112012, 82, date( 2011, 10, 6 ), date( 2012, 4, 10 ) ),
       ] )
 
-   assert [ item.season_id for item in meta ] == [ 20252026, 20262027 ]
+   assert [ item.season_id for item in meta ] == [ 20102011, 20112012 ]

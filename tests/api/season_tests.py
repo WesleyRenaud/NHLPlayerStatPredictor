@@ -4,6 +4,7 @@ from datetime import date
 
 import pytest
 
+from api.position import Position
 from api.season import Season
 from api.season_length import SeasonLength
 from api.team import Team
@@ -23,8 +24,9 @@ def Test_Label( season_id: int, expected: str ) -> None:
 
 
 def Test_PrimaryTeam_TestSplitSeason_ExpectLastTeam() -> None:
-   assert Season.primary_team(
-      [ Team.CHICAGO_BLACKHAWKS, Team.TORONTO_MAPLE_LEAFS ] ) == Team.TORONTO_MAPLE_LEAFS
+   members = list( Team )
+   teams = [ members[ Position.FIRST ], members[ Position.SECOND ] ]
+   assert Season.primary_team( teams ) == teams[ Position.LAST ]
 
 
 def Test_Pace_TestHalfSeason_ExpectScaledToPace() -> None:
@@ -37,19 +39,19 @@ def Test_AgeOn_TestKnownBirthday_ExpectFractionalAge() -> None:
 
 
 def Test_PaceGames_TestLastSeason_ExpectScheduledLength() -> None:
-   assert Season.pace_games(
-      _lengths(
-         [
-            {
-               'id': 20252026,
-               'startDate': '2025-10-07T00:00:00',
-               'regularSeasonEndDate': '2026-04-17',
-               'numberOfGames': 82,
-            },
-            {
-               'id': 20262027,
-               'startDate': '2026-09-29T17:00:00',
-               'regularSeasonEndDate': '2027-04-10',
-               'numberOfGames': 84,
-            },
-         ] ) ) == 84
+   seasons = _lengths(
+      [
+         {
+            'id': 20252026,
+            'startDate': '2025-10-07T00:00:00',
+            'regularSeasonEndDate': '2026-04-17',
+            'numberOfGames': 82,
+         },
+         {
+            'id': 20262027,
+            'startDate': '2026-09-29T17:00:00',
+            'regularSeasonEndDate': '2027-04-10',
+            'numberOfGames': 84,
+         },
+      ] )
+   assert Season.pace_games( seasons ) == sorted( seasons )[ Position.LAST ].number_of_games

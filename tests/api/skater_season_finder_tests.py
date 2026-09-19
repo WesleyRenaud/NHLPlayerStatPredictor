@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
+from api.position import Position
+from api.season import Season
 from api.skater_position import SkaterPosition
 from api.skater_season import SkaterSeason
 from api.skater_season_finder import SkaterSeasonFinder
@@ -13,15 +15,17 @@ from api.team import Team
 
 def Test_FormatTable_TestOneSeason_ExpectPaceColumns( tmp_path: Path ) -> None:
    db_path = str( tmp_path / 'skaters.sqlite' )
+   position = list( SkaterPosition )[ Position.FIRST ]
+   team = list( Team )[ Position.FIRST ]
    SkaterSeasonStore.insert_rows(
       [ SkaterSeason(
          player_id=8478402,
          season_id=20252026,
          player_name='Connor McDavid',
-         position=SkaterPosition.CENTER,
+         position=position,
          birth_date=date( 1997, 1, 13 ),
          age=28.7,
-         team=Team.EDMONTON_OILERS,
+         team=team,
          games_played=82,
          goals=48,
          assists=90,
@@ -35,8 +39,10 @@ def Test_FormatTable_TestOneSeason_ExpectPaceColumns( tmp_path: Path ) -> None:
       db_path=db_path )
    rows = SkaterSeasonProvider.seasons_for_name( 'Connor McDavid', db_path=db_path )
    table = SkaterSeasonFinder.format_table( rows )
+   first = rows[ Position.FIRST ]
 
-   assert 'Connor McDavid (C, #8478402)' in table
-   assert '2025-26' in table
-   assert 'G/84' in table
-   assert '141.4' in table
+   assert f'{ first.player_name } ({ first.position.value }, #{ first.player_id })' in table
+   assert Season.label( first.season_id ) in table
+   assert first.team.value in table
+   assert f'G/{ first.pace_games }' in table
+   assert SkaterSeasonFinder._fmt_pace( first.p_pace ) in table
