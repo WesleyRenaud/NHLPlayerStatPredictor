@@ -12,6 +12,7 @@ test('Test_Get_TestPayload_ExpectNormalizedProjection', async () => {
       goals: 12,
       assists: 34,
       points: 46,
+      gamesPlayed: 70,
    };
    let captured;
    const originalPostJson = ApiClient.postJson;
