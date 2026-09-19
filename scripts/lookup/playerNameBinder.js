@@ -1,17 +1,17 @@
-import { PlayerSearchLabel } from './playerSearchLabel.js';
+const PLAYERS = new WeakMap();
 
 
 export class PlayerNameBinder {
    static bind(inputEl, player) {
       inputEl.value = player.playerName;
       inputEl.dataset.playerId = String(player.playerId);
-      inputEl.dataset.playerLabel = PlayerSearchLabel.format(player);
+      PLAYERS.set(inputEl, player);
    }
 
 
    static clear(inputEl) {
       delete inputEl.dataset.playerId;
-      delete inputEl.dataset.playerLabel;
+      PLAYERS.delete(inputEl);
    }
 
 
@@ -20,7 +20,7 @@ export class PlayerNameBinder {
    }
 
 
-   static label(inputEl) {
-      return inputEl.dataset.playerLabel;
+   static player(inputEl) {
+      return PLAYERS.get(inputEl);
    }
 }

@@ -1,23 +1,26 @@
 import { PlayerNameBinder } from './playerNameBinder.js';
+import { PlayerSearchLabel } from './playerSearchLabel.js';
 
 
 export class LookupFormController {
    static bind(form, result) {
       form.addEventListener('submit', event => {
          event.preventDefault();
-         const input = form.querySelector('#player-name');
+         const player = PlayerNameBinder.player(form.querySelector('#player-name'));
 
-         if (!PlayerNameBinder.playerId(input)) {
+         if (!player) {
             return;
          }
 
-         LookupFormController.render(result, PlayerNameBinder.label(input));
+         LookupFormController.render(result, player);
       });
    }
 
 
-   static render(result, playerName) {
-      result.querySelector('[data-player-name]').textContent = playerName;
+   static render(result, player) {
+      result.querySelector('[data-player-name]').textContent = player.playerName;
+      result.querySelector('[data-player-meta]').textContent =
+         PlayerSearchLabel.meta(player);
       result.hidden = false;
    }
 }
