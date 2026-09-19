@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 import threading
 from urllib.error import HTTPError
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 import pytest
 
 from api.http_request_handler import HttpRequestHandler
 from api.page_strings import PageStrings
+import api.player_names.controllers.player_names_controller as player_names_controller
+from api.player_names.player_names_routes import PlayerNamesRoutes
 from api.position import Position
 import api.static_page_routes as static_page_routes
 from api.static_page_routes import StaticPageRoutes
@@ -114,6 +117,54 @@ def Test_DoGet_TestUnknownPath_ExpectNotFound(
 
       try:
          urlopen( f'http://127.0.0.1:{ port }/missing', timeout=5 )
+         raise AssertionError( 'Expected HTTP 404' )
+      except HTTPError as error:
+         assert error.code == 404
+   finally:
+      server.shutdown()
+      server.server_close()
+
+
+def Test_DoPost_TestPlayerNames_ExpectJson(
+      monkeypatch: pytest.MonkeyPatch ) -> None:
+   stub_names = [ 'Stub Alpha', 'Stub Beta' ]
+   monkeypatch.setattr(
+      player_names_controller.PlayerNamesCoordinator,
+      'get_player_names',
+      lambda: stub_names )
+   path = PlayerNamesRoutes.GET_PLAYER_NAMES
+   server = _start_server()
+
+   try:
+      port = server.server_address[ Position.SECOND ]
+      request = Request(
+         f'http://127.0.0.1:{ port }{ path }',
+         data=b'{}',
+         headers={ 'Content-Type': 'application/json' },
+         method='POST' )
+      response = urlopen( request, timeout=5 )
+      body = json.loads( response.read().decode( 'utf-8' ) )
+   finally:
+      server.shutdown()
+      server.server_close()
+
+   assert response.status == 200
+   assert body == { 'names': stub_names }
+
+
+def Test_DoPost_TestUnknownPath_ExpectNotFound() -> None:
+   server = _start_server()
+
+   try:
+      port = server.server_address[ Position.SECOND ]
+      request = Request(
+         f'http://127.0.0.1:{ port }/missing',
+         data=b'{}',
+         headers={ 'Content-Type': 'application/json' },
+         method='POST' )
+
+      try:
+         urlopen( request, timeout=5 )
          raise AssertionError( 'Expected HTTP 404' )
       except HTTPError as error:
          assert error.code == 404

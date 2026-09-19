@@ -16,14 +16,21 @@
          <form id="lookup-form">
             <label for="player-name">{{ page.playerNameLabel }}</label>
             <div class="lookup-row">
-               <input
-                  id="player-name"
-                  name="player-name"
-                  type="search"
-                  placeholder="{{ page.placeholder }}"
-                  autocomplete="off"
-                  spellcheck="false"
-               >
+               <div class="player-name-field">
+                  <input
+                     id="player-name"
+                     name="player-name"
+                     type="search"
+                     placeholder="{{ page.placeholder }}"
+                     autocomplete="off"
+                     spellcheck="false"
+                  >
+                  <div
+                     id="player-name-results"
+                     class="player-name-autocomplete"
+                     data-empty="{{ page.noMatches }}"
+                  ></div>
+               </div>
                <button type="submit">{{ page.submit }}</button>
             </div>
          </form>

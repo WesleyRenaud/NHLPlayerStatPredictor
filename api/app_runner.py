@@ -17,9 +17,15 @@ class AppRunner():
          cls.start()
          return
 
-      method = getattr( cls, args[ Position.FIRST ], None )
+      name = args[ Position.FIRST ]
 
-      if method is None or method == cls.run:
+      if name == cls.run.__name__:
+         cls.start()
+         return
+
+      method = getattr( cls, name, None )
+
+      if method is None:
          print( 'Usage: python3 -m api [ start | ingest | lookup ]' )
          raise SystemExit( Position.SECOND )
 
@@ -33,7 +39,7 @@ class AppRunner():
 
    @classmethod
    def ingest( cls ) -> None:
-      SkaterSeasonIngester.main()
+      SkaterSeasonIngester.main( force=True )
 
 
    @classmethod

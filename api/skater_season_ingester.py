@@ -58,6 +58,9 @@ class SkaterSeasonIngester():
       rows: list[ SkaterSeason ] = []
 
       for summary in summaries:
+         if summary.player_id not in bios_by_player:
+            continue
+
          bio = bios_by_player[ summary.player_id ]
          games_played = float( summary.games_played )
          goals = float( summary.goals )
