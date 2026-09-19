@@ -18,6 +18,11 @@ class Season():
 
 
    @classmethod
+   def recency_lag( cls, target_season_id: int, season_id: int ) -> int:
+      return cls.start_year( target_season_id ) - cls.start_year( season_id ) - 1
+
+
+   @classmethod
    def label( cls, season_id: int ) -> str:
       start = cls.start_year( season_id )
       return f'{ start }-{ str( start + 1 )[ Position.SECOND_LAST: ] }'

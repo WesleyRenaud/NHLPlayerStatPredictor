@@ -37,6 +37,7 @@ jobs:
           name: skaters
           path: |
             data/processed/skaters.sqlite
+            data/processed/recency_weights.json
             data/raw
           if-no-files-found: error
           retention-days: 14

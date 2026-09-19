@@ -8,6 +8,7 @@ import pytest
 from api.github_cli_result import GithubCliResult
 import api.ingest_artifact_puller as ingest_artifact_puller
 from api.ingest_artifact_puller import IngestArtifactPuller
+from api.recency_weight_store import RecencyWeightStore
 from api.shared.enums.position import Position
 
 
@@ -36,6 +37,10 @@ def _write_artifact( root: Path ) -> None:
    db_path.write_bytes( b'sqlite' )
    raw_path.mkdir( parents=True, exist_ok=True )
    ( raw_path / 'seasons.json' ).write_text( '[]' )
+   weights_path = root / RecencyWeightStore.path().relative_to(
+      ingest_artifact_puller.Paths.ROOT )
+   weights_path.parent.mkdir( parents=True, exist_ok=True )
+   weights_path.write_text( '[]' )
 
 
 def Test_ListedRunId_TestRuns_ExpectFirstId( monkeypatch: pytest.MonkeyPatch ) -> None:
@@ -81,17 +86,7 @@ def Test_Install_TestArtifactTree_ExpectCopiedDbAndRaw(
    IngestArtifactPuller.install( artifact_root )
    assert ingest_artifact_puller.Paths.DB_PATH.read_bytes() == b'sqlite'
    assert ( ingest_artifact_puller.Paths.RAW_DIR / 'seasons.json' ).read_text() == '[]'
-
-
-def Test_Install_TestMissingDb_ExpectSystemExit(
-      monkeypatch: pytest.MonkeyPatch,
-      tmp_path: Path ) -> None:
-   _bind_paths( monkeypatch, tmp_path / 'repo' )
-
-   with pytest.raises( SystemExit ) as exit_info:
-      IngestArtifactPuller.install( tmp_path / 'artifact' )
-
-   assert exit_info.value.code == Position.SECOND
+   assert RecencyWeightStore.path().read_text() == '[]'
 
 
 def Test_ArtifactRoot_TestNestedArtifactDir_ExpectNested(

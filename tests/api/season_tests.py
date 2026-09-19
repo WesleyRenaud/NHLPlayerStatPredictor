@@ -55,3 +55,11 @@ def Test_PaceGames_TestLastSeason_ExpectScheduledLength() -> None:
          },
       ] )
    assert Season.pace_games( seasons ) == sorted( seasons )[ Position.LAST ].number_of_games
+
+
+def Test_RecencyLag_TestImmediatePrior_ExpectZero() -> None:
+   assert Season.recency_lag( 20212022, 20202021 ) == 0
+
+
+def Test_RecencyLag_TestSkippedYear_ExpectOne() -> None:
+   assert Season.recency_lag( 20222023, 20202021 ) == 1

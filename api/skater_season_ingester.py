@@ -3,6 +3,8 @@ from __future__ import annotations
 from .config import Config
 from .nhl_client import NhlClient
 from .paths import Paths
+from .recency_decay_fitter import RecencyDecayFitter
+from .recency_weight_store import RecencyWeightStore
 from .season import Season
 from .season_length import SeasonLength
 from .skater_bio import SkaterBio
@@ -17,6 +19,8 @@ class SkaterSeasonIngester():
    def main( cls, force: bool = False ) -> None:
       rows = cls.build_all_rows( force=force )
       SkaterSeasonStore.insert_rows( rows, str( Paths.DB_PATH ) )
+      RecencyWeightStore.write(
+         RecencyDecayFitter.weights( RecencyDecayFitter.fit( rows ) ) )
       print( f'Ingested { len( rows ) } skater-seasons.' )
 
 

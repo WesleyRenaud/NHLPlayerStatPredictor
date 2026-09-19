@@ -1,0 +1,88 @@
+from __future__ import annotations
+
+from .recency_weight import RecencyWeight
+from .season import Season
+from .skater_season import SkaterSeason
+
+
+class RecencyDecayFitter():
+   WINDOW = 4
+   GRID_STEPS = 20
+
+
+   @classmethod
+   def fit( cls, seasons: list[ SkaterSeason ] ) -> float:
+      by_player = cls._years_by_player( seasons )
+      best_decay = 0.0
+      best_error: float | None = None
+
+      for step in range( RecencyDecayFitter.GRID_STEPS + 1 ):
+         decay = step / RecencyDecayFitter.GRID_STEPS
+         error = cls._squared_error( by_player, decay )
+
+         if best_error is None or error < best_error:
+            best_decay = decay
+            best_error = error
+
+      return best_decay
+
+
+   @classmethod
+   def weights( cls, decay: float ) -> list[ RecencyWeight ]:
+      raw = [
+         decay ** lag
+         for lag in range( RecencyDecayFitter.WINDOW )
+      ]
+      total = sum( raw )
+      return [
+         RecencyWeight( lag=lag, weight=raw[ lag ] / total )
+         for lag in range( RecencyDecayFitter.WINDOW )
+      ]
+
+
+   @classmethod
+   def _years_by_player(
+         cls,
+         seasons: list[ SkaterSeason ] ) -> dict[ int, dict[ int, SkaterSeason ] ]:
+      by_player: dict[ int, dict[ int, SkaterSeason ] ] = {}
+
+      for season in seasons:
+         years = by_player.setdefault( season.player_id, {} )
+         years[ Season.start_year( season.season_id ) ] = season
+
+      return by_player
+
+
+   @classmethod
+   def _squared_error(
+         cls,
+         by_player: dict[ int, dict[ int, SkaterSeason ] ],
+         decay: float ) -> float:
+      error = 0.0
+
+      for years in by_player.values():
+         for year, current in years.items():
+            goals_total = 0.0
+            assists_total = 0.0
+            total = 0.0
+
+            for lag in range( RecencyDecayFitter.WINDOW ):
+               prior = years.get( year - lag - 1 )
+
+               if prior is None:
+                  continue
+
+               weight = decay ** lag
+               goals_total += prior.g_pace * weight
+               assists_total += prior.a_pace * weight
+               total += weight
+
+            if total == 0:
+               continue
+
+            predicted_goals = goals_total / total
+            predicted_assists = assists_total / total
+            error += ( current.g_pace - predicted_goals ) ** 2
+            error += ( current.a_pace - predicted_assists ) ** 2
+
+      return error

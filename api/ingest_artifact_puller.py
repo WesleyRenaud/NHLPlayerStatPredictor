@@ -7,6 +7,7 @@ import tempfile
 
 from .github_cli import GithubCli
 from .paths import Paths
+from .recency_weight_store import RecencyWeightStore
 from .shared.enums.position import Position
 
 
@@ -36,19 +37,14 @@ class IngestArtifactPuller():
 
    @classmethod
    def install( cls, artifact_root: Path ) -> None:
-      source_db = cls._source_db( artifact_root )
-      source_raw = cls._source_raw( artifact_root )
-
-      if not source_db.is_file() or not source_raw.is_dir():
-         raise SystemExit( Position.SECOND )
-
       Paths.PROCESSED_DIR.mkdir( parents=True, exist_ok=True )
-      shutil.copy2( source_db, Paths.DB_PATH )
+      shutil.copy2( cls._source_db( artifact_root ), Paths.DB_PATH )
+      shutil.copy2( cls._source_weights( artifact_root ), RecencyWeightStore.path() )
 
       if Paths.RAW_DIR.exists():
          shutil.rmtree( Paths.RAW_DIR )
 
-      shutil.copytree( source_raw, Paths.RAW_DIR )
+      shutil.copytree( cls._source_raw( artifact_root ), Paths.RAW_DIR )
       print( Paths.DB_PATH )
 
 
@@ -64,7 +60,8 @@ class IngestArtifactPuller():
 
          if (
                not cls._source_db( artifact_root ).is_file()
-               or not cls._source_raw( artifact_root ).is_dir() ):
+               or not cls._source_raw( artifact_root ).is_dir()
+               or not cls._source_weights( artifact_root ).is_file() ):
             return False
 
          cls.install( artifact_root )
@@ -165,3 +162,8 @@ class IngestArtifactPuller():
    @classmethod
    def _source_raw( cls, artifact_root: Path ) -> Path:
       return artifact_root / Paths.RAW_DIR.relative_to( Paths.ROOT )
+
+
+   @classmethod
+   def _source_weights( cls, artifact_root: Path ) -> Path:
+      return artifact_root / RecencyWeightStore.path().relative_to( Paths.ROOT )
