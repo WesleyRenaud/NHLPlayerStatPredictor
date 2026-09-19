@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from api.position import Position
+from api.shared.enums.position import Position
 from api.skater_key import SkaterKey
 from api.skater_position import SkaterPosition
 from api.skater_season import SkaterSeason

@@ -6,7 +6,7 @@ import pytest
 
 import api.app_runner as app_runner
 from api.app_runner import AppRunner
-from api.position import Position
+from api.shared.enums.position import Position
 
 
 def Test_Lookup_TestMissingName_ExpectUsageError( monkeypatch: pytest.MonkeyPatch ) -> None:

@@ -3,8 +3,8 @@ from __future__ import annotations
 import sys
 
 from .ingest_artifact_puller import IngestArtifactPuller
-from .position import Position
 from .server_runner import ServerRunner
+from .shared.enums.position import Position
 from .skater_season_finder import SkaterSeasonFinder
 from .skater_season_ingester import SkaterSeasonIngester
 

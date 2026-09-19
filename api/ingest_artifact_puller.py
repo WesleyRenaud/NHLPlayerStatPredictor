@@ -7,7 +7,7 @@ import tempfile
 
 from .github_cli import GithubCli
 from .paths import Paths
-from .position import Position
+from .shared.enums.position import Position
 
 
 class IngestArtifactPuller():

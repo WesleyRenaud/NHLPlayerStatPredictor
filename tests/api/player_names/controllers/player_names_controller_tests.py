@@ -7,6 +7,10 @@ import pytest
 from api.json_handler_mixin import JsonHandlerMixin
 import api.player_names.controllers.player_names_controller as player_names_controller
 from api.player_names.controllers.player_names_controller import PlayerNamesController
+from api.player_names.player_name_summary import PlayerNameSummary
+from api.shared.enums.position import Position
+from api.skater_position import SkaterPosition
+from api.team import Team
 
 
 class _RecordingHandler( JsonHandlerMixin ):
@@ -34,13 +38,22 @@ class _RecordingHandler( JsonHandlerMixin ):
       return len( data )
 
 
-def Test_GetPlayerNames_TestCoordinatorNames_ExpectJsonPayload(
+def Test_GetPlayerNames_TestCoordinatorSummaries_ExpectJsonPayload(
       monkeypatch: pytest.MonkeyPatch ) -> None:
-   stub_names = [ 'Stub Alpha', 'Stub Beta' ]
+   stub_summaries = [
+      PlayerNameSummary(
+         1,
+         'Stub Alpha',
+         list( SkaterPosition )[ Position.FIRST ],
+         list( Team )[ Position.FIRST ],
+         20202021 ),
+   ]
    monkeypatch.setattr(
       player_names_controller.PlayerNamesCoordinator,
-      'get_player_names',
-      lambda: stub_names )
+      'get_player_summaries',
+      lambda: stub_summaries )
    handler = _RecordingHandler()
    PlayerNamesController.get_player_names( handler )
-   assert json.loads( handler.body.decode( 'utf-8' ) ) == { 'names': stub_names }
+   assert json.loads( handler.body.decode( 'utf-8' ) ) == [
+      summary.as_json() for summary in stub_summaries
+   ]

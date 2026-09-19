@@ -1,3 +1,7 @@
+import { PlayerNameBinder } from './playerNameBinder.js';
+import { PlayerSearchLabel } from './playerSearchLabel.js';
+
+
 export class PlayerNameResultsView {
    static create({ inputEl, resultsEl } = {}) {
       let currentMatches = [];
@@ -30,8 +34,8 @@ export class PlayerNameResultsView {
       }
 
 
-      function selectName(name) {
-         inputEl.value = name;
+      function selectPlayer(player) {
+         PlayerNameBinder.bind(inputEl, player);
          clear();
          inputEl.dispatchEvent(new Event('change', { bubbles: true }));
       }
@@ -52,18 +56,27 @@ export class PlayerNameResultsView {
 
          const fragment = document.createDocumentFragment();
 
-         matches.forEach(name => {
+         matches.forEach(player => {
             const item = document.createElement('button');
             item.type = 'button';
             item.className = 'player-name-autocomplete-item';
-            item.textContent = name;
+
+            const nameEl = document.createElement('span');
+            nameEl.className = 'player-name-autocomplete-item-name';
+            nameEl.textContent = player.playerName;
+
+            const metaEl = document.createElement('span');
+            metaEl.className = 'player-name-autocomplete-item-meta';
+            metaEl.textContent = PlayerSearchLabel.meta(player);
+
+            item.append(nameEl, metaEl);
 
             item.addEventListener('mousedown', event => {
                event.preventDefault();
             });
 
             item.addEventListener('click', () => {
-               selectName(name);
+               selectPlayer(player);
             });
 
             fragment.appendChild(item);
@@ -105,7 +118,7 @@ export class PlayerNameResultsView {
          if (event.key === 'Enter') {
             if (highlightedIndex >= 0 && highlightedIndex < currentMatches.length) {
                event.preventDefault();
-               selectName(currentMatches[highlightedIndex]);
+               selectPlayer(currentMatches[highlightedIndex]);
             }
          }
       }

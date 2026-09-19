@@ -174,7 +174,7 @@ h2 {
    z-index: 50;
    display: none;
    flex-direction: column;
-   max-height: 14rem;
+   max-height: 18rem;
    overflow-y: auto;
    border: 1px solid var(--color-border);
    border-radius: 0.85rem;
@@ -187,6 +187,9 @@ h2 {
 }
 
 .player-name-autocomplete-item {
+   display: flex;
+   flex-direction: column;
+   gap: 0.15rem;
    width: 100%;
    padding: 0.85rem 1.15rem;
    border: 0;
@@ -197,6 +200,12 @@ h2 {
    font-weight: 600;
    text-align: left;
    cursor: pointer;
+}
+
+.player-name-autocomplete-item-meta {
+   color: var(--color-muted);
+   font-size: 0.92rem;
+   font-weight: 600;
 }
 
 .player-name-autocomplete-item:hover,

@@ -4,7 +4,7 @@ import html
 import re
 
 from .page_strings import PageStrings
-from .position import Position
+from .shared.enums.position import Position
 
 
 HTML_STRING_TOKEN_RE = re.compile( r'\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}' )

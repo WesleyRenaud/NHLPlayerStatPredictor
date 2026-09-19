@@ -9,7 +9,7 @@
       "coverage:py": "COVERAGE_FILE=/tmp/nhlpred-python-coverage python3 -m pytest tests/api -n auto --cov=api --cov-report=term:skip-covered --cov-precision=2",
       "ingest": "python3 -m api ingest",
       "lint": "npm run lint:py",
-      "lint:py": "python3 tools/lint/pythonImportStyle.py && python3 tools/lint/pythonHouseStyle.py && python3 tools/lint/pythonOneClassPerFile.py && python3 tools/lint/pythonNamespaceStyle.py && python3 tools/lint/pythonUnitTestStyle.py && ruff check . && echo 'All checks passed!'",
+      "lint:py": "python3 tools/checkSharedEnums.py && python3 tools/lint/pythonImportStyle.py && python3 tools/lint/pythonHouseStyle.py && python3 tools/lint/pythonOneClassPerFile.py && python3 tools/lint/pythonNamespaceStyle.py && python3 tools/lint/pythonUnitTestStyle.py && ruff check . && echo 'All checks passed!'",
       "lookup": "python3 -m api lookup",
       "pull": "python3 -m api pull",
       "run": "npm start",

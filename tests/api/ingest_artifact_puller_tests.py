@@ -8,7 +8,7 @@ import pytest
 from api.github_cli_result import GithubCliResult
 import api.ingest_artifact_puller as ingest_artifact_puller
 from api.ingest_artifact_puller import IngestArtifactPuller
-from api.position import Position
+from api.shared.enums.position import Position
 
 
 def _bind_paths( monkeypatch: pytest.MonkeyPatch, root: Path ) -> None:

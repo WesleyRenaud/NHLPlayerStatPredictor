@@ -4,9 +4,9 @@ from datetime import date
 
 import pytest
 
-from api.position import Position
 from api.season import Season
 from api.season_length import SeasonLength
+from api.shared.enums.position import Position
 from api.team import Team
 from api.types import Types
 

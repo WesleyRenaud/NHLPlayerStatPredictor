@@ -4,22 +4,22 @@ import { PlayerNamesApiNormalizer } from './playerNamesApiNormalizer.js';
 
 
 export class PlayerNamesClient {
-   static namesPromise = null;
+   static playersPromise = null;
 
 
    static list() {
-      if (PlayerNamesClient.namesPromise == null) {
-         PlayerNamesClient.namesPromise = PlayerNamesClient.fetchNames();
+      if (PlayerNamesClient.playersPromise == null) {
+         PlayerNamesClient.playersPromise = PlayerNamesClient.fetchPlayers();
       }
 
-      return PlayerNamesClient.namesPromise;
+      return PlayerNamesClient.playersPromise;
    }
 
 
-   static async fetchNames() {
+   static async fetchPlayers() {
       try {
          const response = await ApiClient.postJson(ApiRoutes.GET_PLAYER_NAMES);
-         return PlayerNamesApiNormalizer.normalizeNames(response);
+         return PlayerNamesApiNormalizer.normalizePlayers(response);
       } catch (error) {
          return [];
       }

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from api.github_cli_result import GithubCliResult
-from api.position import Position
+from api.shared.enums.position import Position
 
 
 def Test_Equality_TestSameFields_ExpectEqual() -> None:

@@ -4,7 +4,7 @@ from datetime import date
 from pathlib import Path
 
 from api.database_connection_provider import DatabaseConnectionProvider
-from api.position import Position
+from api.shared.enums.position import Position
 from api.skater_position import SkaterPosition
 from api.skater_season import SkaterSeason
 from api.skater_season_store import SkaterSeasonStore

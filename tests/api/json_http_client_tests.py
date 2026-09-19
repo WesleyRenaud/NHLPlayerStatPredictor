@@ -6,7 +6,7 @@ import pytest
 
 import api.json_http_client as json_http_client
 from api.json_http_client import JsonHttpClient
-from api.position import Position
+from api.shared.enums.position import Position
 from api.types import Types
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from api.database_connection_provider import DatabaseConnectionProvider
-from api.position import Position
+from api.shared.enums.position import Position
 
 
 def Test_Open_TestNewPath_ExpectQueryableConnection( tmp_path: Path ) -> None:
