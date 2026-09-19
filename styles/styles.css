@@ -4,6 +4,7 @@
    --color-border: #24364c;
    --color-text: #f4f7fb;
    --color-muted: #9aadc2;
+   --color-stat: #ff5c7a;
    --color-accent: #e31837;
    --color-accent-hover: #ff3b57;
    --shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
@@ -148,7 +149,7 @@ h2 {
 
 .statline {
    display: grid;
-   grid-template-columns: repeat(3, 1fr);
+   grid-template-columns: repeat(4, 1fr);
    gap: 0.9rem;
 }
 
@@ -169,8 +170,13 @@ h2 {
 }
 
 .value {
+   color: var(--color-stat);
    font-size: 2.6rem;
    font-weight: 700;
+}
+
+.value.context {
+   color: var(--color-muted);
 }
 
 .player-name-autocomplete {

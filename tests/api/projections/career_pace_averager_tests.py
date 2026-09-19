@@ -33,9 +33,9 @@ def _season( g_pace: float, a_pace: float, season_id: int = 20202021 ) -> Skater
 def Test_Average_TestSeasons_ExpectMeanGoalsAssistsAndSummedPoints() -> None:
    first = _season( 40.0, 50.0, 20202021 )
    second = _season( 60.0, 70.0, 20212022 )
-   projection = CareerPaceAverager.average( [ first, second ] )
+   pace = CareerPaceAverager.average( [ first, second ] )
    goals = round( ( first.g_pace + second.g_pace ) / 2 )
    assists = round( ( first.a_pace + second.a_pace ) / 2 )
-   assert projection.goals == goals
-   assert projection.assists == assists
-   assert projection.points == goals + assists
+   assert pace.goals == goals
+   assert pace.assists == assists
+   assert pace.points == goals + assists

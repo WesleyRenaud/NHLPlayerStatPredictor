@@ -12,6 +12,7 @@ function resultElement() {
       '[data-goals]': { textContent: '' },
       '[data-assists]': { textContent: '' },
       '[data-points]': { textContent: '' },
+      '[data-games-played]': { textContent: '' },
    };
    return {
       hidden: true,
@@ -34,6 +35,7 @@ test('Test_Render_TestPlayerAndProjection_ExpectNameMetaAndStats', () => {
       goals: 12,
       assists: 34,
       points: 46,
+      gamesPlayed: 70,
    };
    const result = resultElement();
    LookupFormController.render(result, player, projection);
@@ -45,5 +47,6 @@ test('Test_Render_TestPlayerAndProjection_ExpectNameMetaAndStats', () => {
    assert.equal(result.nodes['[data-goals]'].textContent, projection.goals);
    assert.equal(result.nodes['[data-assists]'].textContent, projection.assists);
    assert.equal(result.nodes['[data-points]'].textContent, projection.points);
+   assert.equal(result.nodes['[data-games-played]'].textContent, projection.gamesPlayed);
    assert.equal(result.hidden, false);
 });

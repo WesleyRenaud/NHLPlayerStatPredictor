@@ -9,8 +9,10 @@ test('Test_Normalize_TestRow_ExpectFields', () => {
       goals: 12,
       assists: 34,
       points: 46,
+      gamesPlayed: 70,
    });
    assert.equal(projection.goals, 12);
    assert.equal(projection.assists, 34);
    assert.equal(projection.points, 46);
+   assert.equal(projection.gamesPlayed, 70);
 });

@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from api.paths import Paths
+from api.projections.career_pace import CareerPace
 import api.projections.coordinators.projection_coordinator as projection_coordinator
 from api.projections.coordinators.projection_coordinator import ProjectionCoordinator
 from api.projections.projection import Projection
@@ -17,16 +18,17 @@ def Test_GetProjection_TestSeasons_ExpectAveragedProjection(
    db_path = tmp_path / 'skaters.sqlite'
    player_id = 7
    seasons: list[ SkaterSeason ] = []
-   expected = Projection( 1, 2, 3 )
+   pace = CareerPace( 1, 2, 3 )
+   games_played = 70
    captured: list[ tuple[ int, str ] ] = []
 
    def fake_seasons( requested_id: int, path: str ) -> list[ SkaterSeason ]:
       captured.append( ( requested_id, path ) )
       return seasons
 
-   def fake_average( rows: list[ SkaterSeason ] ) -> Projection:
+   def fake_average( rows: list[ SkaterSeason ] ) -> CareerPace:
       assert rows is seasons
-      return expected
+      return pace
 
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
    monkeypatch.setattr(
@@ -37,5 +39,13 @@ def Test_GetProjection_TestSeasons_ExpectAveragedProjection(
       projection_coordinator.CareerPaceAverager,
       'average',
       fake_average )
-   assert ProjectionCoordinator.get_projection( player_id ) == expected
+   monkeypatch.setattr(
+      projection_coordinator.PaceGamesResolver,
+      'resolve',
+      lambda: games_played )
+   assert ProjectionCoordinator.get_projection( player_id ) == Projection(
+      goals=pace.goals,
+      assists=pace.assists,
+      points=pace.points,
+      games_played=games_played )
    assert captured == [ ( player_id, str( db_path ) ) ]
