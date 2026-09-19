@@ -2,10 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { PlayerNameBinder } from '../../../scripts/lookup/playerNameBinder.js';
-import { PlayerSearchLabel } from '../../../scripts/lookup/playerSearchLabel.js';
 
 
-test('Test_Bind_TestPlayer_ExpectValueAndDataset', () => {
+test('Test_Bind_TestPlayer_ExpectValueAndPlayer', () => {
    const player = {
       playerId: 7,
       playerName: 'Stub Alpha',
@@ -20,28 +19,32 @@ test('Test_Bind_TestPlayer_ExpectValueAndDataset', () => {
    PlayerNameBinder.bind(inputEl, player);
    assert.equal(inputEl.value, player.playerName);
    assert.equal(PlayerNameBinder.playerId(inputEl), String(player.playerId));
-   assert.equal(PlayerNameBinder.label(inputEl), PlayerSearchLabel.format(player));
+   assert.equal(PlayerNameBinder.player(inputEl), player);
 });
 
 
 test('Test_Clear_TestDataset_ExpectRemoved', () => {
+   const player = {
+      playerId: 7,
+      playerName: 'Stub Alpha',
+   };
    const inputEl = {
       value: 'Stub Alpha',
       dataset: {
          playerId: '7',
-         playerLabel: 'label',
       },
    };
+   PlayerNameBinder.bind(inputEl, player);
    PlayerNameBinder.clear(inputEl);
    assert.equal(PlayerNameBinder.playerId(inputEl), undefined);
-   assert.equal(PlayerNameBinder.label(inputEl), undefined);
+   assert.equal(PlayerNameBinder.player(inputEl), undefined);
 });
 
 
-test('Test_Label_TestUnbound_ExpectUndefined', () => {
+test('Test_Player_TestUnbound_ExpectUndefined', () => {
    const inputEl = {
       value: 'Stub Alpha',
       dataset: {},
    };
-   assert.equal(PlayerNameBinder.label(inputEl), undefined);
+   assert.equal(PlayerNameBinder.player(inputEl), undefined);
 });
