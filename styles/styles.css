@@ -117,6 +117,65 @@ button:hover {
    background: var(--color-accent-hover);
 }
 
+button:disabled,
+button.is-busy {
+   cursor: wait;
+   opacity: 0.78;
+}
+
+button.is-busy {
+   animation: lookup-busy 0.7s ease-in-out infinite;
+}
+
+button:disabled:hover {
+   background: var(--color-accent);
+}
+
+input[type="search"].is-invalid {
+   border-color: var(--color-accent);
+}
+
+button.is-invalid {
+   animation: lookup-shake 0.35s;
+}
+
+.lookup-error {
+   margin: 0.8rem 0 0;
+   color: var(--color-accent-hover);
+   font-size: 1.05rem;
+   font-weight: 600;
+}
+
+@keyframes lookup-shake {
+   0%, 100% {
+      transform: translateX(0);
+   }
+
+   25% {
+      transform: translateX(-0.28rem);
+   }
+
+   75% {
+      transform: translateX(0.28rem);
+   }
+}
+
+@keyframes lookup-busy {
+   50% {
+      filter: brightness(1.18);
+   }
+}
+
+@keyframes lookup-updated {
+   0% {
+      box-shadow: 0 0 0 0.35rem rgba(255, 92, 122, 0.35);
+   }
+
+   100% {
+      box-shadow: var(--shadow);
+   }
+}
+
 #projection {
    margin-top: 1.75rem;
    padding: 1.6rem 1.7rem 1.75rem;
@@ -128,6 +187,10 @@ button:hover {
 
 #projection[hidden] {
    display: none;
+}
+
+#projection.is-updated {
+   animation: lookup-updated 0.55s ease;
 }
 
 h2 {
