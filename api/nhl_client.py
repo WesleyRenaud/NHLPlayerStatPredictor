@@ -79,7 +79,7 @@ class NhlClient():
             break
 
          rows.extend( batch )
-         start += len( batch )
+         start += NhlClient.PAGE_SIZE
 
       return rows
 

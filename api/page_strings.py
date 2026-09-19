@@ -6,6 +6,7 @@ class PageStrings():
       'page.eyebrow': '2026-27',
       'page.heading': 'Projected Season',
       'page.lede': "Enter a skater's name to see their projected G/A/P.",
+      'page.noMatches': 'No matches',
       'page.placeholder': 'Connor McDavid',
       'page.playerNameLabel': 'Player name',
       'page.seasonLabel': '2026-27 projection',

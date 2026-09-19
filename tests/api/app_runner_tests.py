@@ -27,13 +27,22 @@ def Test_Run_TestUnknownName_ExpectUsageError( monkeypatch: pytest.MonkeyPatch )
    assert exit_info.value.code == Position.SECOND
 
 
-def Test_Ingest_TestRun_ExpectIngesterMain( monkeypatch: pytest.MonkeyPatch ) -> None:
-   called: list[ bool ] = []
+def Test_Ingest_TestRun_ExpectForcedIngesterMain( monkeypatch: pytest.MonkeyPatch ) -> None:
+   forced: list[ bool ] = []
 
-   def fake_main() -> None:
-      called.append( True )
+   def fake_main( force: bool = False ) -> None:
+      forced.append( force )
 
    monkeypatch.setattr( sys, 'argv', [ 'api', 'ingest' ] )
    monkeypatch.setattr( app_runner.SkaterSeasonIngester, 'main', fake_main )
+   AppRunner.run()
+   assert forced == [ True ]
+
+
+def Test_Run_TestRunName_ExpectStartsServer( monkeypatch: pytest.MonkeyPatch ) -> None:
+   called: list[ bool ] = []
+
+   monkeypatch.setattr( sys, 'argv', [ 'api', AppRunner.run.__name__ ] )
+   monkeypatch.setattr( app_runner.ServerRunner, 'run', lambda: called.append( True ) )
    AppRunner.run()
    assert called == [ True ]

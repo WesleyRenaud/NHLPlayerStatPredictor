@@ -57,6 +57,22 @@ def Test_BuildRows_TestShortSeason_ExpectPacedTotals() -> None:
    assert rows[ Position.FIRST ].p_pace == 2 / 4 * 84
 
 
+def Test_BuildRows_TestMissingBio_ExpectSkipped() -> None:
+   team = list( Team )[ Position.FIRST ]
+   position = list( SkaterPosition )[ Position.FIRST ]
+   rows = SkaterSeasonIngester.build_rows(
+      [
+         SkaterSummary( 1, 'Has Bio', position, [ team ], 82, 1, 1, 2 ),
+         SkaterSummary( 2, 'No Bio', position, [ team ], 82, 1, 1, 2 ),
+      ],
+      [ SkaterBio( 1, date( 1999, 1, 1 ) ) ],
+      SeasonLength( 20242025, 82, date( 2024, 10, 4 ), date( 2025, 4, 17 ) ),
+      84 )
+
+   assert len( rows ) == 1
+   assert rows[ Position.FIRST ].player_id == 1
+
+
 def Test_Seasons_TestBeforeFirstSeason_ExpectExcluded(
       monkeypatch: pytest.MonkeyPatch ) -> None:
    monkeypatch.setattr( skater_season_ingester.Config, 'FIRST_SEASON_ID', 20102011 )
