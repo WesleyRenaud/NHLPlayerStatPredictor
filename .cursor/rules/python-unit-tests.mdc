@@ -1,0 +1,42 @@
+---
+description: Python unit test file names, test function names, and file layout conventions
+globs: tests/**/*.py
+alwaysApply: false
+---
+
+# Python Unit Test Conventions
+
+## 1. Test file names
+
+- **One test file per production file.** Do not combine multiple modules in one test file.
+- Mirror the `api/` path under `tests/api/`.
+- Append `_tests` before `.py`.
+
+| Production file | Test file |
+|---|---|
+| `api/season.py` | `tests/api/season_tests.py` |
+| `api/skater_season_finder.py` | `tests/api/skater_season_finder_tests.py` |
+| `api/skater_season_ingester.py` | `tests/api/skater_season_ingester_tests.py` |
+
+## 2. Test function names
+
+Use this pattern for every test:
+
+`Test_[Method]_Test[Scenario]_Expect[Outcome]`
+
+Parametrized table-driven tests may use the short form `Test_[Method]` when decorated with `@pytest.mark.parametrize`.
+
+## 3. Helpers and tests grouped
+
+Keep a strict top-to-bottom layout. Never place helpers, constants, or fixtures between `Test_` functions.
+
+```
+imports
+constants
+private helpers (def _...)
+module-level test data / stubs
+@pytest.fixture definitions
+all Test_... functions
+```
+
+Enforced by `tools/lint/pythonUnitTestStyle.py` (`npm run lint:py`).

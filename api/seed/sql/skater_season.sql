@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS SkaterSeason
+(  PLAYER_ID      INTEGER NOT NULL,
+   SEASON_ID      INTEGER NOT NULL,
+   PLAYER_NAME    TEXT    NOT NULL,
+   POSITION       TEXT,
+   BIRTH_DATE     DATE    NOT NULL,
+   AGE            REAL    NOT NULL,
+   TEAM           TEXT,
+   GAMES_PLAYED   INTEGER,
+   GOALS          INTEGER,
+   ASSISTS        INTEGER,
+   POINTS         INTEGER,
+   SCHEDULE_GAMES INTEGER,
+   PACE_GAMES     INTEGER,
+   G_PACE         REAL,
+   A_PACE         REAL,
+   P_PACE         REAL,
+   GP_SHARE       REAL,
+   PRIMARY KEY ( PLAYER_ID, SEASON_ID ) );
+
+CREATE INDEX IF NOT EXISTS SkaterSeasonNameIndex
+   ON SkaterSeason ( PLAYER_NAME );

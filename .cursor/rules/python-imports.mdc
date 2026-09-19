@@ -1,0 +1,18 @@
+---
+description: Python imports must appear at the top of every file
+globs: **/*.py
+alwaysApply: false
+---
+
+# Python Imports
+
+All `import` and `from ... import ...` statements belong at the top of the file.
+
+Allowed order:
+
+1. `from __future__ import ...`
+2. Module docstring (if present)
+3. All imports, grouped and alphabetized by `pythonImportStyle.py`
+4. Everything else (constants, helpers, classes, functions)
+
+Never add inline imports. Enforced by `tools/lint/pythonImportStyle.py` (`npm run lint:py`).

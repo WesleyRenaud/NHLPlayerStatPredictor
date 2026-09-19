@@ -1,0 +1,62 @@
+[tool.coverage.run]
+source = [ "api" ]
+omit = [
+   "api/__main__.py",
+   "api/**/__init__.py",
+]
+
+[tool.ruff]
+target-version = "py311"
+exclude = [
+   ".git",
+   ".vscode",
+   "__pycache__",
+   "node_modules",
+   ".venv"
+]
+
+[tool.ruff.lint]
+select = [
+   "F841",
+   "W293",
+   "ANN001",
+   "ANN201",
+   "ANN202",
+   "ANN204",
+   "ANN205",
+   "ANN206"
+]
+ignore = [
+   "ANN401"
+]
+
+[tool.ruff.lint.flake8-annotations]
+allow-star-arg-any = true
+mypy-init-return = true
+
+[tool.tzg_python_style]
+blank_lines_between_methods = 2
+enforce_typing = true
+exclude = [
+   ".venv/**",
+]
+
+[tool.tzg_python_one_class_per_file]
+include = [
+   "api/**/*.py",
+]
+
+[tool.tzg_python_unit_tests]
+include = [
+   "tests/api/**/*.py",
+]
+exclude = [
+   "tests/api/api_test_support/**",
+]
+
+[tool.pytest.ini_options]
+python_files = [ "*_tests.py", "test_*.py" ]
+python_functions = [ "Test_*", "test_*" ]
+pythonpath = [ "tests/api" ]
+testpaths = [ "tests/api" ]
+addopts = [ "--import-mode=importlib" ]

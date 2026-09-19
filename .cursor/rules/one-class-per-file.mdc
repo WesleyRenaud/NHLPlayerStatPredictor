@@ -1,0 +1,14 @@
+---
+description: Define one primary class, enum, or Protocol per source file
+globs: **/*.{py,js,mjs,ts,tsx}
+alwaysApply: false
+---
+
+# One class per file
+
+When adding or refactoring types, put each primary class, enum, or Protocol in its own file.
+
+- Name the file after the type in snake_case (Python).
+- Do not add a second unrelated class to an existing type file.
+
+Enforced for `api/**/*.py` by `tools/lint/pythonOneClassPerFile.py`.
