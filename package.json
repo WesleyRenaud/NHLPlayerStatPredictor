@@ -3,9 +3,10 @@
    "private": true,
    "type": "module",
    "scripts": {
-      "build": "npm run coverage && npm run lint && npm run test:js && echo 'Build complete!' && node tools/coverageSummary.js --print-last-summary",
+      "build": "npm run coverage && npm run lint && echo 'Build complete!' && node tools/coverageSummary.js --print-last-summary",
       "clean": "node tools/cleanBuildArtifacts.js",
       "coverage": "node tools/coverageSummary.js",
+      "coverage:js": "node tools/coverage/runJsCoverage.js",
       "coverage:py": "COVERAGE_FILE=/tmp/nhlpred-python-coverage python3 -m pytest tests/api -n auto --cov=api --cov-report=term:skip-covered --cov-precision=2",
       "ingest": "python3 -m api ingest",
       "lint": "npm run lint:py",

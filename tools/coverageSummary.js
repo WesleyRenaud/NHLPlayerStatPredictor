@@ -11,6 +11,11 @@ const COVERAGE_COMMANDS = [
       script: 'coverage:py',
       parseCoverage: parseBackendCoverage,
    },
+   {
+      label: 'Scripts',
+      script: 'coverage:js',
+      parseCoverage: parseScriptsCoverage,
+   },
 ];
 
 function runNpmScript(script) {
@@ -42,6 +47,13 @@ function parseBackendCoverage(output) {
    const lastMatch = matches.at(-1);
 
    return parseCoveragePercent(lastMatch?.[1] ?? null);
+}
+
+function parseScriptsCoverage(output) {
+   const matches = [...output.matchAll(/all files\s+\|\s+([\d.]+)\s+\|/g)];
+   const lastMatch = matches.at(-1);
+
+   return parseCoveragePercent(lastMatch ? `${ lastMatch[1] }%` : null);
 }
 
 function parseCoveragePercent(value) {
