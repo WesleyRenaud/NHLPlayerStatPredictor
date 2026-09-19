@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
+from api.position import Position
 from api.skater_key import SkaterKey
 from api.skater_position import SkaterPosition
 from api.skater_season import SkaterSeason
@@ -13,10 +14,10 @@ def Test_FromRow_TestPlayerAndName_ExpectFields() -> None:
       player_id=8478402,
       season_id=20252026,
       player_name='Connor McDavid',
-      position=SkaterPosition.CENTER,
+      position=list( SkaterPosition )[ Position.FIRST ],
       birth_date=date( 1997, 1, 13 ),
       age=28.7,
-      team=Team.EDMONTON_OILERS,
+      team=list( Team )[ Position.FIRST ],
       games_played=82,
       goals=48,
       assists=90,

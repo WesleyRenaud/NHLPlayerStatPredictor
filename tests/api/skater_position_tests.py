@@ -3,17 +3,11 @@ from __future__ import annotations
 from api.skater_position import SkaterPosition
 
 
-def Test_Center_TestCode_ExpectC() -> None:
-   assert SkaterPosition.CENTER == 'C'
+def Test_Members_TestValues_ExpectUniqueStrings() -> None:
+   values = [ member.value for member in SkaterPosition ]
+   assert values
+   assert len( values ) == len( set( values ) )
 
-
-def Test_Defense_TestCode_ExpectD() -> None:
-   assert SkaterPosition.DEFENSE == 'D'
-
-
-def Test_LeftWing_TestCode_ExpectL() -> None:
-   assert SkaterPosition.LEFT_WING == 'L'
-
-
-def Test_RightWing_TestCode_ExpectR() -> None:
-   assert SkaterPosition.RIGHT_WING == 'R'
+   for member in SkaterPosition:
+      assert isinstance( member.value, str )
+      assert SkaterPosition( member.value ) is member

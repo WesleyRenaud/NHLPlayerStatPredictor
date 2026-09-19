@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
+from api.position import Position
 from api.skater_position import SkaterPosition
 from api.skater_season import SkaterSeason
 from api.skater_season_key import SkaterSeasonKey
@@ -9,14 +10,16 @@ from api.team import Team
 
 
 def Test_FromRow_TestStoredFields_ExpectValues() -> None:
+   position = list( SkaterPosition )[ Position.FIRST ]
+   team = list( Team )[ Position.FIRST ]
    row = SkaterSeason.from_row( {
       'PLAYER_ID': 8478402,
       'SEASON_ID': 20252026,
       'PLAYER_NAME': 'Connor McDavid',
-      'POSITION': 'C',
+      'POSITION': position.value,
       'BIRTH_DATE': '1997-01-13',
       'AGE': 28.7,
-      'TEAM': 'EDM',
+      'TEAM': team.value,
       'GAMES_PLAYED': 82,
       'GOALS': 48,
       'ASSISTS': 90,
@@ -30,6 +33,8 @@ def Test_FromRow_TestStoredFields_ExpectValues() -> None:
    } )
    assert row.player_id == 8478402
    assert row.player_name == 'Connor McDavid'
+   assert row.position == position
+   assert row.team == team
    assert row.p_pace == 138.0
 
 
@@ -38,10 +43,10 @@ def Test_Key_TestPlayerAndSeason_ExpectKey() -> None:
       player_id=8478402,
       season_id=20252026,
       player_name='Connor McDavid',
-      position=SkaterPosition.CENTER,
+      position=list( SkaterPosition )[ Position.FIRST ],
       birth_date=date( 1997, 1, 13 ),
       age=28.7,
-      team=Team.EDMONTON_OILERS,
+      team=list( Team )[ Position.FIRST ],
       games_played=82,
       goals=48,
       assists=90,

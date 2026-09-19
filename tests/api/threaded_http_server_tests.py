@@ -6,6 +6,7 @@ import threading
 from typing import Any
 from urllib.request import urlopen
 
+from api.position import Position
 from api.threaded_http_server import ThreadedHttpServer
 
 
@@ -34,7 +35,7 @@ def Test_ServeForever_TestParallelGets_ExpectAllSucceed() -> None:
    thread.start()
 
    try:
-      port = server.server_address[ 1 ]
+      port = server.server_address[ Position.SECOND ]
       url = f'http://127.0.0.1:{ port }/'
 
       def fetch() -> int:

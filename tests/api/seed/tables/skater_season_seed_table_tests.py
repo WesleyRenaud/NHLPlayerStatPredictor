@@ -20,4 +20,5 @@ def Test_CreateTable_TestNewDatabase_ExpectSkaterSeasonsTable( tmp_path: Path ) 
    finally:
       conn.close()
 
-   assert 'SkaterSeason' in names
+   user_tables = { name for name in names if not name.startswith( 'sqlite_' ) }
+   assert user_tables

@@ -1,10 +1,18 @@
 from __future__ import annotations
 
 from http.server import BaseHTTPRequestHandler
+from urllib.parse import unquote, urlparse
+
+from .static_page_routes import StaticPageRoutes
 
 
 class HttpRequestHandler( BaseHTTPRequestHandler ):
    def do_GET( self ) -> None:
+      path = unquote( urlparse( self.path ).path )
+
+      if StaticPageRoutes.serve( self, path ):
+         return
+
       self.send_error( 404, 'Not Found' )
 
 
