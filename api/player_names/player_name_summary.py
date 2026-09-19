@@ -16,7 +16,7 @@ class PlayerNameSummary():
    first_season_id: int
 
 
-   def as_json( self ) -> dict[ str, object ]:
+   def to_dict( self ) -> dict[ str, object ]:
       return {
          'playerId': self.player_id,
          'playerName': self.player_name,

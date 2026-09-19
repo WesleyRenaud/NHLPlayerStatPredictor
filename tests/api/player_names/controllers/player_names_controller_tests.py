@@ -55,5 +55,5 @@ def Test_GetPlayerNames_TestCoordinatorSummaries_ExpectJsonPayload(
    handler = _RecordingHandler()
    PlayerNamesController.get_player_names( handler )
    assert json.loads( handler.body.decode( 'utf-8' ) ) == [
-      summary.as_json() for summary in stub_summaries
+      summary.to_dict() for summary in stub_summaries
    ]

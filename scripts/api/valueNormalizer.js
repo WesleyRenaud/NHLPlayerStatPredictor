@@ -16,4 +16,14 @@ export class ValueNormalizer {
 
       return String(value).trim();
    }
+
+
+   static asFiniteNumber(value) {
+      if (value === '' || value == null) {
+         return undefined;
+      }
+
+      const number = Number(value);
+      return Number.isFinite(number) ? number : undefined;
+   }
 }
