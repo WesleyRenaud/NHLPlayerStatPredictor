@@ -1,0 +1,7 @@
+{
+   "description": "Scripts omitted from the coverage denominator toward 100%. Still shipped; not required for coverage thresholds.",
+   "exclude": [
+      "scripts/*Bootstrap.js",
+      "scripts/**/*Bootstrap.js"
+   ]
+}
