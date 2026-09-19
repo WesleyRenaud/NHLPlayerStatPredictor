@@ -7,11 +7,11 @@ from api.skater_position import SkaterPosition
 from api.team import Team
 
 
-def Test_AsJson_TestSummary_ExpectMappedFields() -> None:
+def Test_ToDict_TestSummary_ExpectMappedFields() -> None:
    position = list( SkaterPosition )[ Position.FIRST ]
    team = list( Team )[ Position.FIRST ]
    summary = PlayerNameSummary( 1, 'Stub Skater', position, team, 20202021 )
-   payload = summary.as_json()
+   payload = summary.to_dict()
    assert payload[ 'playerId' ] == summary.player_id
    assert payload[ 'playerName' ] == summary.player_name
    assert payload[ 'position' ] == position.value

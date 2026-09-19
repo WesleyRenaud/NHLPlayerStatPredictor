@@ -24,3 +24,24 @@ class SkaterSeasonProvider():
          return [ SkaterSeason.from_row( row ) for row in cursor.fetchall() ]
       finally:
          DatabaseConnectionProvider.close( conn )
+
+
+   @classmethod
+   def seasons_for_player_id(
+         cls,
+         player_id: int,
+         db_path: str ) -> list[ SkaterSeason ]:
+      conn = DatabaseConnectionProvider.open( db_path )
+
+      try:
+         cursor = conn.execute(
+            '''
+            SELECT *
+            FROM SkaterSeason
+            WHERE PLAYER_ID = ?
+            ORDER BY SEASON_ID
+            ''',
+            ( player_id, ) )
+         return [ SkaterSeason.from_row( row ) for row in cursor.fetchall() ]
+      finally:
+         DatabaseConnectionProvider.close( conn )

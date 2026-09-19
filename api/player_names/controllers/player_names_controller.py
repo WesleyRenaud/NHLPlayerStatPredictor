@@ -7,7 +7,9 @@ from ...json_request_handler import JsonRequestHandler
 class PlayerNamesController():
    @staticmethod
    def get_player_names( handler: JsonRequestHandler ) -> None:
+      summaries = PlayerNamesCoordinator.get_player_summaries()
+
       handler._write_json( [
-         summary.as_json()
-         for summary in PlayerNamesCoordinator.get_player_summaries()
+         summary.to_dict()
+         for summary in summaries
       ] )

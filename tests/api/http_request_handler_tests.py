@@ -13,6 +13,9 @@ from api.page_strings import PageStrings
 import api.player_names.controllers.player_names_controller as player_names_controller
 from api.player_names.player_name_summary import PlayerNameSummary
 from api.player_names.player_names_routes import PlayerNamesRoutes
+import api.projections.controllers.projections_controller as projections_controller
+from api.projections.projection import Projection
+from api.projections.projections_routes import ProjectionsRoutes
 from api.shared.enums.position import Position
 from api.skater_position import SkaterPosition
 import api.static_page_routes as static_page_routes
@@ -159,7 +162,42 @@ def Test_DoPost_TestPlayerNames_ExpectJson(
       server.server_close()
 
    assert response.status == 200
-   assert body == [ summary.as_json() for summary in stub_summaries ]
+   assert body == [ summary.to_dict() for summary in stub_summaries ]
+
+
+def Test_DoPost_TestProjection_ExpectJson(
+      monkeypatch: pytest.MonkeyPatch ) -> None:
+   player_id = 7
+   projection = Projection( 12, 34, 46 )
+   captured: list[ int ] = []
+
+   def fake_get_projection( player_id: int ) -> Projection:
+      captured.append( player_id )
+      return projection
+
+   monkeypatch.setattr(
+      projections_controller.ProjectionCoordinator,
+      'get_projection',
+      fake_get_projection )
+   path = ProjectionsRoutes.GET_PROJECTION
+   server = _start_server()
+
+   try:
+      port = server.server_address[ Position.SECOND ]
+      request = Request(
+         f'http://127.0.0.1:{ port }{ path }',
+         data=json.dumps( { 'playerId': player_id } ).encode( 'utf-8' ),
+         headers={ 'Content-Type': 'application/json' },
+         method='POST' )
+      response = urlopen( request, timeout=5 )
+      body = json.loads( response.read().decode( 'utf-8' ) )
+   finally:
+      server.shutdown()
+      server.server_close()
+
+   assert captured == [ player_id ]
+   assert response.status == 200
+   assert body == projection.to_dict()
 
 
 def Test_DoPost_TestUnknownPath_ExpectNotFound() -> None:

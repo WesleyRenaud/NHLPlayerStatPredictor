@@ -37,3 +37,15 @@ test('Test_AsTrimmedString_TestNullish_ExpectEmpty', () => {
    assert.equal(ValueNormalizer.asTrimmedString(null), '');
    assert.equal(ValueNormalizer.asTrimmedString(undefined), '');
 });
+
+
+test('Test_AsFiniteNumber_TestNumeric_ExpectNumber', () => {
+   assert.equal(ValueNormalizer.asFiniteNumber(12), 12);
+   assert.equal(ValueNormalizer.asFiniteNumber('34'), 34);
+});
+
+
+test('Test_AsFiniteNumber_TestMissing_ExpectUndefined', () => {
+   assert.equal(ValueNormalizer.asFiniteNumber(undefined), undefined);
+   assert.equal(ValueNormalizer.asFiniteNumber(''), undefined);
+});
