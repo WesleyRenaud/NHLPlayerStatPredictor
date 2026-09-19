@@ -7,23 +7,34 @@ import pytest
 from api.paths import Paths
 import api.player_names.coordinators.player_names_coordinator as player_names_coordinator
 from api.player_names.coordinators.player_names_coordinator import PlayerNamesCoordinator
+from api.player_names.player_name_summary import PlayerNameSummary
+from api.shared.enums.position import Position
+from api.skater_position import SkaterPosition
+from api.team import Team
 
 
-def Test_GetPlayerNames_TestProvider_ExpectNames(
+def Test_GetPlayerSummaries_TestProvider_ExpectSummaries(
       monkeypatch: pytest.MonkeyPatch,
       tmp_path: Path ) -> None:
-   stub_names = [ 'Stub Alpha', 'Stub Beta' ]
+   stub_summaries = [
+      PlayerNameSummary(
+         1,
+         'Stub Alpha',
+         list( SkaterPosition )[ Position.FIRST ],
+         list( Team )[ Position.FIRST ],
+         20202021 ),
+   ]
    db_path = tmp_path / 'skaters.sqlite'
    captured: list[ str ] = []
 
-   def fake_names( path: str ) -> list[ str ]:
+   def fake_summaries( path: str ) -> list[ PlayerNameSummary ]:
       captured.append( path )
-      return stub_names
+      return stub_summaries
 
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
    monkeypatch.setattr(
       player_names_coordinator.PlayerNameProvider,
-      'names',
-      fake_names )
-   assert PlayerNamesCoordinator.get_player_names() == stub_names
+      'summaries',
+      fake_summaries )
+   assert PlayerNamesCoordinator.get_player_summaries() == stub_summaries
    assert captured == [ str( db_path ) ]

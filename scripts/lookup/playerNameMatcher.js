@@ -2,7 +2,7 @@ export class PlayerNameMatcher {
    static MAX_RESULTS = 12;
 
 
-   static filter(names, query, maxResults = PlayerNameMatcher.MAX_RESULTS) {
+   static filter(players, query, maxResults = PlayerNameMatcher.MAX_RESULTS) {
       const normalizedQuery = String(query).trim().toLowerCase();
 
       if (!normalizedQuery) {
@@ -12,13 +12,13 @@ export class PlayerNameMatcher {
       const startsWithMatches = [];
       const containsMatches = [];
 
-      names.forEach(name => {
-         const lower = String(name).toLowerCase();
+      players.forEach(player => {
+         const lower = String(player.playerName).toLowerCase();
 
          if (lower.startsWith(normalizedQuery)) {
-            startsWithMatches.push(name);
+            startsWithMatches.push(player);
          } else if (lower.includes(normalizedQuery)) {
-            containsMatches.push(name);
+            containsMatches.push(player);
          }
       });
 

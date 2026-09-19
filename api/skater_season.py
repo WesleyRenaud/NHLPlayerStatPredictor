@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
-from .position import Position
+from .shared.enums.position import Position
 from .skater_position import SkaterPosition
 from .skater_season_key import SkaterSeasonKey
 from .team import Team

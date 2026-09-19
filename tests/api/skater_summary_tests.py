@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from api.position import Position
+from api.shared.enums.position import Position
 from api.skater_position import SkaterPosition
 from api.skater_summary import SkaterSummary
 from api.team import Team

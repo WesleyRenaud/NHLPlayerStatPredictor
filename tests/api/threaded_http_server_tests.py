@@ -6,7 +6,7 @@ import threading
 from typing import Any
 from urllib.request import urlopen
 
-from api.position import Position
+from api.shared.enums.position import Position
 from api.threaded_http_server import ThreadedHttpServer
 
 

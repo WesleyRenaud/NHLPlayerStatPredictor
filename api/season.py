@@ -2,17 +2,19 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from .position import Position
 from .season_length import SeasonLength
+from .shared.enums.position import Position
 from .team import Team
 
 
 class Season():
    ISO_DATE_LENGTH = 10
+   START_YEAR_DIVISOR = 10000
+
 
    @classmethod
    def start_year( cls, season_id: int ) -> int:
-      return season_id // 10000
+      return season_id // Season.START_YEAR_DIVISOR
 
 
    @classmethod

@@ -1,15 +1,17 @@
+import { PlayerNameBinder } from './playerNameBinder.js';
+
+
 export class LookupFormController {
    static bind(form, result) {
       form.addEventListener('submit', event => {
          event.preventDefault();
          const input = form.querySelector('#player-name');
-         const playerName = input.value.trim();
 
-         if (!playerName) {
+         if (!PlayerNameBinder.playerId(input)) {
             return;
          }
 
-         LookupFormController.render(result, playerName);
+         LookupFormController.render(result, PlayerNameBinder.label(input));
       });
    }
 

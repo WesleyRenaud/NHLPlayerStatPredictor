@@ -1,0 +1,12 @@
+{
+   "enums": [
+      {
+         "id": "position",
+         "json": "position.json",
+         "pythonModule": "api/shared/enums/position.py",
+         "pythonClass": "Position",
+         "javascriptModule": "scripts/shared/enums/position.js",
+         "javascriptClass": "Position"
+      }
+   ]
+}

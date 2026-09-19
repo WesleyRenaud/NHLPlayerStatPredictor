@@ -4,8 +4,8 @@ from datetime import date
 
 import pytest
 
-from api.position import Position
 from api.season_length import SeasonLength
+from api.shared.enums.position import Position
 from api.skater_bio import SkaterBio
 from api.skater_position import SkaterPosition
 import api.skater_season_ingester as skater_season_ingester

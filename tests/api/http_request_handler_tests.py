@@ -11,10 +11,13 @@ import pytest
 from api.http_request_handler import HttpRequestHandler
 from api.page_strings import PageStrings
 import api.player_names.controllers.player_names_controller as player_names_controller
+from api.player_names.player_name_summary import PlayerNameSummary
 from api.player_names.player_names_routes import PlayerNamesRoutes
-from api.position import Position
+from api.shared.enums.position import Position
+from api.skater_position import SkaterPosition
 import api.static_page_routes as static_page_routes
 from api.static_page_routes import StaticPageRoutes
+from api.team import Team
 from api.threaded_http_server import ThreadedHttpServer
 
 
@@ -127,11 +130,18 @@ def Test_DoGet_TestUnknownPath_ExpectNotFound(
 
 def Test_DoPost_TestPlayerNames_ExpectJson(
       monkeypatch: pytest.MonkeyPatch ) -> None:
-   stub_names = [ 'Stub Alpha', 'Stub Beta' ]
+   stub_summaries = [
+      PlayerNameSummary(
+         1,
+         'Stub Alpha',
+         list( SkaterPosition )[ Position.FIRST ],
+         list( Team )[ Position.FIRST ],
+         20202021 ),
+   ]
    monkeypatch.setattr(
       player_names_controller.PlayerNamesCoordinator,
-      'get_player_names',
-      lambda: stub_names )
+      'get_player_summaries',
+      lambda: stub_summaries )
    path = PlayerNamesRoutes.GET_PLAYER_NAMES
    server = _start_server()
 
@@ -149,7 +159,7 @@ def Test_DoPost_TestPlayerNames_ExpectJson(
       server.server_close()
 
    assert response.status == 200
-   assert body == { 'names': stub_names }
+   assert body == [ summary.as_json() for summary in stub_summaries ]
 
 
 def Test_DoPost_TestUnknownPath_ExpectNotFound() -> None:

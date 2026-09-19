@@ -8,7 +8,7 @@ import pytest
 import api.github_cli as github_cli
 from api.github_cli import GithubCli
 from api.github_cli_result import GithubCliResult
-from api.position import Position
+from api.shared.enums.position import Position
 
 
 def Test_Run_TestSuccess_ExpectStdout( monkeypatch: pytest.MonkeyPatch ) -> None:

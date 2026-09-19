@@ -3,8 +3,8 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
-from api.position import Position
 from api.season import Season
+from api.shared.enums.position import Position
 from api.skater_position import SkaterPosition
 from api.skater_season import SkaterSeason
 from api.skater_season_finder import SkaterSeasonFinder

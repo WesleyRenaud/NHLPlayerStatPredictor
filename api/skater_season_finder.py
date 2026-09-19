@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from .paths import Paths
-from .position import Position
 from .season import Season
+from .shared.enums.position import Position
 from .skater_key import SkaterKey
 from .skater_season import SkaterSeason
 from .skater_season_provider import SkaterSeasonProvider

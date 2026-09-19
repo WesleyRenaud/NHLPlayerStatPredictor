@@ -4,7 +4,7 @@ import subprocess
 
 from .github_cli_result import GithubCliResult
 from .paths import Paths
-from .position import Position
+from .shared.enums.position import Position
 
 
 class GithubCli():

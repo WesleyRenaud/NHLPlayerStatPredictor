@@ -1,8 +1,8 @@
-import { ValueNormalizer } from './valueNormalizer.js';
+import { PlayerSearchSummary } from './playerSearchSummary.js';
 
 
 export class PlayerNamesApiNormalizer {
-   static normalizeNames(response) {
-      return ValueNormalizer.asArray(ValueNormalizer.asObject(response).names);
+   static normalizePlayers(response) {
+      return PlayerSearchSummary.normalizeAll(response);
    }
 }

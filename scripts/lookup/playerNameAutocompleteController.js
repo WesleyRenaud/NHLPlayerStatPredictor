@@ -1,5 +1,6 @@
 import { PlayerNamesClient } from '../api/playerNamesClient.js';
 import { PlayerNameAutocompleteHelper } from './playerNameAutocompleteHelper.js';
+import { PlayerNameBinder } from './playerNameBinder.js';
 import { PlayerNameMatcher } from './playerNameMatcher.js';
 import { PlayerNameResultsView } from './playerNameResultsView.js';
 
@@ -22,13 +23,13 @@ export class PlayerNameAutocompleteController {
             return;
          }
 
-         const names = await PlayerNamesClient.list();
+         const players = await PlayerNamesClient.list();
 
          if (requestId !== searchRequestId) {
             return;
          }
 
-         resultsView.render(PlayerNameMatcher.filter(names, query));
+         resultsView.render(PlayerNameMatcher.filter(players, query));
       }
 
       const runSearch = PlayerNameAutocompleteHelper.debounce(() => {
@@ -36,6 +37,7 @@ export class PlayerNameAutocompleteController {
       });
 
       inputEl.addEventListener('input', () => {
+         PlayerNameBinder.clear(inputEl);
          runSearch();
       });
 

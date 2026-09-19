@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 import sqlite3
 
-from api.position import Position
 from api.seed.tables.skater_season_seed_table import SkaterSeasonSeedTable
+from api.shared.enums.position import Position
 
 
 def Test_CreateTable_TestNewDatabase_ExpectSkaterSeasonsTable( tmp_path: Path ) -> None:

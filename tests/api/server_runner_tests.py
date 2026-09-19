@@ -5,9 +5,9 @@ from typing import Any
 import pytest
 
 from api.http_request_handler import HttpRequestHandler
-from api.position import Position
 import api.server_runner as server_runner
 from api.server_runner import ServerRunner
+from api.shared.enums.position import Position
 
 
 class _FakeServer:
