@@ -4,6 +4,8 @@ from ..career_pace_averager import CareerPaceAverager
 from ...pace_games_resolver import PaceGamesResolver
 from ...paths import Paths
 from ..projection import Projection
+from ...recency_target_resolver import RecencyTargetResolver
+from ...recency_weight_store import RecencyWeightStore
 from ...skater_season_provider import SkaterSeasonProvider
 
 
@@ -13,7 +15,10 @@ class ProjectionCoordinator():
       seasons = SkaterSeasonProvider.seasons_for_player_id(
          player_id,
          str( Paths.DB_PATH ) )
-      pace = CareerPaceAverager.average( seasons )
+      pace = CareerPaceAverager.average(
+         seasons,
+         RecencyWeightStore.read(),
+         RecencyTargetResolver.resolve() )
       return Projection(
          goals=pace.goals,
          assists=pace.assists,

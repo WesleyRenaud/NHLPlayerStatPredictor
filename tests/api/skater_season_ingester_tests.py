@@ -1,17 +1,43 @@
 from __future__ import annotations
 
 from datetime import date
+from pathlib import Path
 
 import pytest
 
+from api.paths import Paths
+from api.recency_decay_fitter import RecencyDecayFitter
+from api.recency_weight_store import RecencyWeightStore
 from api.season_length import SeasonLength
 from api.shared.enums.position import Position
 from api.skater_bio import SkaterBio
 from api.skater_position import SkaterPosition
+from api.skater_season import SkaterSeason
 import api.skater_season_ingester as skater_season_ingester
 from api.skater_season_ingester import SkaterSeasonIngester
 from api.skater_summary import SkaterSummary
 from api.team import Team
+
+
+def _season( season_id: int, p_pace: float ) -> SkaterSeason:
+   return SkaterSeason(
+      player_id=1,
+      season_id=season_id,
+      player_name='Stub Skater',
+      position=list( SkaterPosition )[ Position.FIRST ],
+      birth_date=date( 1997, 1, 13 ),
+      age=28.7,
+      team=list( Team )[ Position.FIRST ],
+      games_played=1,
+      goals=0,
+      assists=0,
+      points=0,
+      schedule_games=1,
+      pace_games=1,
+      g_pace=0.0,
+      a_pace=0.0,
+      p_pace=p_pace,
+      gp_share=1.0 )
 
 
 def Test_BuildRows_TestRegularSeason_ExpectPacedTotals() -> None:
@@ -84,3 +110,25 @@ def Test_Seasons_TestBeforeFirstSeason_ExpectExcluded(
       ] )
 
    assert [ item.season_id for item in meta ] == [ 20102011, 20112012 ]
+
+
+def Test_Main_TestRows_ExpectInsertedAndWeightsStored(
+      monkeypatch: pytest.MonkeyPatch,
+      tmp_path: Path ) -> None:
+   rows = [ _season( 20202021, 50.0 ), _season( 20212022, 80.0 ) ]
+   db_path = tmp_path / 'skaters.sqlite'
+   inserted: list[ tuple[ list[ SkaterSeason ], str ] ] = []
+   monkeypatch.setattr( Paths, 'DB_PATH', db_path )
+   monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
+   monkeypatch.setattr(
+      SkaterSeasonIngester,
+      'build_all_rows',
+      lambda force=False: rows )
+   monkeypatch.setattr(
+      skater_season_ingester.SkaterSeasonStore,
+      'insert_rows',
+      lambda written, path: inserted.append( ( written, path ) ) )
+   SkaterSeasonIngester.main()
+   assert inserted == [ ( rows, str( db_path ) ) ]
+   assert RecencyWeightStore.read() == RecencyDecayFitter.weights(
+      RecencyDecayFitter.fit( rows ) )
