@@ -39,10 +39,37 @@ def Test_Ingest_TestRun_ExpectForcedIngesterMain( monkeypatch: pytest.MonkeyPatc
    assert forced == [ True ]
 
 
+def Test_Pull_TestRun_ExpectArtifactPullerMain( monkeypatch: pytest.MonkeyPatch ) -> None:
+   called: list[ bool ] = []
+
+   monkeypatch.setattr( sys, 'argv', [ 'api', AppRunner.pull.__name__ ] )
+   monkeypatch.setattr( app_runner.IngestArtifactPuller, 'main', lambda: called.append( True ) )
+   AppRunner.run()
+   assert called == [ True ]
+
+
+def Test_Start_TestRun_ExpectSyncThenServer( monkeypatch: pytest.MonkeyPatch ) -> None:
+   events: list[ str ] = []
+   sync_name = app_runner.IngestArtifactPuller.sync.__name__
+   run_name = app_runner.ServerRunner.run.__name__
+
+   monkeypatch.setattr(
+      app_runner.IngestArtifactPuller,
+      'sync',
+      lambda: events.append( sync_name ) )
+   monkeypatch.setattr(
+      app_runner.ServerRunner,
+      'run',
+      lambda: events.append( run_name ) )
+   AppRunner.start()
+   assert events == [ sync_name, run_name ]
+
+
 def Test_Run_TestRunName_ExpectStartsServer( monkeypatch: pytest.MonkeyPatch ) -> None:
    called: list[ bool ] = []
 
    monkeypatch.setattr( sys, 'argv', [ 'api', AppRunner.run.__name__ ] )
+   monkeypatch.setattr( app_runner.IngestArtifactPuller, 'sync', lambda: None )
    monkeypatch.setattr( app_runner.ServerRunner, 'run', lambda: called.append( True ) )
    AppRunner.run()
    assert called == [ True ]
