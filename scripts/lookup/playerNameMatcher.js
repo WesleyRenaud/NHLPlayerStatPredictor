@@ -3,7 +3,7 @@ export class PlayerNameMatcher {
 
 
    static filter(players, query, maxResults = PlayerNameMatcher.MAX_RESULTS) {
-      const normalizedQuery = String(query).trim().toLowerCase();
+      const normalizedQuery = PlayerNameMatcher.fold(query).trim();
 
       if (!normalizedQuery) {
          return [];
@@ -13,15 +13,24 @@ export class PlayerNameMatcher {
       const containsMatches = [];
 
       players.forEach(player => {
-         const lower = String(player.playerName).toLowerCase();
+         const foldedName = PlayerNameMatcher.fold(player.playerName);
 
-         if (lower.startsWith(normalizedQuery)) {
+         if (foldedName.startsWith(normalizedQuery)) {
             startsWithMatches.push(player);
-         } else if (lower.includes(normalizedQuery)) {
+         } else if (foldedName.includes(normalizedQuery)) {
             containsMatches.push(player);
          }
       });
 
       return [...startsWithMatches, ...containsMatches].slice(0, maxResults);
+   }
+
+
+   static fold(value) {
+      return String(value)
+         .normalize('NFD')
+         .replace(/\p{M}/gu, '')
+         .replaceAll('ck', 'k')
+         .toLowerCase();
    }
 }
