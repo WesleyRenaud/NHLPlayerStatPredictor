@@ -3,10 +3,10 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
+from api.nhl_skater_season import NhlSkaterSeason
 from api.player_names.data_access.player_name_provider import PlayerNameProvider
 from api.shared.enums.position import Position
 from api.skater_position import SkaterPosition
-from api.skater_season import SkaterSeason
 from api.skater_season_store import SkaterSeasonStore
 from api.team import Team
 
@@ -16,8 +16,8 @@ def _season(
       season_id: int,
       player_name: str,
       position: SkaterPosition,
-      team: Team ) -> SkaterSeason:
-   return SkaterSeason(
+      team: Team ) -> NhlSkaterSeason:
+   return NhlSkaterSeason(
       player_id=player_id,
       season_id=season_id,
       player_name=player_name,

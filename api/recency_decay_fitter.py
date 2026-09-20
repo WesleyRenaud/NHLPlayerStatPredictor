@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from .nhl_skater_season import NhlSkaterSeason
 from .recency_weight import RecencyWeight
-from .skater_season import SkaterSeason
 from .skater_season_years import SkaterSeasonYears
 
 
@@ -11,7 +11,7 @@ class RecencyDecayFitter():
 
 
    @classmethod
-   def fit( cls, seasons: list[ SkaterSeason ] ) -> float:
+   def fit( cls, seasons: list[ NhlSkaterSeason ] ) -> float:
       by_player = SkaterSeasonYears.by_player( seasons )
       best_decay = 0.0
       best_error: float | None = None
@@ -43,7 +43,7 @@ class RecencyDecayFitter():
    @classmethod
    def _squared_error(
          cls,
-         by_player: dict[ int, dict[ int, SkaterSeason ] ],
+         by_player: dict[ int, dict[ int, NhlSkaterSeason ] ],
          decay: float ) -> float:
       error = 0.0
 

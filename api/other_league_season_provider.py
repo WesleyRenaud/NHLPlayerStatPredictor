@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .database_connection_provider import DatabaseConnectionProvider
-from .other_league_season import OtherLeagueSeason
+from .other_league_skater_season import OtherLeagueSkaterSeason
 
 
 class OtherLeagueSeasonProvider():
@@ -9,7 +9,7 @@ class OtherLeagueSeasonProvider():
    def seasons_for_player_id(
          cls,
          player_id: int,
-         db_path: str ) -> list[ OtherLeagueSeason ]:
+         db_path: str ) -> list[ OtherLeagueSkaterSeason ]:
       conn = DatabaseConnectionProvider.open( db_path )
 
       try:
@@ -21,6 +21,6 @@ class OtherLeagueSeasonProvider():
             ORDER BY SEASON_ID, LEAGUE
             ''',
             ( player_id, ) )
-         return [ OtherLeagueSeason.from_row( row ) for row in cursor.fetchall() ]
+         return [ OtherLeagueSkaterSeason.from_row( row ) for row in cursor.fetchall() ]
       finally:
          DatabaseConnectionProvider.close( conn )

@@ -4,18 +4,18 @@ from collections import defaultdict
 
 from .career_pace import CareerPace
 from ..league_factor import LeagueFactor
-from ..other_league_season import OtherLeagueSeason
+from ..nhl_skater_season import NhlSkaterSeason
+from ..other_league_skater_season import OtherLeagueSkaterSeason
 from ..recency_weight import RecencyWeight
 from ..season import Season
-from ..skater_season import SkaterSeason
 
 
 class TranslatedPaceAverager():
    @classmethod
    def average(
          cls,
-         seasons: list[ SkaterSeason ],
-         other_seasons: list[ OtherLeagueSeason ],
+         seasons: list[ NhlSkaterSeason ],
+         other_seasons: list[ OtherLeagueSkaterSeason ],
          weights: list[ RecencyWeight ],
          target_season_id: int,
          factors: list[ LeagueFactor ] ) -> CareerPace:
@@ -47,8 +47,8 @@ class TranslatedPaceAverager():
    @classmethod
    def _year_pace(
          cls,
-         nhl: SkaterSeason | None,
-         others: list[ OtherLeagueSeason ],
+         nhl: NhlSkaterSeason | None,
+         others: list[ OtherLeagueSkaterSeason ],
          by_league: dict[ str, LeagueFactor ] ) -> CareerPace | None:
       games = 0.0
       goals = 0.0
@@ -80,9 +80,9 @@ class TranslatedPaceAverager():
    @classmethod
    def _nhl_by_lag(
          cls,
-         seasons: list[ SkaterSeason ],
-         target_season_id: int ) -> dict[ int, SkaterSeason ]:
-      by_lag: dict[ int, SkaterSeason ] = {}
+         seasons: list[ NhlSkaterSeason ],
+         target_season_id: int ) -> dict[ int, NhlSkaterSeason ]:
+      by_lag: dict[ int, NhlSkaterSeason ] = {}
 
       for season in seasons:
          by_lag[ Season.recency_lag( target_season_id, season.season_id ) ] = season
@@ -93,9 +93,9 @@ class TranslatedPaceAverager():
    @classmethod
    def _others_by_lag(
          cls,
-         seasons: list[ OtherLeagueSeason ],
-         target_season_id: int ) -> dict[ int, list[ OtherLeagueSeason ] ]:
-      by_lag: dict[ int, list[ OtherLeagueSeason ] ] = defaultdict( list )
+         seasons: list[ OtherLeagueSkaterSeason ],
+         target_season_id: int ) -> dict[ int, list[ OtherLeagueSkaterSeason ] ]:
+      by_lag: dict[ int, list[ OtherLeagueSkaterSeason ] ] = defaultdict( list )
 
       for season in seasons:
          by_lag[ Season.recency_lag( target_season_id, season.season_id ) ].append(

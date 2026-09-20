@@ -4,17 +4,17 @@ from collections import defaultdict
 
 from .aging_factor import AgingFactor
 from .league_factor import LeagueFactor
-from .other_league_season import OtherLeagueSeason
+from .nhl_skater_season import NhlSkaterSeason
+from .other_league_skater_season import OtherLeagueSkaterSeason
 from .season import Season
-from .skater_season import SkaterSeason
 
 
 class LeagueFactorFitter():
    @classmethod
    def fit(
          cls,
-         nhl_seasons: list[ SkaterSeason ],
-         other_seasons: list[ OtherLeagueSeason ],
+         nhl_seasons: list[ NhlSkaterSeason ],
+         other_seasons: list[ OtherLeagueSkaterSeason ],
          aging_factors: list[ AgingFactor ] ) -> list[ LeagueFactor ]:
       nhl_goals, nhl_assists, other_goals, other_assists = cls._paces(
          nhl_seasons,
@@ -26,8 +26,8 @@ class LeagueFactorFitter():
    @classmethod
    def _paces(
          cls,
-         nhl_seasons: list[ SkaterSeason ],
-         other_seasons: list[ OtherLeagueSeason ],
+         nhl_seasons: list[ NhlSkaterSeason ],
+         other_seasons: list[ OtherLeagueSkaterSeason ],
          aging_factors: list[ AgingFactor ] ) -> tuple[
             dict[ str, float ],
             dict[ str, float ],
@@ -98,8 +98,8 @@ class LeagueFactorFitter():
    @classmethod
    def _nhl_for(
          cls,
-         other: OtherLeagueSeason,
-         nhl_years: dict[ int, SkaterSeason ] ) -> SkaterSeason | None:
+         other: OtherLeagueSkaterSeason,
+         nhl_years: dict[ int, NhlSkaterSeason ] ) -> NhlSkaterSeason | None:
       year = Season.start_year( other.season_id )
       same_year = nhl_years.get( year )
 
@@ -117,8 +117,8 @@ class LeagueFactorFitter():
    @classmethod
    def _same_age_pace(
          cls,
-         other: OtherLeagueSeason,
-         nhl: SkaterSeason,
+         other: OtherLeagueSkaterSeason,
+         nhl: NhlSkaterSeason,
          aging_factors: list[ AgingFactor ] ) -> tuple[ float, float ] | None:
       if Season.start_year( other.season_id ) == Season.start_year( nhl.season_id ):
          return other.g_pace, other.a_pace
@@ -211,8 +211,8 @@ class LeagueFactorFitter():
    @classmethod
    def _nhl_by_player_year(
          cls,
-         seasons: list[ SkaterSeason ] ) -> dict[ int, dict[ int, SkaterSeason ] ]:
-      by_player: dict[ int, dict[ int, SkaterSeason ] ] = {}
+         seasons: list[ NhlSkaterSeason ] ) -> dict[ int, dict[ int, NhlSkaterSeason ] ]:
+      by_player: dict[ int, dict[ int, NhlSkaterSeason ] ] = {}
 
       for season in seasons:
          years = by_player.setdefault( season.player_id, {} )

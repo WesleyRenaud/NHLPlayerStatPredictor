@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict
 
 from .database_connection_provider import DatabaseConnectionProvider
-from .other_league_season import OtherLeagueSeason
+from .other_league_skater_season import OtherLeagueSkaterSeason
 from .seed.schema_creator import SchemaCreator
 
 
@@ -11,7 +11,7 @@ class OtherLeagueSeasonStore():
    @classmethod
    def insert_rows(
          cls,
-         rows: list[ OtherLeagueSeason ],
+         rows: list[ OtherLeagueSkaterSeason ],
          db_path: str ) -> None:
       conn = DatabaseConnectionProvider.open( db_path )
 

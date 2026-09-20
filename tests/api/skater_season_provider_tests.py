@@ -3,9 +3,9 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
+from api.nhl_skater_season import NhlSkaterSeason
 from api.shared.enums.position import Position
 from api.skater_position import SkaterPosition
-from api.skater_season import SkaterSeason
 from api.skater_season_provider import SkaterSeasonProvider
 from api.skater_season_store import SkaterSeasonStore
 from api.team import Team
@@ -14,7 +14,7 @@ from api.team import Team
 def Test_SeasonsForName_TestInsertedPlayer_ExpectLookupByName( tmp_path: Path ) -> None:
    db_path = str( tmp_path / 'skaters.sqlite' )
    SkaterSeasonStore.insert_rows(
-      [ SkaterSeason(
+      [ NhlSkaterSeason(
          player_id=8478402,
          season_id=20252026,
          player_name='Connor McDavid',
@@ -41,7 +41,7 @@ def Test_SeasonsForName_TestInsertedPlayer_ExpectLookupByName( tmp_path: Path ) 
 
 def Test_SeasonsForPlayerId_TestInsertedPlayer_ExpectLookupById( tmp_path: Path ) -> None:
    db_path = str( tmp_path / 'skaters.sqlite' )
-   row = SkaterSeason(
+   row = NhlSkaterSeason(
       player_id=7,
       season_id=20202021,
       player_name='Stub Skater',

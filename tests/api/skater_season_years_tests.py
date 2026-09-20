@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from datetime import date
 
+from api.nhl_skater_season import NhlSkaterSeason
 from api.season import Season
 from api.shared.enums.position import Position
 from api.skater_position import SkaterPosition
-from api.skater_season import SkaterSeason
 from api.skater_season_years import SkaterSeasonYears
 from api.team import Team
 
 
-def _season( player_id: int, season_id: int ) -> SkaterSeason:
-   return SkaterSeason(
+def _season( player_id: int, season_id: int ) -> NhlSkaterSeason:
+   return NhlSkaterSeason(
       player_id=player_id,
       season_id=season_id,
       player_name='Stub Skater',
