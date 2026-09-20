@@ -7,6 +7,8 @@ import pytest
 
 from api.aging_curve_fitter import AgingCurveFitter
 from api.aging_factor_store import AgingFactorStore
+from api.league_factor_fitter import LeagueFactorFitter
+from api.league_factor_store import LeagueFactorStore
 from api.paths import Paths
 from api.recency_decay_fitter import RecencyDecayFitter
 from api.recency_weight_store import RecencyWeightStore
@@ -130,8 +132,29 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       skater_season_ingester.SkaterSeasonStore,
       'insert_rows',
       lambda written, path: inserted.append( ( written, path ) ) )
+   monkeypatch.setattr(
+      skater_season_ingester.OtherLeagueSeasonIngester,
+      'build_rows',
+      lambda player_ids, seasons, pace_games, force=False: [] )
+   monkeypatch.setattr(
+      skater_season_ingester.OtherLeagueSeasonStore,
+      'insert_rows',
+      lambda written, path: None )
+   monkeypatch.setattr(
+      skater_season_ingester.NhlClient,
+      'seasons',
+      lambda force=False: [] )
+   monkeypatch.setattr(
+      skater_season_ingester.Season,
+      'pace_games',
+      lambda seasons: 84 )
    SkaterSeasonIngester.main()
    assert inserted == [ ( rows, str( db_path ) ) ]
    assert RecencyWeightStore.read() == RecencyDecayFitter.weights(
       RecencyDecayFitter.fit( rows ) )
-   assert AgingFactorStore.read() == AgingCurveFitter.fit( rows )
+   aging_factors = AgingCurveFitter.fit( rows )
+   assert AgingFactorStore.read() == aging_factors
+   assert LeagueFactorStore.read() == LeagueFactorFitter.fit(
+      rows,
+      [],
+      aging_factors )
