@@ -5,6 +5,8 @@ from pathlib import Path
 
 from api.nhl_skater_season import NhlSkaterSeason
 from api.player_names.data_access.player_name_provider import PlayerNameProvider
+from api.player_status import PlayerStatus
+from api.player_status_store import PlayerStatusStore
 from api.shared.enums.position import Position
 from api.skater_position import SkaterPosition
 from api.skater_season_store import SkaterSeasonStore
@@ -56,6 +58,9 @@ def Test_Summaries_TestDuplicateSeasons_ExpectLatestTeamAndFirstSeason(
          _season( 1, first_season_id, 'Stub Skater', position, first_team ),
       ],
       db_path=db_path )
+   PlayerStatusStore.insert_rows(
+      [ PlayerStatus( player_id=1, is_active=True ) ],
+      db_path=db_path )
    summaries = PlayerNameProvider.summaries( db_path )
    assert len( summaries ) == 1
    summary = summaries[ Position.FIRST ]
@@ -83,6 +88,12 @@ def Test_Summaries_TestSharedName_ExpectSeparatePlayers( tmp_path: Path ) -> Non
          _season( 1, first_debut_id, shared_name, first_position, first_team ),
       ],
       db_path=db_path )
+   PlayerStatusStore.insert_rows(
+      [
+         PlayerStatus( player_id=1, is_active=True ),
+         PlayerStatus( player_id=2, is_active=True ),
+      ],
+      db_path=db_path )
    summaries = PlayerNameProvider.summaries( db_path )
    assert [ summary.player_id for summary in summaries ] == [ 1, 2 ]
    assert summaries[ Position.FIRST ].position == first_position
@@ -102,6 +113,44 @@ def Test_Summaries_TestInactivePlayer_ExpectExcluded( tmp_path: Path ) -> None:
          _season( 1, current_season_id, 'Active Skater', position, team ),
          _season( 2, retired_season_id, 'Retired Skater', position, team ),
       ],
+      db_path=db_path )
+   PlayerStatusStore.insert_rows(
+      [
+         PlayerStatus( player_id=1, is_active=True ),
+         PlayerStatus( player_id=2, is_active=True ),
+      ],
+      db_path=db_path )
+   summaries = PlayerNameProvider.summaries( db_path )
+   assert [ summary.player_id for summary in summaries ] == [ 1 ]
+
+
+def Test_Summaries_TestInactiveStatus_ExpectExcluded( tmp_path: Path ) -> None:
+   db_path = str( tmp_path / 'skaters.sqlite' )
+   position = list( SkaterPosition )[ Position.FIRST ]
+   team = list( Team )[ Position.FIRST ]
+   current_season_id = 20252026
+   SkaterSeasonStore.insert_rows(
+      [
+         _season( 1, current_season_id, 'Active Skater', position, team ),
+         _season( 2, current_season_id, 'Inactive Skater', position, team ),
+      ],
+      db_path=db_path )
+   PlayerStatusStore.insert_rows(
+      [
+         PlayerStatus( player_id=1, is_active=True ),
+         PlayerStatus( player_id=2, is_active=False ),
+      ],
+      db_path=db_path )
+   summaries = PlayerNameProvider.summaries( db_path )
+   assert [ summary.player_id for summary in summaries ] == [ 1 ]
+
+
+def Test_Summaries_TestMissingStatus_ExpectIncluded( tmp_path: Path ) -> None:
+   db_path = str( tmp_path / 'skaters.sqlite' )
+   position = list( SkaterPosition )[ Position.FIRST ]
+   team = list( Team )[ Position.FIRST ]
+   SkaterSeasonStore.insert_rows(
+      [ _season( 1, 20252026, 'Active Skater', position, team ) ],
       db_path=db_path )
    summaries = PlayerNameProvider.summaries( db_path )
    assert [ summary.player_id for summary in summaries ] == [ 1 ]

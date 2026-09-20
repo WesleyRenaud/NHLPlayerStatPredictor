@@ -3,6 +3,8 @@ from __future__ import annotations
 import sys
 
 from .ingest_artifact_puller import IngestArtifactPuller
+from .paths import Paths
+from .player_status_hydrator import PlayerStatusHydrator
 from .server_runner import ServerRunner
 from .shared.enums.position import Position
 from .skater_season_finder import SkaterSeasonFinder
@@ -36,6 +38,7 @@ class AppRunner():
    @classmethod
    def start( cls ) -> None:
       IngestArtifactPuller.sync()
+      PlayerStatusHydrator.hydrate( str( Paths.DB_PATH ) )
       ServerRunner.run()
 
 

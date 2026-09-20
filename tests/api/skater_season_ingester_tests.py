@@ -11,6 +11,7 @@ from api.league_factor_fitter import LeagueFactorFitter
 from api.league_factor_store import LeagueFactorStore
 from api.nhl_skater_season import NhlSkaterSeason
 from api.paths import Paths
+from api.player_status import PlayerStatus
 from api.recency_decay_fitter import RecencyDecayFitter
 from api.recency_weight_store import RecencyWeightStore
 from api.season_length import SeasonLength
@@ -132,14 +133,24 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       skater_season_ingester.SkaterSeasonStore,
       'insert_rows',
       lambda written, path: inserted.append( ( written, path ) ) )
+   landing = { 'playerId': 1, 'isActive': True }
+   statuses: list[ tuple[ list[ object ], str ] ] = []
+   monkeypatch.setattr(
+      skater_season_ingester.PlayerLandingFetcher,
+      'fetch',
+      lambda player_ids, force=False: { 1: landing } )
    monkeypatch.setattr(
       skater_season_ingester.OtherLeagueSeasonIngester,
       'build_rows',
-      lambda player_ids, seasons, pace_games, force=False: [] )
+      lambda player_ids, landings, seasons, pace_games: [] )
    monkeypatch.setattr(
       skater_season_ingester.OtherLeagueSeasonStore,
       'insert_rows',
       lambda written, path: None )
+   monkeypatch.setattr(
+      skater_season_ingester.PlayerStatusStore,
+      'insert_rows',
+      lambda written, path: statuses.append( ( written, path ) ) )
    monkeypatch.setattr(
       skater_season_ingester.NhlClient,
       'seasons',
@@ -150,6 +161,7 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       lambda seasons: 84 )
    SkaterSeasonIngester.main()
    assert inserted == [ ( rows, str( db_path ) ) ]
+   assert statuses == [ ( [ PlayerStatus( 1, True ) ], str( db_path ) ) ]
    assert RecencyWeightStore.read() == RecencyDecayFitter.weights(
       RecencyDecayFitter.fit( rows ) )
    aging_factors = AgingCurveFitter.fit( rows, [] )
