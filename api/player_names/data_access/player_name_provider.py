@@ -11,7 +11,7 @@ from ...team import Team
 
 class PlayerNameProvider():
    @classmethod
-   def summaries( cls, db_path: str ) -> list[ PlayerNameSummary ]:
+   def summaries( cls, db_path: str, target_season_id: int ) -> list[ PlayerNameSummary ]:
       conn = DatabaseConnectionProvider.open( db_path )
 
       try:
@@ -19,38 +19,33 @@ class PlayerNameProvider():
          cursor = conn.execute(
             '''
             SELECT
-               latest.PLAYER_ID,
-               latest.PLAYER_NAME,
-               latest.POSITION,
-               latest.TEAM,
-               first_season.FIRST_SEASON_ID
-            FROM SkaterSeason AS latest
-            INNER JOIN (
-               SELECT PLAYER_ID, MAX( SEASON_ID ) AS SEASON_ID
-               FROM SkaterSeason
-               GROUP BY PLAYER_ID
-            ) AS latest_season
-               ON latest.PLAYER_ID = latest_season.PLAYER_ID
-               AND latest.SEASON_ID = latest_season.SEASON_ID
-            INNER JOIN (
+               roster.PLAYER_ID,
+               roster.PLAYER_NAME,
+               roster.POSITION,
+               roster.TEAM,
+               COALESCE( first_season.FIRST_SEASON_ID, ? ) AS FIRST_SEASON_ID
+            FROM RosterSkater AS roster
+            LEFT JOIN (
                SELECT PLAYER_ID, MIN( SEASON_ID ) AS FIRST_SEASON_ID
                FROM SkaterSeason
                GROUP BY PLAYER_ID
             ) AS first_season
-               ON latest.PLAYER_ID = first_season.PLAYER_ID
-            INNER JOIN (
-               SELECT MAX( SEASON_ID ) AS SEASON_ID
-               FROM SkaterSeason
-            ) AS current_season
-               ON latest.SEASON_ID = current_season.SEASON_ID
-            LEFT JOIN PlayerStatus AS status
-               ON latest.PLAYER_ID = status.PLAYER_ID
-            WHERE status.IS_ACTIVE IS NULL OR status.IS_ACTIVE = 1
+               ON roster.PLAYER_ID = first_season.PLAYER_ID
+            WHERE EXISTS (
+               SELECT 1
+               FROM SkaterSeason AS nhl
+               WHERE nhl.PLAYER_ID = roster.PLAYER_ID
+            ) OR EXISTS (
+               SELECT 1
+               FROM OtherLeagueSeason AS other
+               WHERE other.PLAYER_ID = roster.PLAYER_ID
+            )
             ORDER BY
-               latest.PLAYER_NAME,
-               first_season.FIRST_SEASON_ID,
-               latest.PLAYER_ID
-            ''' )
+               roster.PLAYER_NAME,
+               FIRST_SEASON_ID,
+               roster.PLAYER_ID
+            ''',
+            ( target_season_id, ) )
          return [
             PlayerNameSummary(
                player_id=int( row[ 'PLAYER_ID' ] ),

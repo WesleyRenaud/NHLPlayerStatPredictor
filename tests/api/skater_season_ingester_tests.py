@@ -14,6 +14,7 @@ from api.paths import Paths
 from api.player_status import PlayerStatus
 from api.recency_decay_fitter import RecencyDecayFitter
 from api.recency_weight_store import RecencyWeightStore
+from api.roster_skater import RosterSkater
 from api.season_length import SeasonLength
 from api.shared.enums.position import Position
 from api.skater_bio import SkaterBio
@@ -134,11 +135,31 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       'insert_rows',
       lambda written, path: inserted.append( ( written, path ) ) )
    landing = { 'playerId': 1, 'isActive': True }
+   roster_landing = { 'playerId': 2, 'isActive': True }
    statuses: list[ tuple[ list[ object ], str ] ] = []
+   fetched: list[ list[ int ] ] = []
+   roster_rows = [
+      RosterSkater(
+         player_id=2,
+         player_name='Roster Rookie',
+         position=list( SkaterPosition )[ Position.FIRST ],
+         team=list( Team )[ Position.FIRST ] )
+   ]
+   roster_inserted: list[ tuple[ list[ RosterSkater ], str ] ] = []
+   monkeypatch.setattr(
+      skater_season_ingester.RosterSkaterIngester,
+      'build_rows',
+      lambda force=False: roster_rows )
+   monkeypatch.setattr(
+      skater_season_ingester.RosterSkaterStore,
+      'insert_rows',
+      lambda written, path: roster_inserted.append( ( written, path ) ) )
    monkeypatch.setattr(
       skater_season_ingester.PlayerLandingFetcher,
       'fetch',
-      lambda player_ids, force=False: { 1: landing } )
+      lambda player_ids, force=False: (
+         fetched.append( player_ids )
+         or { 1: landing, 2: roster_landing } ) )
    monkeypatch.setattr(
       skater_season_ingester.OtherLeagueSeasonIngester,
       'build_rows',
@@ -161,7 +182,11 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       lambda seasons: 84 )
    SkaterSeasonIngester.main()
    assert inserted == [ ( rows, str( db_path ) ) ]
-   assert statuses == [ ( [ PlayerStatus( 1, True ) ], str( db_path ) ) ]
+   assert roster_inserted == [ ( roster_rows, str( db_path ) ) ]
+   assert fetched == [ [ 1, 2 ] ]
+   assert statuses == [
+      ( [ PlayerStatus( 1, True ), PlayerStatus( 2, True ) ], str( db_path ) )
+   ]
    assert RecencyWeightStore.read() == RecencyDecayFitter.weights(
       RecencyDecayFitter.fit( rows ) )
    aging_factors = AgingCurveFitter.fit( rows, [] )

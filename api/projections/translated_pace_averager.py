@@ -21,7 +21,7 @@ class TranslatedPaceAverager():
          other_seasons: list[ OtherLeagueSkaterSeason ],
          weights: list[ RecencyWeight ],
          target_season_id: int,
-         factors: list[ LeagueFactor ] ) -> CareerPace:
+         factors: list[ LeagueFactor ] ) -> CareerPace | None:
       nhl_by_lag = cls._nhl_by_lag( seasons, target_season_id )
       others_by_lag = cls._others_by_lag( other_seasons, target_season_id )
       by_league = { factor.league: factor for factor in factors }
@@ -43,6 +43,9 @@ class TranslatedPaceAverager():
          goals_total += pace.goals * weight
          assists_total += pace.assists * weight
          total += weight
+
+      if not total:
+         return None
 
       return CareerPace(
          goals=goals_total / total,

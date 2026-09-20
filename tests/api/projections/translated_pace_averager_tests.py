@@ -102,6 +102,12 @@ def Test_Average_TestMissingLeague_ExpectNhlOnly() -> None:
       nhl.g_pace, nhl.a_pace )
 
 
+def Test_Average_TestNoUsableYears_ExpectNone() -> None:
+   weights = [ RecencyWeight( 0, 1.0 ) ]
+   assert TranslatedPaceAverager.average(
+      [], [], weights, 20262027, [] ) is None
+
+
 def Test_Average_TestOtherOnlyYear_ExpectTranslatedPace() -> None:
    league = 'AAA'
    factor = LeagueFactor( league, 0.30, 0.25 )

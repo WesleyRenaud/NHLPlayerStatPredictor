@@ -117,3 +117,119 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
    assert adjusted == [
       ( pace, int( seasons[ Position.LAST ].age ), factors, seasons )
    ]
+
+
+def Test_GetProjection_TestOtherLeagueOnly_ExpectOtherLeagueAge(
+      monkeypatch: pytest.MonkeyPatch,
+      tmp_path: Path ) -> None:
+   db_path = tmp_path / 'skaters.sqlite'
+   player_id = 7
+   other_age = 20.8
+   other_seasons = [
+      OtherLeagueSkaterSeason(
+         player_id=player_id,
+         season_id=20252026,
+         league='AAA',
+         age=other_age,
+         games_played=46,
+         goals=6,
+         assists=13,
+         points=19,
+         g_pace=10.0,
+         a_pace=20.0 )
+   ]
+   weights = [ RecencyWeight( 0, 1.0 ) ]
+   factors = [ AgingFactor( 20, 0.12, 0.09 ) ]
+   target_season_id = 20262027
+   pace = CareerPace( 31.4, 42.1 )
+   aged = CareerPace( 10.4, 20.6 )
+   games_played = 84
+   adjusted: list[ tuple[ CareerPace, int, list[ AgingFactor ], list[ NhlSkaterSeason ] ] ] = []
+
+   monkeypatch.setattr( Paths, 'DB_PATH', db_path )
+   monkeypatch.setattr(
+      projection_coordinator.SkaterSeasonProvider,
+      'seasons_for_player_id',
+      lambda requested_id, path: [] )
+   monkeypatch.setattr(
+      projection_coordinator.RecencyWeightStore,
+      'read',
+      lambda: weights )
+   monkeypatch.setattr(
+      projection_coordinator.RecencyTargetResolver,
+      'resolve',
+      lambda: target_season_id )
+   monkeypatch.setattr(
+      projection_coordinator.TranslatedPaceAverager,
+      'average',
+      lambda rows, others, recency_weights, target, leagues: pace )
+   monkeypatch.setattr(
+      projection_coordinator.OtherLeagueSeasonProvider,
+      'seasons_for_player_id',
+      lambda requested_id, path: other_seasons )
+   monkeypatch.setattr(
+      projection_coordinator.LeagueFactorStore,
+      'read',
+      lambda: [] )
+   monkeypatch.setattr(
+      projection_coordinator.AgingFactorStore,
+      'read',
+      lambda: factors )
+   monkeypatch.setattr(
+      projection_coordinator.AgingPaceAdjuster,
+      'adjust',
+      lambda recency_pace, completed_age, aging_factors, player_seasons: adjusted.append(
+         ( recency_pace, completed_age, aging_factors, player_seasons ) ) or aged )
+   monkeypatch.setattr(
+      projection_coordinator.PaceGamesResolver,
+      'resolve',
+      lambda: games_played )
+   goals = round( aged.goals )
+   assists = round( aged.assists )
+   assert ProjectionCoordinator.get_projection( player_id ) == Projection(
+      goals=goals,
+      assists=assists,
+      points=goals + assists,
+      games_played=games_played )
+   assert adjusted == [
+      ( pace, int( other_age ), factors, [] )
+   ]
+
+
+def Test_GetProjection_TestMissingPace_ExpectNone(
+      monkeypatch: pytest.MonkeyPatch,
+      tmp_path: Path ) -> None:
+   db_path = tmp_path / 'skaters.sqlite'
+   adjusted: list[ object ] = []
+   monkeypatch.setattr( Paths, 'DB_PATH', db_path )
+   monkeypatch.setattr(
+      projection_coordinator.SkaterSeasonProvider,
+      'seasons_for_player_id',
+      lambda requested_id, path: [] )
+   monkeypatch.setattr(
+      projection_coordinator.OtherLeagueSeasonProvider,
+      'seasons_for_player_id',
+      lambda requested_id, path: [] )
+   monkeypatch.setattr(
+      projection_coordinator.RecencyWeightStore,
+      'read',
+      lambda: [] )
+   monkeypatch.setattr(
+      projection_coordinator.RecencyTargetResolver,
+      'resolve',
+      lambda: 20262027 )
+   monkeypatch.setattr(
+      projection_coordinator.TranslatedPaceAverager,
+      'average',
+      lambda rows, others, recency_weights, target, leagues: None )
+   monkeypatch.setattr(
+      projection_coordinator.LeagueFactorStore,
+      'read',
+      lambda: [] )
+   monkeypatch.setattr(
+      projection_coordinator.AgingPaceAdjuster,
+      'adjust',
+      lambda recency_pace, completed_age, aging_factors, player_seasons: adjusted.append(
+         recency_pace ) )
+   assert ProjectionCoordinator.get_projection( 7 ) is None
+   assert adjusted == []

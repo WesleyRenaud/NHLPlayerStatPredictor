@@ -59,3 +59,14 @@ def Test_GetProjection_TestCoordinatorProjection_ExpectJsonPayload(
    assert captured == [ player_id ]
    assert handler.status == 200
    assert json.loads( handler.body.decode( 'utf-8' ) ) == projection.to_dict()
+
+
+def Test_GetProjection_TestMissingProjection_ExpectNotFound(
+      monkeypatch: pytest.MonkeyPatch ) -> None:
+   monkeypatch.setattr(
+      projections_controller.ProjectionCoordinator,
+      'get_projection',
+      lambda player_id: None )
+   handler = _RecordingHandler( { 'playerId': 7 } )
+   ProjectionsController.get_projection( handler )
+   assert handler.status == 404
