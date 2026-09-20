@@ -16,17 +16,26 @@ from ..translated_pace_averager import TranslatedPaceAverager
 
 class ProjectionCoordinator():
    @classmethod
-   def get_projection( cls, player_id: int ) -> Projection:
+   def get_projection( cls, player_id: int ) -> Projection | None:
       db_path = str( Paths.DB_PATH )
       seasons = SkaterSeasonProvider.seasons_for_player_id( player_id, db_path )
+      other_seasons = OtherLeagueSeasonProvider.seasons_for_player_id(
+         player_id,
+         db_path )
+      pace = TranslatedPaceAverager.average(
+         seasons,
+         other_seasons,
+         RecencyWeightStore.read(),
+         RecencyTargetResolver.resolve(),
+         LeagueFactorStore.read() )
+
+      if pace is None:
+         return None
+
+      age_source = seasons if seasons else other_seasons
       aged = AgingPaceAdjuster.adjust(
-         TranslatedPaceAverager.average(
-            seasons,
-            OtherLeagueSeasonProvider.seasons_for_player_id( player_id, db_path ),
-            RecencyWeightStore.read(),
-            RecencyTargetResolver.resolve(),
-            LeagueFactorStore.read() ),
-         int( seasons[ Position.LAST ].age ),
+         pace,
+         int( age_source[ Position.LAST ].age ),
          AgingFactorStore.read(),
          seasons )
       goals = round( aged.goals )

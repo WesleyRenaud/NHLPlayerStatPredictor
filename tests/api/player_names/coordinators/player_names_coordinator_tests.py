@@ -25,16 +25,21 @@ def Test_GetPlayerSummaries_TestProvider_ExpectSummaries(
          20202021 ),
    ]
    db_path = tmp_path / 'skaters.sqlite'
-   captured: list[ str ] = []
+   target_season_id = 20262027
+   captured: list[ tuple[ str, int ] ] = []
 
-   def fake_summaries( path: str ) -> list[ PlayerNameSummary ]:
-      captured.append( path )
+   def fake_summaries( path: str, season_id: int ) -> list[ PlayerNameSummary ]:
+      captured.append( ( path, season_id ) )
       return stub_summaries
 
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
+   monkeypatch.setattr(
+      player_names_coordinator.RecencyTargetResolver,
+      'resolve',
+      lambda: target_season_id )
    monkeypatch.setattr(
       player_names_coordinator.PlayerNameProvider,
       'summaries',
       fake_summaries )
    assert PlayerNamesCoordinator.get_player_summaries() == stub_summaries
-   assert captured == [ str( db_path ) ]
+   assert captured == [ ( str( db_path ), target_season_id ) ]

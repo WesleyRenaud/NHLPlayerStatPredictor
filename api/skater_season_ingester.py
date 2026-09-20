@@ -17,6 +17,9 @@ from .player_status_builder import PlayerStatusBuilder
 from .player_status_store import PlayerStatusStore
 from .recency_decay_fitter import RecencyDecayFitter
 from .recency_weight_store import RecencyWeightStore
+from .roster_skater import RosterSkater
+from .roster_skater_ingester import RosterSkaterIngester
+from .roster_skater_store import RosterSkaterStore
 from .season import Season
 from .season_length import SeasonLength
 from .skater_bio import SkaterBio
@@ -33,7 +36,9 @@ class SkaterSeasonIngester():
    def main( cls, force: bool = False ) -> None:
       rows = cls.build_all_rows( force=force )
       SkaterSeasonStore.insert_rows( rows, str( Paths.DB_PATH ) )
-      player_ids = cls._player_ids( rows )
+      roster_rows = RosterSkaterIngester.build_rows( force=force )
+      RosterSkaterStore.insert_rows( roster_rows, str( Paths.DB_PATH ) )
+      player_ids = cls._player_ids( rows, roster_rows )
       landings = PlayerLandingFetcher.fetch( player_ids, force=force )
       other_rows = OtherLeagueSeasonIngester.build_rows(
          player_ids,
@@ -158,8 +163,12 @@ class SkaterSeasonIngester():
 
 
    @classmethod
-   def _player_ids( cls, rows: list[ NhlSkaterSeason ] ) -> list[ int ]:
-      return sorted( { row.player_id for row in rows } )
+   def _player_ids(
+         cls,
+         rows: list[ NhlSkaterSeason ],
+         roster_rows: list[ RosterSkater ] ) -> list[ int ]:
+      return sorted(
+         { row.player_id for row in rows } | { row.player_id for row in roster_rows } )
 
 
 if __name__ == '__main__':

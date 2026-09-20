@@ -4,9 +4,11 @@ from datetime import date
 from pathlib import Path
 
 from api.nhl_skater_season import NhlSkaterSeason
+from api.other_league_season_store import OtherLeagueSeasonStore
+from api.other_league_skater_season import OtherLeagueSkaterSeason
 from api.player_names.data_access.player_name_provider import PlayerNameProvider
-from api.player_status import PlayerStatus
-from api.player_status_store import PlayerStatusStore
+from api.roster_skater import RosterSkater
+from api.roster_skater_store import RosterSkaterStore
 from api.shared.enums.position import Position
 from api.skater_position import SkaterPosition
 from api.skater_season_store import SkaterSeasonStore
@@ -39,33 +41,63 @@ def _season(
       gp_share=1.0 )
 
 
+def _other( player_id: int ) -> OtherLeagueSkaterSeason:
+   return OtherLeagueSkaterSeason(
+      player_id=player_id,
+      season_id=20252026,
+      league='AAA',
+      age=20.8,
+      games_played=46,
+      goals=6,
+      assists=13,
+      points=19,
+      g_pace=10.0,
+      a_pace=20.0 )
+
+
+def _roster(
+      player_id: int,
+      player_name: str,
+      position: SkaterPosition,
+      team: Team ) -> RosterSkater:
+   return RosterSkater(
+      player_id=player_id,
+      player_name=player_name,
+      position=position,
+      team=team )
+
+
 def Test_Summaries_TestMissingTable_ExpectEmptyList( tmp_path: Path ) -> None:
    db_path = str( tmp_path / 'skaters.sqlite' )
-   assert PlayerNameProvider.summaries( db_path ) == []
+   target_season_id = 20262027
+   assert PlayerNameProvider.summaries( db_path, target_season_id ) == []
 
 
-def Test_Summaries_TestDuplicateSeasons_ExpectLatestTeamAndFirstSeason(
+def Test_Summaries_TestDuplicateSeasons_ExpectRosterTeamAndFirstSeason(
       tmp_path: Path ) -> None:
    db_path = str( tmp_path / 'skaters.sqlite' )
    first_team = list( Team )[ Position.FIRST ]
    latest_team = list( Team )[ Position.SECOND ]
+   roster_team = list( Team )[ Position.THIRD ]
    position = list( SkaterPosition )[ Position.FIRST ]
    first_season_id = 20202021
    latest_season_id = 20252026
+   target_season_id = 20262027
+   player_name = 'Stub Skater'
    SkaterSeasonStore.insert_rows(
       [
-         _season( 1, latest_season_id, 'Stub Skater', position, latest_team ),
-         _season( 1, first_season_id, 'Stub Skater', position, first_team ),
+         _season( 1, latest_season_id, player_name, position, latest_team ),
+         _season( 1, first_season_id, player_name, position, first_team ),
       ],
       db_path=db_path )
-   PlayerStatusStore.insert_rows(
-      [ PlayerStatus( player_id=1, is_active=True ) ],
+   RosterSkaterStore.insert_rows(
+      [ _roster( 1, player_name, position, roster_team ) ],
       db_path=db_path )
-   summaries = PlayerNameProvider.summaries( db_path )
+   summaries = PlayerNameProvider.summaries( db_path, target_season_id )
    assert len( summaries ) == 1
    summary = summaries[ Position.FIRST ]
    assert summary.player_id == 1
-   assert summary.team == latest_team
+   assert summary.team == roster_team
    assert summary.first_season_id == first_season_id
    assert summary.position == position
 
@@ -78,6 +110,7 @@ def Test_Summaries_TestSharedName_ExpectSeparatePlayers( tmp_path: Path ) -> Non
    first_team = list( Team )[ Position.FIRST ]
    second_team = list( Team )[ Position.SECOND ]
    current_season_id = 20252026
+   target_season_id = 20262027
    first_debut_id = 20182019
    second_debut_id = 20232024
    SkaterSeasonStore.insert_rows(
@@ -88,13 +121,13 @@ def Test_Summaries_TestSharedName_ExpectSeparatePlayers( tmp_path: Path ) -> Non
          _season( 1, first_debut_id, shared_name, first_position, first_team ),
       ],
       db_path=db_path )
-   PlayerStatusStore.insert_rows(
+   RosterSkaterStore.insert_rows(
       [
-         PlayerStatus( player_id=1, is_active=True ),
-         PlayerStatus( player_id=2, is_active=True ),
+         _roster( 1, shared_name, first_position, first_team ),
+         _roster( 2, shared_name, second_position, second_team ),
       ],
       db_path=db_path )
-   summaries = PlayerNameProvider.summaries( db_path )
+   summaries = PlayerNameProvider.summaries( db_path, target_season_id )
    assert [ summary.player_id for summary in summaries ] == [ 1, 2 ]
    assert summaries[ Position.FIRST ].position == first_position
    assert summaries[ Position.SECOND ].position == second_position
@@ -102,55 +135,51 @@ def Test_Summaries_TestSharedName_ExpectSeparatePlayers( tmp_path: Path ) -> Non
    assert summaries[ Position.SECOND ].first_season_id == second_debut_id
 
 
-def Test_Summaries_TestInactivePlayer_ExpectExcluded( tmp_path: Path ) -> None:
+def Test_Summaries_TestMissingRoster_ExpectExcluded( tmp_path: Path ) -> None:
    db_path = str( tmp_path / 'skaters.sqlite' )
    position = list( SkaterPosition )[ Position.FIRST ]
    team = list( Team )[ Position.FIRST ]
    current_season_id = 20252026
-   retired_season_id = 20202021
+   target_season_id = 20262027
    SkaterSeasonStore.insert_rows(
       [
-         _season( 1, current_season_id, 'Active Skater', position, team ),
-         _season( 2, retired_season_id, 'Retired Skater', position, team ),
+         _season( 1, current_season_id, 'Rostered Skater', position, team ),
+         _season( 2, current_season_id, 'Unrostered Skater', position, team ),
       ],
       db_path=db_path )
-   PlayerStatusStore.insert_rows(
-      [
-         PlayerStatus( player_id=1, is_active=True ),
-         PlayerStatus( player_id=2, is_active=True ),
-      ],
+   RosterSkaterStore.insert_rows(
+      [ _roster( 1, 'Rostered Skater', position, team ) ],
       db_path=db_path )
-   summaries = PlayerNameProvider.summaries( db_path )
+   summaries = PlayerNameProvider.summaries( db_path, target_season_id )
    assert [ summary.player_id for summary in summaries ] == [ 1 ]
 
 
-def Test_Summaries_TestInactiveStatus_ExpectExcluded( tmp_path: Path ) -> None:
+def Test_Summaries_TestOtherLeagueOnly_ExpectTargetFirstSeason( tmp_path: Path ) -> None:
    db_path = str( tmp_path / 'skaters.sqlite' )
    position = list( SkaterPosition )[ Position.FIRST ]
    team = list( Team )[ Position.FIRST ]
-   current_season_id = 20252026
-   SkaterSeasonStore.insert_rows(
-      [
-         _season( 1, current_season_id, 'Active Skater', position, team ),
-         _season( 2, current_season_id, 'Inactive Skater', position, team ),
-      ],
+   target_season_id = 20262027
+   player_name = 'Rostered Rookie'
+   OtherLeagueSeasonStore.insert_rows( [ _other( 2 ) ], db_path=db_path )
+   RosterSkaterStore.insert_rows(
+      [ _roster( 2, player_name, position, team ) ],
       db_path=db_path )
-   PlayerStatusStore.insert_rows(
-      [
-         PlayerStatus( player_id=1, is_active=True ),
-         PlayerStatus( player_id=2, is_active=False ),
-      ],
-      db_path=db_path )
-   summaries = PlayerNameProvider.summaries( db_path )
-   assert [ summary.player_id for summary in summaries ] == [ 1 ]
+   summaries = PlayerNameProvider.summaries( db_path, target_season_id )
+   assert len( summaries ) == 1
+   summary = summaries[ Position.FIRST ]
+   assert summary.player_id == 2
+   assert summary.player_name == player_name
+   assert summary.team == team
+   assert summary.first_season_id == target_season_id
 
 
-def Test_Summaries_TestMissingStatus_ExpectIncluded( tmp_path: Path ) -> None:
+def Test_Summaries_TestRosterWithoutSeasons_ExpectExcluded( tmp_path: Path ) -> None:
    db_path = str( tmp_path / 'skaters.sqlite' )
    position = list( SkaterPosition )[ Position.FIRST ]
    team = list( Team )[ Position.FIRST ]
-   SkaterSeasonStore.insert_rows(
-      [ _season( 1, 20252026, 'Active Skater', position, team ) ],
+   target_season_id = 20262027
+   RosterSkaterStore.insert_rows(
+      [ _roster( 3, 'Empty Roster Skater', position, team ) ],
       db_path=db_path )
-   summaries = PlayerNameProvider.summaries( db_path )
-   assert [ summary.player_id for summary in summaries ] == [ 1 ]
+   summaries = PlayerNameProvider.summaries( db_path, target_season_id )
+   assert summaries == []

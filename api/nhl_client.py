@@ -39,6 +39,22 @@ class NhlClient():
 
 
    @classmethod
+   def standings( cls, force: bool = False ) -> Types.JsonObject:
+      return JsonFileCache().get_object(
+         'standings',
+         cls._fetch_standings,
+         force )
+
+
+   @classmethod
+   def roster( cls, team_abbrev: str, force: bool = False ) -> Types.JsonObject:
+      return JsonFileCache().get_object(
+         f'roster_{ team_abbrev }_current',
+         lambda: cls._fetch_roster( team_abbrev ),
+         force )
+
+
+   @classmethod
    def _skater_report(
          cls,
          report: str,
@@ -72,6 +88,27 @@ class NhlClient():
    def _fetch_player_landing( cls, player_id: int ) -> Types.JsonObject:
       payload = JsonHttpClient.get_json(
          f'{ NhlClient.WEB_BASE }/v1/player/{ player_id }/landing' )
+
+      if isinstance( payload, dict ):
+         return payload
+
+      return {}
+
+
+   @classmethod
+   def _fetch_standings( cls ) -> Types.JsonObject:
+      payload = JsonHttpClient.get_json( f'{ NhlClient.WEB_BASE }/v1/standings/now' )
+
+      if isinstance( payload, dict ):
+         return payload
+
+      return {}
+
+
+   @classmethod
+   def _fetch_roster( cls, team_abbrev: str ) -> Types.JsonObject:
+      payload = JsonHttpClient.get_json(
+         f'{ NhlClient.WEB_BASE }/v1/roster/{ team_abbrev }/current' )
 
       if isinstance( payload, dict ):
          return payload

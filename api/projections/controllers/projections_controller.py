@@ -12,4 +12,8 @@ class ProjectionsController():
       projection = ProjectionCoordinator.get_projection(
          player_id=data.get( 'playerId' ) )
 
+      if projection is None:
+         handler._write_json( {}, 404 )
+         return
+
       handler._write_json( projection.to_dict() )
