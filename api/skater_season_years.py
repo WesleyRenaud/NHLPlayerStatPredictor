@@ -1,15 +1,15 @@
 from __future__ import annotations
 
+from .nhl_skater_season import NhlSkaterSeason
 from .season import Season
-from .skater_season import SkaterSeason
 
 
 class SkaterSeasonYears():
    @classmethod
    def by_player(
          cls,
-         seasons: list[ SkaterSeason ] ) -> dict[ int, dict[ int, SkaterSeason ] ]:
-      by_player: dict[ int, dict[ int, SkaterSeason ] ] = {}
+         seasons: list[ NhlSkaterSeason ] ) -> dict[ int, dict[ int, NhlSkaterSeason ] ]:
+      by_player: dict[ int, dict[ int, NhlSkaterSeason ] ] = {}
 
       for season in seasons:
          years = by_player.setdefault( season.player_id, {} )
@@ -21,8 +21,8 @@ class SkaterSeasonYears():
    @classmethod
    def consecutive(
          cls,
-         seasons: list[ SkaterSeason ] ) -> list[ tuple[ SkaterSeason, SkaterSeason ] ]:
-      pairs: list[ tuple[ SkaterSeason, SkaterSeason ] ] = []
+         seasons: list[ NhlSkaterSeason ] ) -> list[ tuple[ NhlSkaterSeason, NhlSkaterSeason ] ]:
+      pairs: list[ tuple[ NhlSkaterSeason, NhlSkaterSeason ] ] = []
 
       for years in cls.by_player( seasons ).values():
          for year, current in sorted( years.items() ):

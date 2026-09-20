@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .skater_season import SkaterSeason
+from .nhl_skater_season import NhlSkaterSeason
 
 
 @dataclass( frozen=True )
@@ -12,5 +12,5 @@ class SkaterKey():
 
 
    @classmethod
-   def from_row( cls, row: SkaterSeason ) -> SkaterKey:
+   def from_row( cls, row: NhlSkaterSeason ) -> SkaterKey:
       return cls( row.player_id, row.player_name )

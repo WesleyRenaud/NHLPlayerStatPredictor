@@ -5,10 +5,10 @@ from datetime import date
 from api.aging_factor import AgingFactor
 from api.league_factor import LeagueFactor
 from api.league_factor_fitter import LeagueFactorFitter
-from api.other_league_season import OtherLeagueSeason
+from api.nhl_skater_season import NhlSkaterSeason
+from api.other_league_skater_season import OtherLeagueSkaterSeason
 from api.shared.enums.position import Position
 from api.skater_position import SkaterPosition
-from api.skater_season import SkaterSeason
 from api.team import Team
 
 
@@ -17,8 +17,8 @@ def _nhl(
       season_id: int,
       age: float,
       g_pace: float,
-      a_pace: float ) -> SkaterSeason:
-   return SkaterSeason(
+      a_pace: float ) -> NhlSkaterSeason:
+   return NhlSkaterSeason(
       player_id=player_id,
       season_id=season_id,
       player_name='Stub Skater',
@@ -44,8 +44,8 @@ def _other(
       league: str,
       age: float,
       g_pace: float,
-      a_pace: float ) -> OtherLeagueSeason:
-   return OtherLeagueSeason(
+      a_pace: float ) -> OtherLeagueSkaterSeason:
+   return OtherLeagueSkaterSeason(
       player_id=player_id,
       season_id=season_id,
       league=league,

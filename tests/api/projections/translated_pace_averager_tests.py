@@ -3,14 +3,14 @@ from __future__ import annotations
 from datetime import date
 
 from api.league_factor import LeagueFactor
-from api.other_league_season import OtherLeagueSeason
+from api.nhl_skater_season import NhlSkaterSeason
+from api.other_league_skater_season import OtherLeagueSkaterSeason
 from api.projections.career_pace import CareerPace
 from api.projections.career_pace_averager import CareerPaceAverager
 from api.projections.translated_pace_averager import TranslatedPaceAverager
 from api.recency_weight import RecencyWeight
 from api.shared.enums.position import Position
 from api.skater_position import SkaterPosition
-from api.skater_season import SkaterSeason
 from api.team import Team
 
 
@@ -18,8 +18,8 @@ def _nhl(
       g_pace: float,
       a_pace: float,
       season_id: int,
-      games_played: int = 82 ) -> SkaterSeason:
-   return SkaterSeason(
+      games_played: int = 82 ) -> NhlSkaterSeason:
+   return NhlSkaterSeason(
       player_id=1,
       season_id=season_id,
       player_name='Stub Skater',
@@ -44,8 +44,8 @@ def _other(
       a_pace: float,
       season_id: int,
       league: str,
-      games_played: int ) -> OtherLeagueSeason:
-   return OtherLeagueSeason(
+      games_played: int ) -> OtherLeagueSkaterSeason:
+   return OtherLeagueSkaterSeason(
       player_id=1,
       season_id=season_id,
       league=league,

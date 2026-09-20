@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from api.other_league_season import OtherLeagueSeason
 from api.other_league_season_provider import OtherLeagueSeasonProvider
 from api.other_league_season_store import OtherLeagueSeasonStore
+from api.other_league_skater_season import OtherLeagueSkaterSeason
 from api.shared.enums.position import Position
 
 
 def Test_InsertRows_TestInsertedSeason_ExpectReadableByPlayer( tmp_path: Path ) -> None:
    db_path = str( tmp_path / 'skaters.sqlite' )
-   row = OtherLeagueSeason(
+   row = OtherLeagueSkaterSeason(
       player_id=7,
       season_id=20252026,
       league='AAA',

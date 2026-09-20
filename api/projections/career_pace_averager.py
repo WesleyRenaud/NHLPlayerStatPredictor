@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 from .career_pace import CareerPace
+from ..nhl_skater_season import NhlSkaterSeason
 from ..recency_weight import RecencyWeight
 from ..season import Season
-from ..skater_season import SkaterSeason
 
 
 class CareerPaceAverager():
    @classmethod
    def average(
          cls,
-         seasons: list[ SkaterSeason ],
+         seasons: list[ NhlSkaterSeason ],
          weights: list[ RecencyWeight ],
          target_season_id: int ) -> CareerPace:
       by_lag = { weight.lag: weight.weight for weight in weights }

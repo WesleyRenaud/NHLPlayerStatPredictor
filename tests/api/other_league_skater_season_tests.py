@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from api.other_league_season import OtherLeagueSeason
 from api.other_league_season_key import OtherLeagueSeasonKey
+from api.other_league_skater_season import OtherLeagueSkaterSeason
+from api.skater_season import SkaterSeason
 
 
 def Test_FromRow_TestDict_ExpectSeason() -> None:
-   row = OtherLeagueSeason(
+   row = OtherLeagueSkaterSeason(
       player_id=7,
       season_id=20252026,
       league='AAA',
@@ -16,7 +17,7 @@ def Test_FromRow_TestDict_ExpectSeason() -> None:
       points=19,
       g_pace=10.0,
       a_pace=20.0 )
-   assert OtherLeagueSeason.from_row( {
+   assert OtherLeagueSkaterSeason.from_row( {
       'PLAYER_ID': row.player_id,
       'SEASON_ID': row.season_id,
       'LEAGUE': row.league,
@@ -28,10 +29,11 @@ def Test_FromRow_TestDict_ExpectSeason() -> None:
       'G_PACE': row.g_pace,
       'A_PACE': row.a_pace,
    } ) == row
+   assert isinstance( row, SkaterSeason )
 
 
 def Test_Key_TestSeason_ExpectPlayerSeasonLeague() -> None:
-   row = OtherLeagueSeason(
+   row = OtherLeagueSkaterSeason(
       player_id=7,
       season_id=20252026,
       league='AAA',

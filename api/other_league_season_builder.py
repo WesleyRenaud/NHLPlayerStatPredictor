@@ -4,8 +4,8 @@ from datetime import date
 
 from .club_league import ClubLeague
 from .nhl_client import NhlClient
-from .other_league_season import OtherLeagueSeason
 from .other_league_season_key import OtherLeagueSeasonKey
+from .other_league_skater_season import OtherLeagueSkaterSeason
 from .season import Season
 from .season_length import SeasonLength
 from .shared.enums.position import Position
@@ -18,12 +18,12 @@ class OtherLeagueSeasonBuilder():
          cls,
          landing: Types.JsonObject,
          seasons: list[ SeasonLength ],
-         pace_games: int ) -> list[ OtherLeagueSeason ]:
+         pace_games: int ) -> list[ OtherLeagueSkaterSeason ]:
       player_id = int( landing[ 'playerId' ] )
       birth_date = date.fromisoformat(
          str( landing[ 'birthDate' ] ).split( 'T' )[ Position.FIRST ] )
 
-      combined: dict[ OtherLeagueSeasonKey, OtherLeagueSeason ] = {}
+      combined: dict[ OtherLeagueSeasonKey, OtherLeagueSkaterSeason ] = {}
       by_season_id = { season.season_id: season for season in seasons }
 
       for raw in cls._season_totals( landing ):
@@ -51,12 +51,12 @@ class OtherLeagueSeasonBuilder():
    @classmethod
    def _adding(
          cls,
-         current: OtherLeagueSeason | None,
-         incoming: OtherLeagueSeason ) -> OtherLeagueSeason:
+         current: OtherLeagueSkaterSeason | None,
+         incoming: OtherLeagueSkaterSeason ) -> OtherLeagueSkaterSeason:
       if current is None:
          return incoming
 
-      return OtherLeagueSeason(
+      return OtherLeagueSkaterSeason(
          player_id=incoming.player_id,
          season_id=incoming.season_id,
          league=incoming.league,
@@ -72,10 +72,10 @@ class OtherLeagueSeasonBuilder():
    @classmethod
    def _paced(
          cls,
-         season: OtherLeagueSeason,
-         pace_games: int ) -> OtherLeagueSeason:
+         season: OtherLeagueSkaterSeason,
+         pace_games: int ) -> OtherLeagueSkaterSeason:
       games_played = float( season.games_played )
-      return OtherLeagueSeason(
+      return OtherLeagueSkaterSeason(
          player_id=season.player_id,
          season_id=season.season_id,
          league=season.league,
@@ -94,7 +94,7 @@ class OtherLeagueSeasonBuilder():
          player_id: int,
          birth_date: date,
          raw: Types.JsonObject,
-         by_season_id: dict[ int, SeasonLength ] ) -> OtherLeagueSeason | None:
+         by_season_id: dict[ int, SeasonLength ] ) -> OtherLeagueSkaterSeason | None:
       if raw[ 'gameTypeId' ] != NhlClient.REGULAR_SEASON_GAME_TYPE_ID:
          return None
 
@@ -103,14 +103,18 @@ class OtherLeagueSeasonBuilder():
       if not ClubLeague.contains( league ):
          return None
 
-      games_played = int( raw[ 'gamesPlayed' ] )
-
-      if games_played <= 0:
+      if not raw.get( 'gamesPlayed' ):
          return None
 
+      games_played = int( raw[ 'gamesPlayed' ] )
+
       season_id = int( raw[ 'season' ] )
-      season = by_season_id[ season_id ]
-      return OtherLeagueSeason(
+      season = by_season_id.get( season_id )
+
+      if season is None:
+         return None
+
+      return OtherLeagueSkaterSeason(
          player_id=player_id,
          season_id=season_id,
          league=league,

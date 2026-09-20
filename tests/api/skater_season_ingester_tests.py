@@ -9,6 +9,7 @@ from api.aging_curve_fitter import AgingCurveFitter
 from api.aging_factor_store import AgingFactorStore
 from api.league_factor_fitter import LeagueFactorFitter
 from api.league_factor_store import LeagueFactorStore
+from api.nhl_skater_season import NhlSkaterSeason
 from api.paths import Paths
 from api.recency_decay_fitter import RecencyDecayFitter
 from api.recency_weight_store import RecencyWeightStore
@@ -16,15 +17,14 @@ from api.season_length import SeasonLength
 from api.shared.enums.position import Position
 from api.skater_bio import SkaterBio
 from api.skater_position import SkaterPosition
-from api.skater_season import SkaterSeason
 import api.skater_season_ingester as skater_season_ingester
 from api.skater_season_ingester import SkaterSeasonIngester
 from api.skater_summary import SkaterSummary
 from api.team import Team
 
 
-def _season( season_id: int, p_pace: float ) -> SkaterSeason:
-   return SkaterSeason(
+def _season( season_id: int, p_pace: float ) -> NhlSkaterSeason:
+   return NhlSkaterSeason(
       player_id=1,
       season_id=season_id,
       player_name='Stub Skater',
@@ -121,7 +121,7 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       tmp_path: Path ) -> None:
    rows = [ _season( 20202021, 50.0 ), _season( 20212022, 80.0 ) ]
    db_path = tmp_path / 'skaters.sqlite'
-   inserted: list[ tuple[ list[ SkaterSeason ], str ] ] = []
+   inserted: list[ tuple[ list[ NhlSkaterSeason ], str ] ] = []
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
    monkeypatch.setattr(
@@ -152,7 +152,7 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    assert inserted == [ ( rows, str( db_path ) ) ]
    assert RecencyWeightStore.read() == RecencyDecayFitter.weights(
       RecencyDecayFitter.fit( rows ) )
-   aging_factors = AgingCurveFitter.fit( rows )
+   aging_factors = AgingCurveFitter.fit( rows, [] )
    assert AgingFactorStore.read() == aging_factors
    assert LeagueFactorStore.read() == LeagueFactorFitter.fit(
       rows,

@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from datetime import date
 
+from api.nhl_skater_season import NhlSkaterSeason
 from api.recency_decay_fitter import RecencyDecayFitter
 from api.recency_weight import RecencyWeight
 from api.shared.enums.position import Position
 from api.skater_position import SkaterPosition
-from api.skater_season import SkaterSeason
 from api.team import Team
 
 
@@ -14,8 +14,8 @@ def _season(
       player_id: int,
       season_id: int,
       g_pace: float,
-      a_pace: float ) -> SkaterSeason:
-   return SkaterSeason(
+      a_pace: float ) -> NhlSkaterSeason:
+   return NhlSkaterSeason(
       player_id=player_id,
       season_id=season_id,
       player_name='Stub Skater',

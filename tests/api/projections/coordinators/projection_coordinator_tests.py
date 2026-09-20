@@ -7,7 +7,8 @@ import pytest
 
 from api.aging_factor import AgingFactor
 from api.league_factor import LeagueFactor
-from api.other_league_season import OtherLeagueSeason
+from api.nhl_skater_season import NhlSkaterSeason
+from api.other_league_skater_season import OtherLeagueSkaterSeason
 from api.paths import Paths
 from api.projections.career_pace import CareerPace
 import api.projections.coordinators.projection_coordinator as projection_coordinator
@@ -16,12 +17,11 @@ from api.projections.projection import Projection
 from api.recency_weight import RecencyWeight
 from api.shared.enums.position import Position
 from api.skater_position import SkaterPosition
-from api.skater_season import SkaterSeason
 from api.team import Team
 
 
-def _season( age: float ) -> SkaterSeason:
-   return SkaterSeason(
+def _season( age: float ) -> NhlSkaterSeason:
+   return NhlSkaterSeason(
       player_id=1,
       season_id=20232024,
       player_name='Stub Skater',
@@ -55,13 +55,13 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
    games_played = 70
    captured: list[ tuple[ int, str ] ] = []
    averaged: list[ tuple[
-      list[ SkaterSeason ],
-      list[ OtherLeagueSeason ],
+      list[ NhlSkaterSeason ],
+      list[ OtherLeagueSkaterSeason ],
       list[ RecencyWeight ],
       int,
       list[ LeagueFactor ] ] ] = []
-   adjusted: list[ tuple[ CareerPace, int, list[ AgingFactor ], list[ SkaterSeason ] ] ] = []
-   other_seasons: list[ OtherLeagueSeason ] = []
+   adjusted: list[ tuple[ CareerPace, int, list[ AgingFactor ], list[ NhlSkaterSeason ] ] ] = []
+   other_seasons: list[ OtherLeagueSkaterSeason ] = []
    league_factors: list[ LeagueFactor ] = []
 
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )

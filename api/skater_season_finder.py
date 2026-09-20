@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+from .nhl_skater_season import NhlSkaterSeason
 from .paths import Paths
 from .season import Season
 from .shared.enums.position import Position
 from .skater_key import SkaterKey
-from .skater_season import SkaterSeason
 from .skater_season_provider import SkaterSeasonProvider
 
 
@@ -21,8 +21,8 @@ class SkaterSeasonFinder():
 
 
    @classmethod
-   def format_table( cls, rows: list[ SkaterSeason ] ) -> str:
-      grouped: dict[ SkaterKey, list[ SkaterSeason ] ] = {}
+   def format_table( cls, rows: list[ NhlSkaterSeason ] ) -> str:
+      grouped: dict[ SkaterKey, list[ NhlSkaterSeason ] ] = {}
 
       for row in rows:
          key = SkaterKey.from_row( row )

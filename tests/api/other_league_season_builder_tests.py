@@ -96,6 +96,24 @@ def Test_Build_TestPlayoffs_ExpectEmpty() -> None:
    assert rows == []
 
 
+def Test_Build_TestMissingGamesPlayed_ExpectEmpty() -> None:
+   landing = _landing( 1, _league(), 20252026, 46, 6, 13 )
+   del landing[ 'seasonTotals' ][ Position.FIRST ][ 'gamesPlayed' ]
+   rows = OtherLeagueSeasonBuilder.build(
+      landing,
+      [ SeasonLength( 20252026, 82, date( 2025, 10, 8 ), date( 2026, 4, 17 ) ) ],
+      84 )
+   assert rows == []
+
+
+def Test_Build_TestUnknownSeason_ExpectEmpty() -> None:
+   rows = OtherLeagueSeasonBuilder.build(
+      _landing( 1, _league(), 20242025, 46, 6, 13 ),
+      [ SeasonLength( 20252026, 82, date( 2025, 10, 8 ), date( 2026, 4, 17 ) ) ],
+      84 )
+   assert rows == []
+
+
 def Test_Build_TestZeroGames_ExpectEmpty() -> None:
    rows = OtherLeagueSeasonBuilder.build(
       _landing( 1, _league(), 20252026, 0, 6, 13 ),

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from ..aging_pair_totals import AgingPairTotals
+from ..nhl_skater_season import NhlSkaterSeason
 from .player_aging_rate import PlayerAgingRate
-from ..skater_season import SkaterSeason
 from ..skater_season_years import SkaterSeasonYears
 
 
@@ -11,7 +11,7 @@ class PlayerAgingFitter():
 
 
    @classmethod
-   def fit( cls, seasons: list[ SkaterSeason ] ) -> PlayerAgingRate | None:
+   def fit( cls, seasons: list[ NhlSkaterSeason ] ) -> PlayerAgingRate | None:
       totals = AgingPairTotals.empty()
       pairs = SkaterSeasonYears.consecutive( seasons )[ -PlayerAgingFitter.WINDOW: ]
 
