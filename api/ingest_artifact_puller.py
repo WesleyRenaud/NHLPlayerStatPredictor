@@ -7,6 +7,7 @@ import tempfile
 
 from .aging_factor_store import AgingFactorStore
 from .github_cli import GithubCli
+from .league_factor_store import LeagueFactorStore
 from .paths import Paths
 from .recency_weight_store import RecencyWeightStore
 from .shared.enums.position import Position
@@ -42,6 +43,7 @@ class IngestArtifactPuller():
       shutil.copy2( cls._source_db( artifact_root ), Paths.DB_PATH )
       shutil.copy2( cls._source_weights( artifact_root ), RecencyWeightStore.path() )
       shutil.copy2( cls._source_aging( artifact_root ), AgingFactorStore.path() )
+      shutil.copy2( cls._source_leagues( artifact_root ), LeagueFactorStore.path() )
 
       if Paths.RAW_DIR.exists():
          shutil.rmtree( Paths.RAW_DIR )
@@ -64,7 +66,8 @@ class IngestArtifactPuller():
                not cls._source_db( artifact_root ).is_file()
                or not cls._source_raw( artifact_root ).is_dir()
                or not cls._source_weights( artifact_root ).is_file()
-               or not cls._source_aging( artifact_root ).is_file() ):
+               or not cls._source_aging( artifact_root ).is_file()
+               or not cls._source_leagues( artifact_root ).is_file() ):
             return False
 
          cls.install( artifact_root )
@@ -175,3 +178,8 @@ class IngestArtifactPuller():
    @classmethod
    def _source_aging( cls, artifact_root: Path ) -> Path:
       return artifact_root / AgingFactorStore.path().relative_to( Paths.ROOT )
+
+
+   @classmethod
+   def _source_leagues( cls, artifact_root: Path ) -> Path:
+      return artifact_root / LeagueFactorStore.path().relative_to( Paths.ROOT )

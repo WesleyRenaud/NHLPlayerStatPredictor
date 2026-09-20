@@ -3,7 +3,11 @@ from __future__ import annotations
 from .aging_curve_fitter import AgingCurveFitter
 from .aging_factor_store import AgingFactorStore
 from .config import Config
+from .league_factor_fitter import LeagueFactorFitter
+from .league_factor_store import LeagueFactorStore
 from .nhl_client import NhlClient
+from .other_league_season_ingester import OtherLeagueSeasonIngester
+from .other_league_season_store import OtherLeagueSeasonStore
 from .paths import Paths
 from .recency_decay_fitter import RecencyDecayFitter
 from .recency_weight_store import RecencyWeightStore
@@ -21,9 +25,18 @@ class SkaterSeasonIngester():
    def main( cls, force: bool = False ) -> None:
       rows = cls.build_all_rows( force=force )
       SkaterSeasonStore.insert_rows( rows, str( Paths.DB_PATH ) )
+      other_rows = OtherLeagueSeasonIngester.build_rows(
+         cls._player_ids( rows ),
+         NhlClient.seasons( force=force ),
+         Season.pace_games( NhlClient.seasons( force=force ) ),
+         force=force )
+      OtherLeagueSeasonStore.insert_rows( other_rows, str( Paths.DB_PATH ) )
       RecencyWeightStore.write(
          RecencyDecayFitter.weights( RecencyDecayFitter.fit( rows ) ) )
-      AgingFactorStore.write( AgingCurveFitter.fit( rows ) )
+      aging_factors = AgingCurveFitter.fit( rows )
+      AgingFactorStore.write( aging_factors )
+      LeagueFactorStore.write(
+         LeagueFactorFitter.fit( rows, other_rows, aging_factors ) )
       print( f'Ingested { len( rows ) } skater-seasons.' )
 
 
@@ -109,6 +122,11 @@ class SkaterSeasonIngester():
             if season.season_id >= Config.FIRST_SEASON_ID
          ],
          key=lambda season: season.season_id )
+
+
+   @classmethod
+   def _player_ids( cls, rows: list[ SkaterSeason ] ) -> list[ int ]:
+      return sorted( { row.player_id for row in rows } )
 
 
 if __name__ == '__main__':
