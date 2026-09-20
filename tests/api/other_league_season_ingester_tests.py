@@ -31,30 +31,21 @@ def Test_BuildRows_TestLanding_ExpectBuilderRows(
          a_pace=20.0 ) ]
    captured: list[ tuple[ dict[ str, object ], list[ SeasonLength ], int ] ] = []
    monkeypatch.setattr(
-      other_league_season_ingester.NhlClient,
-      'player_landing',
-      lambda requested_id, force=False: landing )
-   monkeypatch.setattr(
       other_league_season_ingester.OtherLeagueSeasonBuilder,
       'build',
       lambda payload, season_rows, pace: captured.append(
          ( payload, season_rows, pace ) ) or expected )
    rows = OtherLeagueSeasonIngester.build_rows(
-      [ player_id ], seasons, pace_games )
+      [ player_id ],
+      { player_id: landing },
+      seasons,
+      pace_games )
    assert rows == expected
    assert captured == [ ( landing, seasons, pace_games ) ]
 
 
-def Test_BuildRows_TestFetchError_ExpectSkipped(
-      monkeypatch: pytest.MonkeyPatch ) -> None:
-   def fake_landing( requested_id: int, force: bool = False ) -> dict[ str, object ]:
-      raise RuntimeError( 'landing' )
-
-   monkeypatch.setattr(
-      other_league_season_ingester.NhlClient,
-      'player_landing',
-      fake_landing )
-   rows = OtherLeagueSeasonIngester.build_rows( [ 1 ], [], 84 )
+def Test_BuildRows_TestMissingLanding_ExpectSkipped() -> None:
+   rows = OtherLeagueSeasonIngester.build_rows( [ 1 ], {}, [], 84 )
    assert rows == []
 
 
@@ -89,19 +80,21 @@ def Test_BuildRows_TestMultiplePlayers_ExpectPlayerOrder(
          a_pace=20.0 ),
    }
    monkeypatch.setattr(
-      other_league_season_ingester.NhlClient,
-      'player_landing',
-      lambda requested_id, force=False: { 'playerId': requested_id } )
-   monkeypatch.setattr(
       other_league_season_ingester.OtherLeagueSeasonBuilder,
       'build',
       lambda payload, season_rows, pace: [ expected[ int( payload[ 'playerId' ] ) ] ] )
    rows = OtherLeagueSeasonIngester.build_rows(
-      [ first_id, second_id ], seasons, 84 )
+      [ first_id, second_id ],
+      {
+         first_id: { 'playerId': first_id },
+         second_id: { 'playerId': second_id },
+      },
+      seasons,
+      84 )
    assert rows == [ expected[ first_id ], expected[ second_id ] ]
 
 
-def Test_BuildRows_TestFetchErrorAmongPlayers_ExpectRemaining(
+def Test_BuildRows_TestMissingLandingAmongPlayers_ExpectRemaining(
       monkeypatch: pytest.MonkeyPatch ) -> None:
    ok_id = 8
    expected = OtherLeagueSkaterSeason(
@@ -115,20 +108,13 @@ def Test_BuildRows_TestFetchErrorAmongPlayers_ExpectRemaining(
       points=19,
       g_pace=10.0,
       a_pace=20.0 )
-
-   def fake_landing( requested_id: int, force: bool = False ) -> dict[ str, object ]:
-      if requested_id == 1:
-         raise RuntimeError( 'landing' )
-
-      return { 'playerId': requested_id }
-
-   monkeypatch.setattr(
-      other_league_season_ingester.NhlClient,
-      'player_landing',
-      fake_landing )
    monkeypatch.setattr(
       other_league_season_ingester.OtherLeagueSeasonBuilder,
       'build',
       lambda payload, season_rows, pace: [ expected ] )
-   rows = OtherLeagueSeasonIngester.build_rows( [ 1, ok_id ], [], 84 )
+   rows = OtherLeagueSeasonIngester.build_rows(
+      [ 1, ok_id ],
+      { ok_id: { 'playerId': ok_id } },
+      [],
+      84 )
    assert rows == [ expected ]

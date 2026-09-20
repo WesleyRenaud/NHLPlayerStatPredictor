@@ -48,9 +48,11 @@ def Test_Pull_TestRun_ExpectArtifactPullerMain( monkeypatch: pytest.MonkeyPatch 
    assert called == [ True ]
 
 
-def Test_Start_TestRun_ExpectSyncThenServer( monkeypatch: pytest.MonkeyPatch ) -> None:
+def Test_Start_TestRun_ExpectSyncThenHydrateThenServer(
+      monkeypatch: pytest.MonkeyPatch ) -> None:
    events: list[ str ] = []
    sync_name = app_runner.IngestArtifactPuller.sync.__name__
+   hydrate_name = app_runner.PlayerStatusHydrator.hydrate.__name__
    run_name = app_runner.ServerRunner.run.__name__
 
    monkeypatch.setattr(
@@ -58,11 +60,15 @@ def Test_Start_TestRun_ExpectSyncThenServer( monkeypatch: pytest.MonkeyPatch ) -
       'sync',
       lambda: events.append( sync_name ) )
    monkeypatch.setattr(
+      app_runner.PlayerStatusHydrator,
+      'hydrate',
+      lambda db_path: events.append( hydrate_name ) )
+   monkeypatch.setattr(
       app_runner.ServerRunner,
       'run',
       lambda: events.append( run_name ) )
    AppRunner.start()
-   assert events == [ sync_name, run_name ]
+   assert events == [ sync_name, hydrate_name, run_name ]
 
 
 def Test_Run_TestRunName_ExpectStartsServer( monkeypatch: pytest.MonkeyPatch ) -> None:
@@ -70,6 +76,7 @@ def Test_Run_TestRunName_ExpectStartsServer( monkeypatch: pytest.MonkeyPatch ) -
 
    monkeypatch.setattr( sys, 'argv', [ 'api', AppRunner.run.__name__ ] )
    monkeypatch.setattr( app_runner.IngestArtifactPuller, 'sync', lambda: None )
+   monkeypatch.setattr( app_runner.PlayerStatusHydrator, 'hydrate', lambda db_path: None )
    monkeypatch.setattr( app_runner.ServerRunner, 'run', lambda: called.append( True ) )
    AppRunner.run()
    assert called == [ True ]

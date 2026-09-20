@@ -4,6 +4,7 @@ import sqlite3
 
 from ...database_connection_provider import DatabaseConnectionProvider
 from ..player_name_summary import PlayerNameSummary
+from ...seed.schema_creator import SchemaCreator
 from ...skater_position import SkaterPosition
 from ...team import Team
 
@@ -14,6 +15,7 @@ class PlayerNameProvider():
       conn = DatabaseConnectionProvider.open( db_path )
 
       try:
+         SchemaCreator.create( conn.cursor() )
          cursor = conn.execute(
             '''
             SELECT
@@ -41,6 +43,9 @@ class PlayerNameProvider():
                FROM SkaterSeason
             ) AS current_season
                ON latest.SEASON_ID = current_season.SEASON_ID
+            LEFT JOIN PlayerStatus AS status
+               ON latest.PLAYER_ID = status.PLAYER_ID
+            WHERE status.IS_ACTIVE IS NULL OR status.IS_ACTIVE = 1
             ORDER BY
                latest.PLAYER_NAME,
                first_season.FIRST_SEASON_ID,
