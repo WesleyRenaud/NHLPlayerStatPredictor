@@ -29,9 +29,6 @@ class CareerPaceAverager():
          assists_total += season.a_pace * weight
          total += weight
 
-      goals = round( goals_total / total )
-      assists = round( assists_total / total )
       return CareerPace(
-         goals=goals,
-         assists=assists,
-         points=goals + assists )
+         goals=goals_total / total,
+         assists=assists_total / total )

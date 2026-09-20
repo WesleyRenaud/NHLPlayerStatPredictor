@@ -5,6 +5,7 @@ from pathlib import Path
 import shutil
 import tempfile
 
+from .aging_factor_store import AgingFactorStore
 from .github_cli import GithubCli
 from .paths import Paths
 from .recency_weight_store import RecencyWeightStore
@@ -40,6 +41,7 @@ class IngestArtifactPuller():
       Paths.PROCESSED_DIR.mkdir( parents=True, exist_ok=True )
       shutil.copy2( cls._source_db( artifact_root ), Paths.DB_PATH )
       shutil.copy2( cls._source_weights( artifact_root ), RecencyWeightStore.path() )
+      shutil.copy2( cls._source_aging( artifact_root ), AgingFactorStore.path() )
 
       if Paths.RAW_DIR.exists():
          shutil.rmtree( Paths.RAW_DIR )
@@ -61,7 +63,8 @@ class IngestArtifactPuller():
          if (
                not cls._source_db( artifact_root ).is_file()
                or not cls._source_raw( artifact_root ).is_dir()
-               or not cls._source_weights( artifact_root ).is_file() ):
+               or not cls._source_weights( artifact_root ).is_file()
+               or not cls._source_aging( artifact_root ).is_file() ):
             return False
 
          cls.install( artifact_root )
@@ -167,3 +170,8 @@ class IngestArtifactPuller():
    @classmethod
    def _source_weights( cls, artifact_root: Path ) -> Path:
       return artifact_root / RecencyWeightStore.path().relative_to( Paths.ROOT )
+
+
+   @classmethod
+   def _source_aging( cls, artifact_root: Path ) -> Path:
+      return artifact_root / AgingFactorStore.path().relative_to( Paths.ROOT )
