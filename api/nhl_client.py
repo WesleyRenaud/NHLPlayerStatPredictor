@@ -10,6 +10,7 @@ from .types import Types
 
 class NhlClient():
    STATS_BASE = 'https://api.nhle.com/stats/rest/en'
+   WEB_BASE = 'https://api-web.nhle.com'
    PAGE_SIZE = 100
    REGULAR_SEASON_GAME_TYPE_ID = 2
 
@@ -27,6 +28,14 @@ class NhlClient():
    @classmethod
    def skater_bios( cls, season_id: int, force: bool = False ) -> list[ SkaterBio ]:
       return SkaterBio.from_rows( cls._skater_report( 'bios', season_id, force ) )
+
+
+   @classmethod
+   def player_landing( cls, player_id: int, force: bool = False ) -> Types.JsonObject:
+      return JsonFileCache().get_object(
+         f'player_landing_{ player_id }',
+         lambda: cls._fetch_player_landing( player_id ),
+         force )
 
 
    @classmethod
@@ -57,6 +66,17 @@ class NhlClient():
    def _fetch_seasons( cls ) -> Types.JsonObjectList:
       return cls._data_rows(
          JsonHttpClient.get_json( f'{ NhlClient.STATS_BASE }/season' ) )
+
+
+   @classmethod
+   def _fetch_player_landing( cls, player_id: int ) -> Types.JsonObject:
+      payload = JsonHttpClient.get_json(
+         f'{ NhlClient.WEB_BASE }/v1/player/{ player_id }/landing' )
+
+      if isinstance( payload, dict ):
+         return payload
+
+      return {}
 
 
    @classmethod

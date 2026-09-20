@@ -6,6 +6,8 @@ from pathlib import Path
 import pytest
 
 from api.aging_factor import AgingFactor
+from api.league_factor import LeagueFactor
+from api.other_league_season import OtherLeagueSeason
 from api.paths import Paths
 from api.projections.career_pace import CareerPace
 import api.projections.coordinators.projection_coordinator as projection_coordinator
@@ -52,8 +54,15 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
    aged = CareerPace( 10.4, 20.6 )
    games_played = 70
    captured: list[ tuple[ int, str ] ] = []
-   averaged: list[ tuple[ list[ SkaterSeason ], list[ RecencyWeight ], int ] ] = []
+   averaged: list[ tuple[
+      list[ SkaterSeason ],
+      list[ OtherLeagueSeason ],
+      list[ RecencyWeight ],
+      int,
+      list[ LeagueFactor ] ] ] = []
    adjusted: list[ tuple[ CareerPace, int, list[ AgingFactor ] ] ] = []
+   other_seasons: list[ OtherLeagueSeason ] = []
+   league_factors: list[ LeagueFactor ] = []
 
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
    monkeypatch.setattr(
@@ -69,10 +78,18 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
       'resolve',
       lambda: target_season_id )
    monkeypatch.setattr(
-      projection_coordinator.CareerPaceAverager,
+      projection_coordinator.TranslatedPaceAverager,
       'average',
-      lambda rows, recency_weights, target: averaged.append(
-         ( rows, recency_weights, target ) ) or pace )
+      lambda rows, others, recency_weights, target, leagues: averaged.append(
+         ( rows, others, recency_weights, target, leagues ) ) or pace )
+   monkeypatch.setattr(
+      projection_coordinator.OtherLeagueSeasonProvider,
+      'seasons_for_player_id',
+      lambda requested_id, path: other_seasons )
+   monkeypatch.setattr(
+      projection_coordinator.LeagueFactorStore,
+      'read',
+      lambda: league_factors )
    monkeypatch.setattr(
       projection_coordinator.AgingFactorStore,
       'read',
@@ -94,7 +111,9 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
       points=goals + assists,
       games_played=games_played )
    assert captured == [ ( player_id, str( db_path ) ) ]
-   assert averaged == [ ( seasons, weights, target_season_id ) ]
+   assert averaged == [
+      ( seasons, other_seasons, weights, target_season_id, league_factors )
+   ]
    assert adjusted == [
       ( pace, int( seasons[ Position.LAST ].age ), factors )
    ]
