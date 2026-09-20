@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+from api.aging_curve_fitter import AgingCurveFitter
+from api.aging_factor_store import AgingFactorStore
 from api.paths import Paths
 from api.recency_decay_fitter import RecencyDecayFitter
 from api.recency_weight_store import RecencyWeightStore
@@ -112,7 +114,7 @@ def Test_Seasons_TestBeforeFirstSeason_ExpectExcluded(
    assert [ item.season_id for item in meta ] == [ 20102011, 20112012 ]
 
 
-def Test_Main_TestRows_ExpectInsertedAndWeightsStored(
+def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       monkeypatch: pytest.MonkeyPatch,
       tmp_path: Path ) -> None:
    rows = [ _season( 20202021, 50.0 ), _season( 20212022, 80.0 ) ]
@@ -132,3 +134,4 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsStored(
    assert inserted == [ ( rows, str( db_path ) ) ]
    assert RecencyWeightStore.read() == RecencyDecayFitter.weights(
       RecencyDecayFitter.fit( rows ) )
+   assert AgingFactorStore.read() == AgingCurveFitter.fit( rows )

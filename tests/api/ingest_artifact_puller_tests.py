@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from api.aging_factor_store import AgingFactorStore
 from api.github_cli_result import GithubCliResult
 import api.ingest_artifact_puller as ingest_artifact_puller
 from api.ingest_artifact_puller import IngestArtifactPuller
@@ -41,6 +42,10 @@ def _write_artifact( root: Path ) -> None:
       ingest_artifact_puller.Paths.ROOT )
    weights_path.parent.mkdir( parents=True, exist_ok=True )
    weights_path.write_text( '[]' )
+   aging_path = root / AgingFactorStore.path().relative_to(
+      ingest_artifact_puller.Paths.ROOT )
+   aging_path.parent.mkdir( parents=True, exist_ok=True )
+   aging_path.write_text( '[]' )
 
 
 def Test_ListedRunId_TestRuns_ExpectFirstId( monkeypatch: pytest.MonkeyPatch ) -> None:
@@ -87,6 +92,7 @@ def Test_Install_TestArtifactTree_ExpectCopiedDbAndRaw(
    assert ingest_artifact_puller.Paths.DB_PATH.read_bytes() == b'sqlite'
    assert ( ingest_artifact_puller.Paths.RAW_DIR / 'seasons.json' ).read_text() == '[]'
    assert RecencyWeightStore.path().read_text() == '[]'
+   assert AgingFactorStore.path().read_text() == '[]'
 
 
 def Test_ArtifactRoot_TestNestedArtifactDir_ExpectNested(

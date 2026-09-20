@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from .aging_curve_fitter import AgingCurveFitter
+from .aging_factor_store import AgingFactorStore
 from .config import Config
 from .nhl_client import NhlClient
 from .paths import Paths
@@ -21,6 +23,7 @@ class SkaterSeasonIngester():
       SkaterSeasonStore.insert_rows( rows, str( Paths.DB_PATH ) )
       RecencyWeightStore.write(
          RecencyDecayFitter.weights( RecencyDecayFitter.fit( rows ) ) )
+      AgingFactorStore.write( AgingCurveFitter.fit( rows ) )
       print( f'Ingested { len( rows ) } skater-seasons.' )
 
 

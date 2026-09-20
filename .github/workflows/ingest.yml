@@ -38,6 +38,7 @@ jobs:
           path: |
             data/processed/skaters.sqlite
             data/processed/recency_weights.json
+            data/processed/aging_factors.json
             data/raw
           if-no-files-found: error
           retention-days: 14
