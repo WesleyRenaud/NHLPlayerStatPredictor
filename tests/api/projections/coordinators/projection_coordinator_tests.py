@@ -53,7 +53,7 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
    games_played = 70
    captured: list[ tuple[ int, str ] ] = []
    averaged: list[ tuple[ list[ SkaterSeason ], list[ RecencyWeight ], int ] ] = []
-   adjusted: list[ tuple[ CareerPace, int, list[ AgingFactor ] ] ] = []
+   adjusted: list[ tuple[ CareerPace, int, list[ AgingFactor ], list[ SkaterSeason ] ] ] = []
 
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
    monkeypatch.setattr(
@@ -80,8 +80,8 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
    monkeypatch.setattr(
       projection_coordinator.AgingPaceAdjuster,
       'adjust',
-      lambda recency_pace, completed_age, aging_factors: adjusted.append(
-         ( recency_pace, completed_age, aging_factors ) ) or aged )
+      lambda recency_pace, completed_age, aging_factors, player_seasons: adjusted.append(
+         ( recency_pace, completed_age, aging_factors, player_seasons ) ) or aged )
    monkeypatch.setattr(
       projection_coordinator.PaceGamesResolver,
       'resolve',
@@ -96,5 +96,5 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
    assert captured == [ ( player_id, str( db_path ) ) ]
    assert averaged == [ ( seasons, weights, target_season_id ) ]
    assert adjusted == [
-      ( pace, int( seasons[ Position.LAST ].age ), factors )
+      ( pace, int( seasons[ Position.LAST ].age ), factors, seasons )
    ]

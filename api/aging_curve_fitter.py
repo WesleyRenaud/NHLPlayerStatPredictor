@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from collections import defaultdict
-
 from .aging_factor import AgingFactor
-from .season import Season
+from .aging_pair_totals import AgingPairTotals
 from .skater_season import SkaterSeason
+from .skater_season_years import SkaterSeasonYears
 
 
 class AgingCurveFitter():
@@ -24,50 +23,27 @@ class AgingCurveFitter():
             dict[ int, int ],
             dict[ int, float ],
             dict[ int, float ] ]:
-      pair_counts: dict[ int, int ] = defaultdict( int )
-      goal_pace: dict[ int, float ] = defaultdict( float )
-      assist_pace: dict[ int, float ] = defaultdict( float )
-      goal_change: dict[ int, float ] = defaultdict( float )
-      assist_change: dict[ int, float ] = defaultdict( float )
+      totals_by_age: dict[ int, AgingPairTotals ] = {}
 
-      for age, current, following in cls._consecutive_seasons( seasons ):
-         pair_counts[ age ] += 1
-         goal_pace[ age ] += current.g_pace
-         assist_pace[ age ] += current.a_pace
-         goal_change[ age ] += following.g_pace - current.g_pace
-         assist_change[ age ] += following.a_pace - current.a_pace
+      for current, following in SkaterSeasonYears.consecutive( seasons ):
+         age = int( current.age )
+         totals = totals_by_age.get( age, AgingPairTotals.empty() )
+         totals_by_age[ age ] = totals.adding( current, following )
 
       goal_percents: dict[ int, float ] = {}
       assist_percents: dict[ int, float ] = {}
       counted: dict[ int, int ] = {}
 
-      for age, pair_count in pair_counts.items():
-         if goal_pace[ age ] == 0 or assist_pace[ age ] == 0:
+      for age, totals in totals_by_age.items():
+         percent = totals.percent()
+
+         if percent is None:
             continue
 
-         counted[ age ] = pair_count
-         goal_percents[ age ] = goal_change[ age ] / goal_pace[ age ]
-         assist_percents[ age ] = assist_change[ age ] / assist_pace[ age ]
+         counted[ age ] = totals.pair_count
+         goal_percents[ age ], assist_percents[ age ] = percent
 
       return counted, goal_percents, assist_percents
-
-
-   @classmethod
-   def _consecutive_seasons(
-         cls,
-         seasons: list[ SkaterSeason ] ) -> list[ tuple[ int, SkaterSeason, SkaterSeason ] ]:
-      pairs: list[ tuple[ int, SkaterSeason, SkaterSeason ] ] = []
-
-      for years in cls._years_by_player( seasons ).values():
-         for year, current in years.items():
-            following = years.get( year + 1 )
-
-            if following is None:
-               continue
-
-            pairs.append( ( int( current.age ), current, following ) )
-
-      return pairs
 
 
    @classmethod
@@ -112,16 +88,3 @@ class AgingCurveFitter():
    def _neighbor_ages( cls, age: int ) -> range:
       half = AgingCurveFitter.SMOOTH_AGES // 2
       return range( age - half, age + half + 1 )
-
-
-   @classmethod
-   def _years_by_player(
-         cls,
-         seasons: list[ SkaterSeason ] ) -> dict[ int, dict[ int, SkaterSeason ] ]:
-      by_player: dict[ int, dict[ int, SkaterSeason ] ] = {}
-
-      for season in seasons:
-         years = by_player.setdefault( season.player_id, {} )
-         years[ Season.start_year( season.season_id ) ] = season
-
-      return by_player

@@ -24,7 +24,8 @@ class ProjectionCoordinator():
             RecencyWeightStore.read(),
             RecencyTargetResolver.resolve() ),
          int( seasons[ Position.LAST ].age ),
-         AgingFactorStore.read() )
+         AgingFactorStore.read(),
+         seasons )
       goals = round( aged.goals )
       assists = round( aged.assists )
       return Projection(
