@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from .recency_weight import RecencyWeight
-from .season import Season
 from .skater_season import SkaterSeason
+from .skater_season_years import SkaterSeasonYears
 
 
 class RecencyDecayFitter():
@@ -12,7 +12,7 @@ class RecencyDecayFitter():
 
    @classmethod
    def fit( cls, seasons: list[ SkaterSeason ] ) -> float:
-      by_player = cls._years_by_player( seasons )
+      by_player = SkaterSeasonYears.by_player( seasons )
       best_decay = 0.0
       best_error: float | None = None
 
@@ -38,19 +38,6 @@ class RecencyDecayFitter():
          RecencyWeight( lag=lag, weight=raw[ lag ] / total )
          for lag in range( RecencyDecayFitter.WINDOW )
       ]
-
-
-   @classmethod
-   def _years_by_player(
-         cls,
-         seasons: list[ SkaterSeason ] ) -> dict[ int, dict[ int, SkaterSeason ] ]:
-      by_player: dict[ int, dict[ int, SkaterSeason ] ] = {}
-
-      for season in seasons:
-         years = by_player.setdefault( season.player_id, {} )
-         years[ Season.start_year( season.season_id ) ] = season
-
-      return by_player
 
 
    @classmethod
