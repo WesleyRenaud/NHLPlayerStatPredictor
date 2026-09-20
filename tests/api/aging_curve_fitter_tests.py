@@ -182,3 +182,17 @@ def Test_Fit_TestNhlAndOtherSeasons_ExpectBothAges() -> None:
       24,
       ( 12.0 - 10.0 ) / 10.0,
       ( 22.0 - 20.0 ) / 20.0 )
+
+
+def Test_Fit_TestPastLastAge_ExpectOmitted() -> None:
+   seasons = [
+      _season( 1, 20222023, 40.2, 10.0, 20.0 ),
+      _season( 1, 20232024, 41.2, 8.0, 16.0 ),
+      _season( 1, 20242025, 42.2, 4.0, 8.0 ),
+   ]
+   assert AgingCurveFitter.fit( seasons, [] ) == [
+      AgingFactor(
+         AgingCurveFitter.LAST_AGE,
+         ( 8.0 - 10.0 ) / 10.0,
+         ( 16.0 - 20.0 ) / 20.0 )
+   ]

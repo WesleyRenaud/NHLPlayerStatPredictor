@@ -10,6 +10,7 @@ from .skater_season_years import SkaterSeasonYears
 
 
 class AgingCurveFitter():
+   LAST_AGE = 40
    SMOOTH_AGES = 3
 
 
@@ -63,6 +64,10 @@ class AgingCurveFitter():
          current: SkaterSeason,
          following: SkaterSeason ) -> None:
       age = int( current.age )
+
+      if age > AgingCurveFitter.LAST_AGE:
+         return
+
       totals = totals_by_age.get( age, AgingPairTotals.empty() )
       totals_by_age[ age ] = totals.adding( current, following )
 
