@@ -11,6 +11,9 @@ from ..season import Season
 
 
 class TranslatedPaceAverager():
+   GAMES_SCALE = 20
+
+
    @classmethod
    def average(
          cls,
@@ -26,18 +29,20 @@ class TranslatedPaceAverager():
       goals_total = 0.0
       assists_total = 0.0
 
-      for weight in weights:
-         pace = cls._year_pace(
-            nhl_by_lag.get( weight.lag ),
-            others_by_lag.get( weight.lag, [] ),
+      for recency in weights:
+         year = cls._year_pace(
+            nhl_by_lag.get( recency.lag ),
+            others_by_lag.get( recency.lag, [] ),
             by_league )
 
-         if pace is None:
+         if year is None:
             continue
 
-         goals_total += pace.goals * weight.weight
-         assists_total += pace.assists * weight.weight
-         total += weight.weight
+         pace, games = year
+         weight = recency.weight * cls._games_weight( games )
+         goals_total += pace.goals * weight
+         assists_total += pace.assists * weight
+         total += weight
 
       return CareerPace(
          goals=goals_total / total,
@@ -45,11 +50,16 @@ class TranslatedPaceAverager():
 
 
    @classmethod
+   def _games_weight( cls, games: float ) -> float:
+      return games / ( games + TranslatedPaceAverager.GAMES_SCALE )
+
+
+   @classmethod
    def _year_pace(
          cls,
          nhl: NhlSkaterSeason | None,
          others: list[ OtherLeagueSkaterSeason ],
-         by_league: dict[ str, LeagueFactor ] ) -> CareerPace | None:
+         by_league: dict[ str, LeagueFactor ] ) -> tuple[ CareerPace, float ] | None:
       games = 0.0
       goals = 0.0
       assists = 0.0
@@ -74,7 +84,7 @@ class TranslatedPaceAverager():
       if not games:
          return None
 
-      return CareerPace( goals=goals / games, assists=assists / games )
+      return CareerPace( goals=goals / games, assists=assists / games ), games
 
 
    @classmethod
