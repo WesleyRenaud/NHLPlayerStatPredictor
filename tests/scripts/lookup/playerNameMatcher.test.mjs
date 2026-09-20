@@ -57,3 +57,10 @@ test('Test_Filter_TestSharedName_ExpectBothPlayers', () => {
       [first, second]
    );
 });
+
+
+test('Test_Filter_TestDiacritics_ExpectAsciiQueryMatches', () => {
+   const player = { playerName: 'Viggo Björck' };
+   assert.deepEqual(PlayerNameMatcher.filter([player], 'bjork'), [player]);
+   assert.deepEqual(PlayerNameMatcher.filter([player], 'viggo'), [player]);
+});
