@@ -16,11 +16,15 @@ class LeagueFactorFitter():
          nhl_seasons: list[ NhlSkaterSeason ],
          other_seasons: list[ OtherLeagueSkaterSeason ],
          aging_factors: list[ AgingFactor ] ) -> list[ LeagueFactor ]:
-      nhl_goals, nhl_assists, other_goals, other_assists = cls._paces(
+      nhl_points, other_points = cls._paces(
          nhl_seasons,
          other_seasons,
          aging_factors )
-      return cls._factors( nhl_goals, nhl_assists, other_goals, other_assists )
+      return [
+         LeagueFactor( league, nhl_points[ league ] / other_points[ league ] )
+         for league in sorted( nhl_points )
+         if nhl_points[ league ] and other_points[ league ]
+      ]
 
 
    @classmethod
@@ -30,14 +34,10 @@ class LeagueFactorFitter():
          other_seasons: list[ OtherLeagueSkaterSeason ],
          aging_factors: list[ AgingFactor ] ) -> tuple[
             dict[ str, float ],
-            dict[ str, float ],
-            dict[ str, float ],
             dict[ str, float ] ]:
       nhl_by_player = cls._nhl_by_player_year( nhl_seasons )
-      nhl_goals: dict[ str, float ] = defaultdict( float )
-      nhl_assists: dict[ str, float ] = defaultdict( float )
-      other_goals: dict[ str, float ] = defaultdict( float )
-      other_assists: dict[ str, float ] = defaultdict( float )
+      nhl_points: dict[ str, float ] = defaultdict( float )
+      other_points: dict[ str, float ] = defaultdict( float )
 
       for other_season in other_seasons:
          nhl_season = cls._nhl_for(
@@ -56,43 +56,10 @@ class LeagueFactorFitter():
             continue
 
          same_age_goals, same_age_assists = same_age_other_pace
-         nhl_goals[ other_season.league ] += nhl_season.g_pace
-         nhl_assists[ other_season.league ] += nhl_season.a_pace
-         other_goals[ other_season.league ] += same_age_goals
-         other_assists[ other_season.league ] += same_age_assists
+         nhl_points[ other_season.league ] += nhl_season.g_pace + nhl_season.a_pace
+         other_points[ other_season.league ] += same_age_goals + same_age_assists
 
-      return nhl_goals, nhl_assists, other_goals, other_assists
-
-
-   @classmethod
-   def _factors(
-         cls,
-         nhl_goals: dict[ str, float ],
-         nhl_assists: dict[ str, float ],
-         other_goals: dict[ str, float ],
-         other_assists: dict[ str, float ] ) -> list[ LeagueFactor ]:
-      return [
-         LeagueFactor(
-            league=league,
-            goals=nhl_goals[ league ] / other_goals[ league ],
-            assists=nhl_assists[ league ] / other_assists[ league ] )
-         for league in sorted( nhl_goals )
-         if cls._has_pace(
-            nhl_goals[ league ],
-            nhl_assists[ league ],
-            other_goals[ league ],
-            other_assists[ league ] )
-      ]
-
-
-   @classmethod
-   def _has_pace(
-         cls,
-         nhl_goals: float,
-         nhl_assists: float,
-         other_goals: float,
-         other_assists: float ) -> bool:
-      return bool( nhl_goals and nhl_assists and other_goals and other_assists )
+      return nhl_points, other_points
 
 
    @classmethod
