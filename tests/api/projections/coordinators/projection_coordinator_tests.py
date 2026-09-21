@@ -14,10 +14,30 @@ from api.projections.career_pace import CareerPace
 import api.projections.coordinators.projection_coordinator as projection_coordinator
 from api.projections.coordinators.projection_coordinator import ProjectionCoordinator
 from api.projections.projection import Projection
+from api.projections.team_environment import TeamEnvironment
 from api.recency_weight import RecencyWeight
 from api.shared.enums.position import Position
 from api.skater_position import SkaterPosition
 from api.team import Team
+
+
+def _stub_team_scaling( monkeypatch: pytest.MonkeyPatch ) -> None:
+   monkeypatch.setattr(
+      projection_coordinator.RecencyTargetResolver,
+      'prior',
+      lambda: 20252026 )
+   monkeypatch.setattr(
+      projection_coordinator.RosterSkaterProvider,
+      'skaters',
+      lambda path: [] )
+   monkeypatch.setattr(
+      projection_coordinator.SkaterSeasonProvider,
+      'seasons_for_season_id',
+      lambda season_id, path: [] )
+   monkeypatch.setattr(
+      projection_coordinator.OtherLeagueSeasonProvider,
+      'seasons_for_season_id',
+      lambda season_id, path: [] )
 
 
 def _season( age: float ) -> NhlSkaterSeason:
@@ -65,6 +85,7 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
    league_factors: list[ LeagueFactor ] = []
 
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
+   _stub_team_scaling( monkeypatch )
    monkeypatch.setattr(
       projection_coordinator.SkaterSeasonProvider,
       'seasons_for_player_id',
@@ -147,6 +168,7 @@ def Test_GetProjection_TestOtherLeagueOnly_ExpectOtherLeagueAge(
    adjusted: list[ tuple[ CareerPace, int, list[ AgingFactor ], list[ NhlSkaterSeason ] ] ] = []
 
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
+   _stub_team_scaling( monkeypatch )
    monkeypatch.setattr(
       projection_coordinator.SkaterSeasonProvider,
       'seasons_for_player_id',
@@ -202,6 +224,7 @@ def Test_GetProjection_TestMissingPace_ExpectNone(
    db_path = tmp_path / 'skaters.sqlite'
    adjusted: list[ object ] = []
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
+   _stub_team_scaling( monkeypatch )
    monkeypatch.setattr(
       projection_coordinator.SkaterSeasonProvider,
       'seasons_for_player_id',
@@ -233,3 +256,76 @@ def Test_GetProjection_TestMissingPace_ExpectNone(
          recency_pace ) )
    assert ProjectionCoordinator.get_projection( 7 ) is None
    assert adjusted == []
+
+
+def Test_GetProjection_TestTeamEnvironment_ExpectScaledProjection(
+      monkeypatch: pytest.MonkeyPatch,
+      tmp_path: Path ) -> None:
+   db_path = tmp_path / 'skaters.sqlite'
+   player_id = 7
+   seasons = [ _season( 27.2 ) ]
+   weights = [ RecencyWeight( 0, 1.0 ) ]
+   factors = [ AgingFactor( 27, 0.0, 0.0 ) ]
+   target_season_id = 20232024
+   pace = CareerPace( 31.4, 42.1 )
+   aged = CareerPace( 10.4, 20.6 )
+   scaled = CareerPace( 12.1, 28.4 )
+   environment = TeamEnvironment( 80.0, 40.0 )
+   games_played = 84
+   adjusted: list[ tuple[ CareerPace, TeamEnvironment ] ] = []
+
+   monkeypatch.setattr( Paths, 'DB_PATH', db_path )
+   _stub_team_scaling( monkeypatch )
+   monkeypatch.setattr(
+      projection_coordinator.SkaterSeasonProvider,
+      'seasons_for_player_id',
+      lambda requested_id, path: seasons )
+   monkeypatch.setattr(
+      projection_coordinator.RecencyWeightStore,
+      'read',
+      lambda: weights )
+   monkeypatch.setattr(
+      projection_coordinator.RecencyTargetResolver,
+      'resolve',
+      lambda: target_season_id )
+   monkeypatch.setattr(
+      projection_coordinator.TranslatedPaceAverager,
+      'average',
+      lambda rows, others, recency_weights, target, leagues: pace )
+   monkeypatch.setattr(
+      projection_coordinator.OtherLeagueSeasonProvider,
+      'seasons_for_player_id',
+      lambda requested_id, path: [] )
+   monkeypatch.setattr(
+      projection_coordinator.LeagueFactorStore,
+      'read',
+      lambda: [] )
+   monkeypatch.setattr(
+      projection_coordinator.AgingFactorStore,
+      'read',
+      lambda: factors )
+   monkeypatch.setattr(
+      projection_coordinator.AgingPaceAdjuster,
+      'adjust',
+      lambda recency_pace, completed_age, aging_factors, player_seasons: aged )
+   monkeypatch.setattr(
+      projection_coordinator.TeamEnvironmentResolver,
+      'resolve',
+      lambda requested_id, roster, last_season: environment )
+   monkeypatch.setattr(
+      projection_coordinator.TeamPaceAdjuster,
+      'adjust',
+      lambda recency_pace, team_environment: adjusted.append(
+         ( recency_pace, team_environment ) ) or scaled )
+   monkeypatch.setattr(
+      projection_coordinator.PaceGamesResolver,
+      'resolve',
+      lambda: games_played )
+   goals = round( scaled.goals )
+   assists = round( scaled.assists )
+   assert ProjectionCoordinator.get_projection( player_id ) == Projection(
+      goals=goals,
+      assists=assists,
+      points=goals + assists,
+      games_played=games_played )
+   assert adjusted == [ ( aged, environment ) ]

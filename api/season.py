@@ -61,5 +61,15 @@ class Season():
 
 
    @classmethod
+   def latest( cls, seasons: list[ SeasonLength ] ) -> SeasonLength:
+      return sorted( seasons )[ Position.LAST ]
+
+
+   @classmethod
+   def prior( cls, seasons: list[ SeasonLength ] ) -> SeasonLength:
+      return sorted( seasons )[ Position.SECOND_LAST ]
+
+
+   @classmethod
    def pace_games( cls, seasons: list[ SeasonLength ] ) -> int:
-      return sorted( seasons )[ Position.LAST ].number_of_games
+      return cls.latest( seasons ).number_of_games

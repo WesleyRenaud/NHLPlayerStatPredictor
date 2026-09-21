@@ -177,3 +177,24 @@ def Test_Average_TestShortNhlWithOtherYear_ExpectYearGamesReliability() -> None:
    assert pace == CareerPace(
       ( later_pace.goals * later_weight + earlier.g_pace * earlier_weight ) / total,
       ( later_pace.assists * later_weight + earlier.a_pace * earlier_weight ) / total )
+
+
+def Test_Year_TestMixedNhlAndOther_ExpectGamesWeightedBlend() -> None:
+   league = 'AAA'
+   factor = LeagueFactor( league, 0.40, 0.50 )
+   nhl_games = 1
+   other_games = 46
+   nhl = _nhl( 84.0, 84.0, 20252026, nhl_games )
+   other = _other( 10.96, 23.74, 20252026, league, other_games )
+   pace, games = TranslatedPaceAverager.year( nhl, [ other ], [ factor ] )
+   total_games = float( nhl_games + other_games )
+   assert games == total_games
+   assert pace == CareerPace(
+      ( nhl_games * nhl.g_pace + other_games * other.g_pace * factor.goals )
+      / total_games,
+      ( nhl_games * nhl.a_pace + other_games * other.a_pace * factor.assists )
+      / total_games )
+
+
+def Test_Year_TestNoGames_ExpectNone() -> None:
+   assert TranslatedPaceAverager.year( None, [], [] ) is None
