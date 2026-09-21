@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
+import unicodedata
 
 
 class Team( str, Enum ):
@@ -39,3 +40,12 @@ class Team( str, Enum ):
    VEGAS_GOLDEN_KNIGHTS = 'VGK'
    WASHINGTON_CAPITALS = 'WSH'
    WINNIPEG_JETS = 'WPG'
+
+
+   @classmethod
+   def from_name( cls, name: str ) -> Team:
+      ascii_name = unicodedata.normalize( 'NFKD', name ).encode(
+         'ascii',
+         'ignore' ).decode()
+      key = ascii_name.upper().replace( '.', '' ).replace( "'", '' ).strip()
+      return cls[ key.replace( ' ', '_' ) ]

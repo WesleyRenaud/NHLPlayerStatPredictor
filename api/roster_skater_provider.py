@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from .database_connection_provider import DatabaseConnectionProvider
 from .roster_skater import RosterSkater
+from .team import Team
 
 
 class RosterSkaterProvider():
@@ -19,3 +20,13 @@ class RosterSkaterProvider():
          return [ RosterSkater.from_row( row ) for row in cursor.fetchall() ]
       finally:
          DatabaseConnectionProvider.close( conn )
+
+
+   @classmethod
+   def team( cls, player_id: int, db_path: str ) -> Team | None:
+      for skater in cls.skaters( db_path ):
+         if skater.player_id == player_id:
+            return skater.team
+
+      return None
+
