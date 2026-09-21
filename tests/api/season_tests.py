@@ -54,7 +54,51 @@ def Test_PaceGames_TestLastSeason_ExpectScheduledLength() -> None:
             'numberOfGames': 84,
          },
       ] )
-   assert Season.pace_games( seasons ) == sorted( seasons )[ Position.LAST ].number_of_games
+   assert Season.pace_games( seasons ) == Season.latest( seasons ).number_of_games
+
+
+def Test_Latest_TestSeasons_ExpectLastLength() -> None:
+   seasons = _lengths(
+      [
+         {
+            'id': 20252026,
+            'startDate': '2025-10-07T00:00:00',
+            'regularSeasonEndDate': '2026-04-17',
+            'numberOfGames': 82,
+         },
+         {
+            'id': 20262027,
+            'startDate': '2026-09-29T17:00:00',
+            'regularSeasonEndDate': '2027-04-10',
+            'numberOfGames': 84,
+         },
+      ] )
+   assert Season.latest( seasons ) == sorted( seasons )[ Position.LAST ]
+
+
+def Test_Prior_TestSeasons_ExpectSecondLastLength() -> None:
+   seasons = _lengths(
+      [
+         {
+            'id': 20242025,
+            'startDate': '2024-10-04T00:00:00',
+            'regularSeasonEndDate': '2025-04-17',
+            'numberOfGames': 82,
+         },
+         {
+            'id': 20252026,
+            'startDate': '2025-10-07T00:00:00',
+            'regularSeasonEndDate': '2026-04-17',
+            'numberOfGames': 82,
+         },
+         {
+            'id': 20262027,
+            'startDate': '2026-09-29T17:00:00',
+            'regularSeasonEndDate': '2027-04-10',
+            'numberOfGames': 84,
+         },
+      ] )
+   assert Season.prior( seasons ) == sorted( seasons )[ Position.SECOND_LAST ]
 
 
 def Test_RecencyLag_TestImmediatePrior_ExpectZero() -> None:

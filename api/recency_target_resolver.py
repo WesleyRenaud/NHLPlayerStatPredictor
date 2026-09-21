@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 from .nhl_client import NhlClient
-from .shared.enums.position import Position
+from .season import Season
 
 
 class RecencyTargetResolver():
    @classmethod
    def resolve( cls ) -> int:
-      return sorted( NhlClient.seasons() )[ Position.LAST ].season_id
+      return Season.latest( NhlClient.seasons() ).season_id
+
+
+   @classmethod
+   def prior( cls ) -> int:
+      return Season.prior( NhlClient.seasons() ).season_id

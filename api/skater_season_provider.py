@@ -27,6 +27,27 @@ class SkaterSeasonProvider():
 
 
    @classmethod
+   def seasons_for_season_id(
+         cls,
+         season_id: int,
+         db_path: str ) -> list[ NhlSkaterSeason ]:
+      conn = DatabaseConnectionProvider.open( db_path )
+
+      try:
+         cursor = conn.execute(
+            '''
+            SELECT *
+            FROM SkaterSeason
+            WHERE SEASON_ID = ?
+            ORDER BY PLAYER_ID
+            ''',
+            ( season_id, ) )
+         return [ NhlSkaterSeason.from_row( row ) for row in cursor.fetchall() ]
+      finally:
+         DatabaseConnectionProvider.close( conn )
+
+
+   @classmethod
    def seasons_for_player_id(
          cls,
          player_id: int,

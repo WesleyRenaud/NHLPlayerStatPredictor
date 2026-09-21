@@ -24,16 +24,15 @@ class TranslatedPaceAverager():
          factors: list[ LeagueFactor ] ) -> CareerPace | None:
       nhl_by_lag = cls._nhl_by_lag( seasons, target_season_id )
       others_by_lag = cls._others_by_lag( other_seasons, target_season_id )
-      by_league = { factor.league: factor for factor in factors }
       total = 0.0
       goals_total = 0.0
       assists_total = 0.0
 
       for recency in weights:
-         year = cls._year_pace(
+         year = cls.year(
             nhl_by_lag.get( recency.lag ),
             others_by_lag.get( recency.lag, [] ),
-            by_league )
+            factors )
 
          if year is None:
             continue
@@ -50,6 +49,16 @@ class TranslatedPaceAverager():
       return CareerPace(
          goals=goals_total / total,
          assists=assists_total / total )
+
+
+   @classmethod
+   def year(
+         cls,
+         nhl: NhlSkaterSeason | None,
+         others: list[ OtherLeagueSkaterSeason ],
+         factors: list[ LeagueFactor ] ) -> tuple[ CareerPace, float ] | None:
+      by_league = { factor.league: factor for factor in factors }
+      return cls._year_pace( nhl, others, by_league )
 
 
    @classmethod
