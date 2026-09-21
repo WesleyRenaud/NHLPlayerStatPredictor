@@ -14,7 +14,7 @@ def Test_Write_TestFactors_ExpectReadable(
       monkeypatch: pytest.MonkeyPatch,
       tmp_path: Path ) -> None:
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
-   factors = [ LeagueFactor( 'AAA', 0.44, 0.42 ), LeagueFactor( 'BBB', 0.28, 0.30 ) ]
+   factors = [ LeagueFactor( 'AAA', 0.44 ), LeagueFactor( 'BBB', 0.28 ) ]
    LeagueFactorStore.write( factors )
    assert LeagueFactorStore.read() == factors
    assert LeagueFactorStore.path().read_text() == json.dumps(

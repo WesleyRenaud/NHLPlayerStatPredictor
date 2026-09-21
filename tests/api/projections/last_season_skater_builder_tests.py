@@ -78,7 +78,7 @@ def Test_Build_TestNhlOnDifferentTeam_ExpectPaceFromThatSeason() -> None:
 
 def Test_Build_TestOtherLeagueOnly_ExpectTranslatedPaceWithoutNhlTeam() -> None:
    league = 'AAA'
-   factor = LeagueFactor( league, 0.40, 0.50 )
+   factor = LeagueFactor( league, 0.40 )
    other = _other( 7, 20.0, 30.0, league, 46 )
    pace, games = TranslatedPaceAverager.year( None, [ other ], [ factor ] )
    group = LastSeasonSkaterBuilder.build( [], [ other ], [ factor ] )
@@ -89,7 +89,7 @@ def Test_Build_TestOtherLeagueOnly_ExpectTranslatedPaceWithoutNhlTeam() -> None:
 
 def Test_Build_TestNhlAndOther_ExpectBlendedPaceAndNhlTeam() -> None:
    league = 'AAA'
-   factor = LeagueFactor( league, 0.40, 0.50 )
+   factor = LeagueFactor( league, 0.40 )
    team = list( Team )[ Position.SECOND ]
    nhl = _nhl( 7, team, 84.0, 84.0, 1 )
    other = _other( 7, 10.96, 23.74, league, 46 )
@@ -107,7 +107,7 @@ def Test_Build_TestUnknownLeague_ExpectOmitted() -> None:
 
 def Test_Build_TestZeroGames_ExpectOmitted() -> None:
    league = 'AAA'
-   factor = LeagueFactor( league, 0.40, 0.50 )
+   factor = LeagueFactor( league, 0.40 )
    nhl = _nhl( 1, list( Team )[ Position.FIRST ], 40.0, 50.0, 0 )
    other = _other( 2, 20.0, 30.0, league, 0 )
    assert LastSeasonSkaterBuilder.build( [ nhl ], [ other ], [ factor ] ) == LastSeasonGroup(
@@ -117,7 +117,7 @@ def Test_Build_TestZeroGames_ExpectOmitted() -> None:
 
 def Test_Build_TestNhlAndOtherOnlyPlayers_ExpectBothRows() -> None:
    league = 'AAA'
-   factor = LeagueFactor( league, 0.40, 0.50 )
+   factor = LeagueFactor( league, 0.40 )
    team = list( Team )[ Position.FIRST ]
    nhl = _nhl( 1, team, 40.0, 50.0 )
    other = _other( 2, 20.0, 30.0, league, 46 )

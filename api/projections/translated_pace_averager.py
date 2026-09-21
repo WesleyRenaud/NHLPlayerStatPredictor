@@ -90,8 +90,8 @@ class TranslatedPaceAverager():
 
          other_games = float( other.games_played )
          games += other_games
-         goals += other_games * other.g_pace * factor.goals
-         assists += other_games * other.a_pace * factor.assists
+         goals += other_games * other.g_pace * factor.rate
+         assists += other_games * other.a_pace * factor.rate
 
       if not games:
          return None

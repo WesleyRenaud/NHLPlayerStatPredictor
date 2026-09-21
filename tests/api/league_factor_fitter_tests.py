@@ -73,8 +73,7 @@ def Test_Fit_TestSameYear_ExpectRatioOfMeans() -> None:
    assert factors == [
       LeagueFactor(
          league,
-         ( 10.0 + 30.0 ) / ( 50.0 + 90.0 ),
-         ( 20.0 + 40.0 ) / ( 80.0 + 120.0 ) )
+         ( 10.0 + 20.0 + 30.0 + 40.0 ) / ( 50.0 + 80.0 + 90.0 + 120.0 ) )
    ]
 
 
@@ -90,8 +89,8 @@ def Test_Fit_TestLowPaceSwing_ExpectRatioOfMeansNotMeanOfPercents() -> None:
          _other( 2, 20252026, league, 20.4, 40.0, 40.0 ),
       ],
       [] )
-   rate = ( 5.0 + 40.0 ) / ( 10.0 + 40.0 )
-   assert factors == [ LeagueFactor( league, rate, rate ) ]
+   rate = ( 5.0 + 5.0 + 40.0 + 40.0 ) / ( 10.0 + 10.0 + 40.0 + 40.0 )
+   assert factors == [ LeagueFactor( league, rate ) ]
 
 
 def Test_Fit_TestConsecutiveYear_ExpectAgeAdjusted() -> None:
@@ -105,11 +104,12 @@ def Test_Fit_TestConsecutiveYear_ExpectAgeAdjusted() -> None:
       [ _nhl( 1, 20242025, 19.2, nhl_goals, nhl_assists ) ],
       [ _other( 1, 20232024, league, 18.2, other_goals, other_assists ) ],
       [ aging ] )
+   aged_goals = other_goals * ( 1.0 + aging.goals )
+   aged_assists = other_assists * ( 1.0 + aging.assists )
    assert factors == [
       LeagueFactor(
          league,
-         nhl_goals / ( other_goals * ( 1.0 + aging.goals ) ),
-         nhl_assists / ( other_assists * ( 1.0 + aging.assists ) ) )
+         ( nhl_goals + nhl_assists ) / ( aged_goals + aged_assists ) )
    ]
 
 
@@ -133,8 +133,24 @@ def Test_Fit_TestSameYearAndNext_ExpectSameYearPair() -> None:
    assert factors == [
       LeagueFactor(
          league,
-         same_nhl.g_pace / other.g_pace,
-         same_nhl.a_pace / other.a_pace )
+         ( same_nhl.g_pace + same_nhl.a_pace ) / ( other.g_pace + other.a_pace ) )
+   ]
+
+
+def Test_Fit_TestUnevenGoalsAndAssists_ExpectSharedPointsRate() -> None:
+   league = 'AAA'
+   nhl_goals = 10.0
+   nhl_assists = 20.0
+   other_goals = 10.0
+   other_assists = 80.0
+   factors = LeagueFactorFitter.fit(
+      [ _nhl( 1, 20252026, 20.2, nhl_goals, nhl_assists ) ],
+      [ _other( 1, 20252026, league, 20.2, other_goals, other_assists ) ],
+      [] )
+   assert factors == [
+      LeagueFactor(
+         league,
+         ( nhl_goals + nhl_assists ) / ( other_goals + other_assists ) )
    ]
 
 
@@ -152,9 +168,10 @@ def Test_Fit_TestReverseYear_ExpectAgeAdjustedBack() -> None:
    nhl = _nhl( 1, 20232024, 24.2, 22.0, 36.0 )
    other = _other( 1, 20242025, league, 25.2, 50.0, 80.0 )
    factors = LeagueFactorFitter.fit( [ nhl ], [ other ], [ aging ] )
+   aged_goals = other.g_pace / ( 1.0 + aging.goals )
+   aged_assists = other.a_pace / ( 1.0 + aging.assists )
    assert factors == [
       LeagueFactor(
          league,
-         nhl.g_pace / ( other.g_pace / ( 1.0 + aging.goals ) ),
-         nhl.a_pace / ( other.a_pace / ( 1.0 + aging.assists ) ) )
+         ( nhl.g_pace + nhl.a_pace ) / ( aged_goals + aged_assists ) )
    ]
