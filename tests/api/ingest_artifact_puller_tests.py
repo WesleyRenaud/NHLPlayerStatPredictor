@@ -12,6 +12,7 @@ from api.ingest_artifact_puller import IngestArtifactPuller
 from api.league_factor_store import LeagueFactorStore
 from api.recency_weight_store import RecencyWeightStore
 from api.shared.enums.position import Position
+from api.team_factor_store import TeamFactorStore
 
 
 def _bind_paths( monkeypatch: pytest.MonkeyPatch, root: Path ) -> None:
@@ -51,6 +52,10 @@ def _write_artifact( root: Path ) -> None:
       ingest_artifact_puller.Paths.ROOT )
    leagues_path.parent.mkdir( parents=True, exist_ok=True )
    leagues_path.write_text( '[]' )
+   teams_path = root / TeamFactorStore.path().relative_to(
+      ingest_artifact_puller.Paths.ROOT )
+   teams_path.parent.mkdir( parents=True, exist_ok=True )
+   teams_path.write_text( '[]' )
 
 
 def Test_ListedRunId_TestRuns_ExpectFirstId( monkeypatch: pytest.MonkeyPatch ) -> None:
@@ -99,6 +104,7 @@ def Test_Install_TestArtifactTree_ExpectCopiedDbAndRaw(
    assert RecencyWeightStore.path().read_text() == '[]'
    assert AgingFactorStore.path().read_text() == '[]'
    assert LeagueFactorStore.path().read_text() == '[]'
+   assert TeamFactorStore.path().read_text() == '[]'
 
 
 def Test_ArtifactRoot_TestNestedArtifactDir_ExpectNested(

@@ -7,11 +7,14 @@ import pytest
 
 from api.aging_curve_fitter import AgingCurveFitter
 from api.aging_factor_store import AgingFactorStore
+from api.league_factor import LeagueFactor
 from api.league_factor_fitter import LeagueFactorFitter
 from api.league_factor_store import LeagueFactorStore
 from api.nhl_skater_season import NhlSkaterSeason
+from api.other_league_skater_season import OtherLeagueSkaterSeason
 from api.paths import Paths
 from api.player_status import PlayerStatus
+from api.projections.last_season_nhl_skater import LastSeasonNhlSkater
 from api.recency_decay_fitter import RecencyDecayFitter
 from api.recency_weight_store import RecencyWeightStore
 from api.roster_skater import RosterSkater
@@ -23,6 +26,8 @@ import api.skater_season_ingester as skater_season_ingester
 from api.skater_season_ingester import SkaterSeasonIngester
 from api.skater_summary import SkaterSummary
 from api.team import Team
+from api.team_factor import TeamFactor
+from api.team_factor_store import TeamFactorStore
 
 
 def _season( season_id: int, p_pace: float ) -> NhlSkaterSeason:
@@ -180,6 +185,41 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       skater_season_ingester.Season,
       'pace_games',
       lambda seasons: 84 )
+   last_season_id = 20212022
+   current_season = 20222023
+   last_nhl = [ row for row in rows if row.season_id == last_season_id ]
+   team_factors = [
+      TeamFactor( last_season_id, list( Team )[ Position.FIRST ], 0.87 )
+   ]
+   fitted: list[ tuple[
+      list[ RosterSkater ],
+      list[ NhlSkaterSeason ],
+      list[ OtherLeagueSkaterSeason ],
+      list[ LeagueFactor ],
+      int,
+      int,
+      list[ LastSeasonNhlSkater ] ] ] = []
+   monkeypatch.setattr(
+      skater_season_ingester.RecencyTargetResolver,
+      'prior',
+      lambda: last_season_id )
+   monkeypatch.setattr(
+      skater_season_ingester.RecencyTargetResolver,
+      'resolve',
+      lambda: current_season )
+   monkeypatch.setattr(
+      skater_season_ingester.SkaterSeasonProvider,
+      'seasons_for_season_id',
+      lambda season_id, path: last_nhl )
+   monkeypatch.setattr(
+      skater_season_ingester.OtherLeagueSeasonProvider,
+      'seasons_for_season_id',
+      lambda season_id, path: [] )
+   monkeypatch.setattr(
+      skater_season_ingester.TeamFactorFitter,
+      'fit',
+      lambda roster, nhl, others, leagues, current, previous, splits: fitted.append(
+         ( roster, nhl, others, leagues, current, previous, splits ) ) or team_factors )
    SkaterSeasonIngester.main()
    assert inserted == [ ( rows, str( db_path ) ) ]
    assert roster_inserted == [ ( roster_rows, str( db_path ) ) ]
@@ -191,7 +231,19 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       RecencyDecayFitter.fit( rows ) )
    aging_factors = AgingCurveFitter.fit( rows, [] )
    assert AgingFactorStore.read() == aging_factors
-   assert LeagueFactorStore.read() == LeagueFactorFitter.fit(
+   league_factors = LeagueFactorFitter.fit(
       rows,
       [],
       aging_factors )
+   assert LeagueFactorStore.read() == league_factors
+   assert TeamFactorStore.read() == team_factors
+   assert fitted == [
+      (
+         roster_rows,
+         last_nhl,
+         [],
+         league_factors,
+         current_season,
+         last_season_id,
+         [] )
+   ]

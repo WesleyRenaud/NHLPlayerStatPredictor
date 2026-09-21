@@ -95,9 +95,6 @@ class OtherLeagueSeasonBuilder():
          birth_date: date,
          raw: Types.JsonObject,
          by_season_id: dict[ int, SeasonLength ] ) -> OtherLeagueSkaterSeason | None:
-      if raw[ 'gameTypeId' ] != NhlClient.REGULAR_SEASON_GAME_TYPE_ID:
-         return None
-
       league = str( raw[ 'leagueAbbrev' ] )
 
       if not ClubLeague.contains( league ):
@@ -134,4 +131,8 @@ class OtherLeagueSeasonBuilder():
       if not isinstance( raw_rows, list ):
          return []
 
-      return [ row for row in raw_rows if isinstance( row, dict ) ]
+      return [
+         row for row in raw_rows
+         if isinstance( row, dict )
+         and row[ 'gameTypeId' ] == NhlClient.REGULAR_SEASON_GAME_TYPE_ID
+      ]

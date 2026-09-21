@@ -11,3 +11,11 @@ def Test_Members_TestValues_ExpectUniqueStrings() -> None:
    for member in Team:
       assert isinstance( member.value, str )
       assert Team( member.value ) is member
+
+
+def Test_FromName_TestAccentedName_ExpectTeam() -> None:
+   assert Team.from_name( 'Montréal Canadiens' ) == Team( 'MTL' )
+
+
+def Test_FromName_TestDottedName_ExpectTeam() -> None:
+   assert Team.from_name( 'St. Louis Blues' ) == Team( 'STL' )
