@@ -5,8 +5,8 @@ from datetime import date
 from api.league_factor import LeagueFactor
 from api.nhl_skater_season import NhlSkaterSeason
 from api.other_league_skater_season import OtherLeagueSkaterSeason
-from api.projections.career_pace import CareerPace
-from api.projections.career_pace_averager import CareerPaceAverager
+from api.projections.season_pace import SeasonPace
+from api.projections.season_pace_averager import SeasonPaceAverager
 from api.projections.translated_pace_averager import TranslatedPaceAverager
 from api.recency_weight import RecencyWeight
 from api.shared.enums.position import Position
@@ -49,6 +49,7 @@ def _other(
       player_id=1,
       season_id=season_id,
       league=league,
+      position=SkaterPosition( 'C' ),
       age=20.8,
       games_played=games_played,
       goals=1,
@@ -58,14 +59,14 @@ def _other(
       a_pace=a_pace )
 
 
-def Test_Average_TestNhlOnly_ExpectMatchesCareerPaceAverager() -> None:
+def Test_Average_TestNhlOnly_ExpectMatchesSeasonPaceAverager() -> None:
    later = _nhl( 10.0, 20.0, 20222023 )
    earlier = _nhl( 40.0, 50.0, 20212022 )
    target_season_id = 20232024
    weights = [ RecencyWeight( 0, 0.75 ), RecencyWeight( 1, 0.25 ) ]
    seasons = [ later, earlier ]
    assert TranslatedPaceAverager.average(
-      seasons, [], weights, target_season_id, [] ) == CareerPaceAverager.average(
+      seasons, weights, target_season_id, [] ) == SeasonPaceAverager.average(
       seasons, weights, target_season_id )
 
 
@@ -78,8 +79,8 @@ def Test_Average_TestMixedYear_ExpectGamesWeightedBlend() -> None:
    other = _other( 10.96, 23.74, 20252026, league, other_games )
    weights = [ RecencyWeight( 0, 1.0 ) ]
    pace = TranslatedPaceAverager.average(
-      [ nhl ], [ other ], weights, 20262027, [ factor ] )
-   total_games = float( nhl_games + other_games )
+      [ nhl, other ], weights, 20262027, [ factor ] )
+   total_games = nhl_games + other_games
    weight = total_games / (
       total_games + TranslatedPaceAverager.GAMES_SCALE )
    goals = (
@@ -88,7 +89,7 @@ def Test_Average_TestMixedYear_ExpectGamesWeightedBlend() -> None:
    assists = (
       nhl_games * nhl.a_pace
       + other_games * other.a_pace * factor.rate ) / total_games
-   assert pace == CareerPace(
+   assert pace == SeasonPace(
       goals * weight / weight,
       assists * weight / weight )
 
@@ -98,14 +99,14 @@ def Test_Average_TestMissingLeague_ExpectNhlOnly() -> None:
    other = _other( 100.0, 100.0, 20252026, 'AAA', 50 )
    weights = [ RecencyWeight( 0, 1.0 ) ]
    assert TranslatedPaceAverager.average(
-      [ nhl ], [ other ], weights, 20262027, [] ) == CareerPace(
+      [ nhl, other ], weights, 20262027, [] ) == SeasonPace(
       nhl.g_pace, nhl.a_pace )
 
 
 def Test_Average_TestNoUsableYears_ExpectNone() -> None:
    weights = [ RecencyWeight( 0, 1.0 ) ]
    assert TranslatedPaceAverager.average(
-      [], [], weights, 20262027, [] ) is None
+      [], weights, 20262027, [] ) is None
 
 
 def Test_Average_TestOtherOnlyYear_ExpectTranslatedPace() -> None:
@@ -114,8 +115,8 @@ def Test_Average_TestOtherOnlyYear_ExpectTranslatedPace() -> None:
    other = _other( 40.0, 80.0, 20242025, league, 52 )
    weights = [ RecencyWeight( 0, 1.0 ), RecencyWeight( 1, 1.0 ) ]
    pace = TranslatedPaceAverager.average(
-      [], [ other ], weights, 20262027, [ factor ] )
-   assert pace == CareerPace(
+      [ other ], weights, 20262027, [ factor ] )
+   assert pace == SeasonPace(
       other.g_pace * factor.rate,
       other.a_pace * factor.rate )
 
@@ -137,8 +138,8 @@ def Test_Average_TestShortSeason_ExpectReliabilityWeighted() -> None:
       / ( float( earlier_games ) + TranslatedPaceAverager.GAMES_SCALE ) )
    total = later_weight + earlier_weight
    pace = TranslatedPaceAverager.average(
-      [ later, earlier ], [], weights, target_season_id, [] )
-   assert pace == CareerPace(
+      [ later, earlier ], weights, target_season_id, [] )
+   assert pace == SeasonPace(
       ( later.g_pace * later_weight + earlier.g_pace * earlier_weight ) / total,
       ( later.a_pace * later_weight + earlier.a_pace * earlier_weight ) / total )
 
@@ -155,7 +156,7 @@ def Test_Average_TestShortNhlWithOtherYear_ExpectYearGamesReliability() -> None:
    later_recency = 0.75
    earlier_recency = 0.25
    later_games = float( nhl_games + other_games )
-   later_pace = CareerPace(
+   later_pace = SeasonPace(
       (
          nhl_games * later_nhl.g_pace
          + other_games * later_other.g_pace * factor.rate ) / later_games,
@@ -169,12 +170,11 @@ def Test_Average_TestShortNhlWithOtherYear_ExpectYearGamesReliability() -> None:
       / ( float( earlier_games ) + TranslatedPaceAverager.GAMES_SCALE ) )
    total = later_weight + earlier_weight
    pace = TranslatedPaceAverager.average(
-      [ later_nhl, earlier ],
-      [ later_other ],
+      [ later_nhl, later_other, earlier ],
       [ RecencyWeight( 0, later_recency ), RecencyWeight( 1, earlier_recency ) ],
       20232024,
       [ factor ] )
-   assert pace == CareerPace(
+   assert pace == SeasonPace(
       ( later_pace.goals * later_weight + earlier.g_pace * earlier_weight ) / total,
       ( later_pace.assists * later_weight + earlier.a_pace * earlier_weight ) / total )
 
@@ -186,10 +186,10 @@ def Test_Year_TestMixedNhlAndOther_ExpectGamesWeightedBlend() -> None:
    other_games = 46
    nhl = _nhl( 84.0, 84.0, 20252026, nhl_games )
    other = _other( 10.96, 23.74, 20252026, league, other_games )
-   pace, games = TranslatedPaceAverager.year( nhl, [ other ], [ factor ] )
-   total_games = float( nhl_games + other_games )
-   assert games == total_games
-   assert pace == CareerPace(
+   year = TranslatedPaceAverager.year( [ nhl, other ], [ factor ] )
+   total_games = nhl_games + other_games
+   assert year.games == total_games
+   assert year.pace == SeasonPace(
       ( nhl_games * nhl.g_pace + other_games * other.g_pace * factor.rate )
       / total_games,
       ( nhl_games * nhl.a_pace + other_games * other.a_pace * factor.rate )
@@ -197,4 +197,4 @@ def Test_Year_TestMixedNhlAndOther_ExpectGamesWeightedBlend() -> None:
 
 
 def Test_Year_TestNoGames_ExpectNone() -> None:
-   assert TranslatedPaceAverager.year( None, [], [] ) is None
+   assert TranslatedPaceAverager.year( [], [] ) is None

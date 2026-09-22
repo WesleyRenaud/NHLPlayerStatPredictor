@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from .career_pace import CareerPace
+from .season_pace import SeasonPace
 
 
 class TeamPaceAdjuster():
    @classmethod
    def adjust(
          cls,
-         pace: CareerPace,
+         pace: SeasonPace,
          current: float,
-         previous: float ) -> CareerPace:
+         previous: float ) -> SeasonPace:
       delta = current - previous
-      return CareerPace(
+      return SeasonPace(
          goals=pace.goals * ( 1.0 + delta ),
          assists=pace.assists * ( 1.0 + delta ) )

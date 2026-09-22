@@ -9,6 +9,7 @@ from .other_league_skater_season import OtherLeagueSkaterSeason
 from .season import Season
 from .season_length import SeasonLength
 from .shared.enums.position import Position
+from .skater_position import SkaterPosition
 from .types import Types
 
 
@@ -20,6 +21,7 @@ class OtherLeagueSeasonBuilder():
          seasons: list[ SeasonLength ],
          pace_games: int ) -> list[ OtherLeagueSkaterSeason ]:
       player_id = int( landing[ 'playerId' ] )
+      position = SkaterPosition( str( landing[ 'position' ] ) )
       birth_date = date.fromisoformat(
          str( landing[ 'birthDate' ] ).split( 'T' )[ Position.FIRST ] )
 
@@ -29,6 +31,7 @@ class OtherLeagueSeasonBuilder():
       for raw in cls._season_totals( landing ):
          parsed = cls._parse_total(
             player_id,
+            position,
             birth_date,
             raw,
             by_season_id )
@@ -60,6 +63,7 @@ class OtherLeagueSeasonBuilder():
          player_id=incoming.player_id,
          season_id=incoming.season_id,
          league=incoming.league,
+         position=incoming.position,
          age=incoming.age,
          games_played=current.games_played + incoming.games_played,
          goals=current.goals + incoming.goals,
@@ -79,6 +83,7 @@ class OtherLeagueSeasonBuilder():
          player_id=season.player_id,
          season_id=season.season_id,
          league=season.league,
+         position=season.position,
          age=season.age,
          games_played=season.games_played,
          goals=season.goals,
@@ -92,6 +97,7 @@ class OtherLeagueSeasonBuilder():
    def _parse_total(
          cls,
          player_id: int,
+         position: SkaterPosition,
          birth_date: date,
          raw: Types.JsonObject,
          by_season_id: dict[ int, SeasonLength ] ) -> OtherLeagueSkaterSeason | None:
@@ -115,6 +121,7 @@ class OtherLeagueSeasonBuilder():
          player_id=player_id,
          season_id=season_id,
          league=league,
+         position=position,
          age=Season.age_on( birth_date, season.start_date ),
          games_played=games_played,
          goals=int( raw[ 'goals' ] ),

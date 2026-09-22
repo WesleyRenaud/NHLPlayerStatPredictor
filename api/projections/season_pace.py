@@ -4,6 +4,6 @@ from dataclasses import dataclass
 
 
 @dataclass( frozen=True )
-class CareerPace():
+class SeasonPace():
    goals: float
    assists: float

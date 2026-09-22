@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from .career_pace import CareerPace
 from ..league_factor import LeagueFactor
-from ..nhl_skater_season import NhlSkaterSeason
 from ..other_league_skater_season import OtherLeagueSkaterSeason
 from ..recency_weight import RecencyWeight
 from ..season import Season
+from .season_pace import SeasonPace
+from ..skater_season import SkaterSeason
+from .year_pace import YearPace
 
 
 class TranslatedPaceAverager():
@@ -17,36 +18,30 @@ class TranslatedPaceAverager():
    @classmethod
    def average(
          cls,
-         seasons: list[ NhlSkaterSeason ],
-         other_seasons: list[ OtherLeagueSkaterSeason ],
+         seasons: list[ SkaterSeason ],
          weights: list[ RecencyWeight ],
          target_season_id: int,
-         factors: list[ LeagueFactor ] ) -> CareerPace | None:
-      nhl_by_lag = cls._nhl_by_lag( seasons, target_season_id )
-      others_by_lag = cls._others_by_lag( other_seasons, target_season_id )
+         factors: list[ LeagueFactor ] ) -> SeasonPace | None:
+      by_lag = cls._by_lag( seasons, target_season_id )
       total = 0.0
       goals_total = 0.0
       assists_total = 0.0
 
       for recency in weights:
-         year = cls.year(
-            nhl_by_lag.get( recency.lag ),
-            others_by_lag.get( recency.lag, [] ),
-            factors )
+         year = cls.year( by_lag.get( recency.lag, [] ), factors )
 
          if year is None:
             continue
 
-         pace, games = year
-         weight = recency.weight * cls._games_weight( games )
-         goals_total += pace.goals * weight
-         assists_total += pace.assists * weight
+         weight = recency.weight * cls._games_weight( year.games )
+         goals_total += year.pace.goals * weight
+         assists_total += year.pace.assists * weight
          total += weight
 
       if not total:
          return None
 
-      return CareerPace(
+      return SeasonPace(
          goals=goals_total / total,
          assists=assists_total / total )
 
@@ -54,70 +49,52 @@ class TranslatedPaceAverager():
    @classmethod
    def year(
          cls,
-         nhl: NhlSkaterSeason | None,
-         others: list[ OtherLeagueSkaterSeason ],
-         factors: list[ LeagueFactor ] ) -> tuple[ CareerPace, float ] | None:
-      by_league = { factor.league: factor for factor in factors }
-      return cls._year_pace( nhl, others, by_league )
-
-
-   @classmethod
-   def _games_weight( cls, games: float ) -> float:
-      return games / ( games + TranslatedPaceAverager.GAMES_SCALE )
-
-
-   @classmethod
-   def _year_pace(
-         cls,
-         nhl: NhlSkaterSeason | None,
-         others: list[ OtherLeagueSkaterSeason ],
-         by_league: dict[ str, LeagueFactor ] ) -> tuple[ CareerPace, float ] | None:
-      games = 0.0
+         seasons: list[ SkaterSeason ],
+         factors: list[ LeagueFactor ] ) -> YearPace | None:
+      games = 0
       goals = 0.0
       assists = 0.0
 
-      if nhl is not None:
-         nhl_games = float( nhl.games_played )
-         games += nhl_games
-         goals += nhl_games * nhl.g_pace
-         assists += nhl_games * nhl.a_pace
+      for season in seasons:
+         pace = cls._nhl_pace( season, factors )
 
-      for other in others:
-         factor = by_league.get( other.league )
-
-         if factor is None:
+         if pace is None:
             continue
 
-         other_games = float( other.games_played )
-         games += other_games
-         goals += other_games * other.g_pace * factor.rate
-         assists += other_games * other.a_pace * factor.rate
+         games += season.games_played
+         goals += season.games_played * pace.goals
+         assists += season.games_played * pace.assists
 
       if not games:
          return None
 
-      return CareerPace( goals=goals / games, assists=assists / games ), games
+      return YearPace(
+         SeasonPace( goals=goals / games, assists=assists / games ),
+         games )
 
 
    @classmethod
-   def _nhl_by_lag(
+   def _nhl_pace(
          cls,
-         seasons: list[ NhlSkaterSeason ],
-         target_season_id: int ) -> dict[ int, NhlSkaterSeason ]:
-      by_lag: dict[ int, NhlSkaterSeason ] = {}
+         season: SkaterSeason,
+         factors: list[ LeagueFactor ] ) -> SeasonPace | None:
+      if isinstance( season, OtherLeagueSkaterSeason ):
+         return season.nhl_pace( factors )
 
-      for season in seasons:
-         by_lag[ Season.recency_lag( target_season_id, season.season_id ) ] = season
-
-      return by_lag
+      return SeasonPace( season.g_pace, season.a_pace )
 
 
    @classmethod
-   def _others_by_lag(
+   def _games_weight( cls, games: int ) -> float:
+      return games / ( games + TranslatedPaceAverager.GAMES_SCALE )
+
+
+   @classmethod
+   def _by_lag(
          cls,
-         seasons: list[ OtherLeagueSkaterSeason ],
-         target_season_id: int ) -> dict[ int, list[ OtherLeagueSkaterSeason ] ]:
-      by_lag: dict[ int, list[ OtherLeagueSkaterSeason ] ] = defaultdict( list )
+         seasons: list[ SkaterSeason ],
+         target_season_id: int ) -> dict[ int, list[ SkaterSeason ] ]:
+      by_lag: dict[ int, list[ SkaterSeason ] ] = defaultdict( list )
 
       for season in seasons:
          by_lag[ Season.recency_lag( target_season_id, season.season_id ) ].append(

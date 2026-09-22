@@ -8,6 +8,7 @@ from api.other_league_season_builder import OtherLeagueSeasonBuilder
 from api.season import Season
 from api.season_length import SeasonLength
 from api.shared.enums.position import Position
+from api.skater_position import SkaterPosition
 
 
 def _league() -> str:
@@ -43,6 +44,7 @@ def _landing(
 
    return {
       'playerId': player_id,
+      'position': SkaterPosition( 'C' ).value,
       'birthDate': '2005-01-09',
       'seasonTotals': totals,
    }
@@ -65,6 +67,7 @@ def Test_Build_TestClubSeason_ExpectPacedRow() -> None:
    assert row.player_id == 1
    assert row.season_id == season_id
    assert row.league == league
+   assert row.position == SkaterPosition( 'C' )
    assert row.games_played == games_played
    assert row.goals == goals
    assert row.assists == assists

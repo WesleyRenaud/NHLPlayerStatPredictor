@@ -11,12 +11,12 @@ from .nhl_client import NhlClient
 from .nhl_skater_season import NhlSkaterSeason
 from .nhl_team_split_builder import NhlTeamSplitBuilder
 from .other_league_season_ingester import OtherLeagueSeasonIngester
-from .other_league_season_provider import OtherLeagueSeasonProvider
 from .other_league_season_store import OtherLeagueSeasonStore
 from .paths import Paths
 from .player_landing_fetcher import PlayerLandingFetcher
 from .player_status_builder import PlayerStatusBuilder
 from .player_status_store import PlayerStatusStore
+from .projections.baseline_roster_pace_builder import BaselineRosterPaceBuilder
 from .recency_decay_fitter import RecencyDecayFitter
 from .recency_target_resolver import RecencyTargetResolver
 from .recency_weight_store import RecencyWeightStore
@@ -27,7 +27,6 @@ from .season import Season
 from .season_length import SeasonLength
 from .skater_bio import SkaterBio
 from .skater_season_key import SkaterSeasonKey
-from .skater_season_provider import SkaterSeasonProvider
 from .skater_season_store import SkaterSeasonStore
 from .skater_summary import SkaterSummary
 from .team_factor_fitter import TeamFactorFitter
@@ -55,28 +54,29 @@ class SkaterSeasonIngester():
       PlayerStatusStore.insert_rows(
          PlayerStatusBuilder.build_all( player_ids, landings ),
          str( Paths.DB_PATH ) )
-      RecencyWeightStore.write(
-         RecencyDecayFitter.weights( RecencyDecayFitter.fit( rows ) ) )
+      weights = RecencyDecayFitter.weights( RecencyDecayFitter.fit( rows ) )
+      RecencyWeightStore.write( weights )
       aging_factors = AgingCurveFitter.fit( rows, other_rows )
       AgingFactorStore.write( aging_factors )
       league_factors = LeagueFactorFitter.fit( rows, other_rows, aging_factors )
       LeagueFactorStore.write( league_factors )
-      last_season_id = RecencyTargetResolver.prior()
-      db_path = str( Paths.DB_PATH )
+      previous_season_id = RecencyTargetResolver.prior()
+      current_season = RecencyTargetResolver.resolve()
       TeamFactorStore.write(
          TeamFactorFitter.fit(
-            roster_rows,
-            SkaterSeasonProvider.seasons_for_season_id( last_season_id, db_path ),
-            OtherLeagueSeasonProvider.seasons_for_season_id(
-               last_season_id,
-               db_path ),
-            league_factors,
-            RecencyTargetResolver.resolve(),
-            last_season_id,
+            current_season,
+            previous_season_id,
             NhlTeamSplitBuilder.build(
                landings,
-               last_season_id,
-               Season.pace_games( NhlClient.seasons( force=force ) ) ) ) )
+               previous_season_id,
+               Season.pace_games( NhlClient.seasons( force=force ) ) ),
+            BaselineRosterPaceBuilder.build(
+               roster_rows,
+               rows + other_rows,
+               weights,
+               current_season,
+               league_factors,
+               aging_factors ) ) )
       print( f'Ingested { len( rows ) } skater-seasons.', flush=True )
 
 

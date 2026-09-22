@@ -34,6 +34,7 @@ def Test_Ingest_TestRun_ExpectForcedIngesterMain( monkeypatch: pytest.MonkeyPatc
       forced.append( force )
 
    monkeypatch.setattr( sys, 'argv', [ 'api', 'ingest' ] )
+   monkeypatch.setattr( app_runner.SchemaMigrator, 'migrate', lambda db_path: None )
    monkeypatch.setattr( app_runner.SkaterSeasonIngester, 'main', fake_main )
    AppRunner.run()
    assert forced == [ True ]
@@ -48,10 +49,23 @@ def Test_Pull_TestRun_ExpectArtifactPullerMain( monkeypatch: pytest.MonkeyPatch 
    assert called == [ True ]
 
 
-def Test_Start_TestRun_ExpectSyncThenHydrateThenServer(
+def Test_Migrate_TestRun_ExpectSchemaMigrator( monkeypatch: pytest.MonkeyPatch ) -> None:
+   called: list[ bool ] = []
+
+   monkeypatch.setattr( sys, 'argv', [ 'api', AppRunner.migrate.__name__ ] )
+   monkeypatch.setattr(
+      app_runner.SchemaMigrator,
+      'migrate',
+      lambda db_path: called.append( True ) )
+   AppRunner.run()
+   assert called == [ True ]
+
+
+def Test_Start_TestRun_ExpectSyncThenMigrateThenHydrateThenServer(
       monkeypatch: pytest.MonkeyPatch ) -> None:
    events: list[ str ] = []
    sync_name = app_runner.IngestArtifactPuller.sync.__name__
+   migrate_name = app_runner.SchemaMigrator.migrate.__name__
    hydrate_name = app_runner.PlayerStatusHydrator.hydrate.__name__
    run_name = app_runner.ServerRunner.run.__name__
 
@@ -59,6 +73,10 @@ def Test_Start_TestRun_ExpectSyncThenHydrateThenServer(
       app_runner.IngestArtifactPuller,
       'sync',
       lambda: events.append( sync_name ) )
+   monkeypatch.setattr(
+      app_runner.SchemaMigrator,
+      'migrate',
+      lambda db_path: events.append( migrate_name ) )
    monkeypatch.setattr(
       app_runner.PlayerStatusHydrator,
       'hydrate',
@@ -68,7 +86,7 @@ def Test_Start_TestRun_ExpectSyncThenHydrateThenServer(
       'run',
       lambda: events.append( run_name ) )
    AppRunner.start()
-   assert events == [ sync_name, hydrate_name, run_name ]
+   assert events == [ sync_name, migrate_name, hydrate_name, run_name ]
 
 
 def Test_Run_TestRunName_ExpectStartsServer( monkeypatch: pytest.MonkeyPatch ) -> None:
@@ -76,6 +94,7 @@ def Test_Run_TestRunName_ExpectStartsServer( monkeypatch: pytest.MonkeyPatch ) -
 
    monkeypatch.setattr( sys, 'argv', [ 'api', AppRunner.run.__name__ ] )
    monkeypatch.setattr( app_runner.IngestArtifactPuller, 'sync', lambda: None )
+   monkeypatch.setattr( app_runner.SchemaMigrator, 'migrate', lambda db_path: None )
    monkeypatch.setattr( app_runner.PlayerStatusHydrator, 'hydrate', lambda db_path: None )
    monkeypatch.setattr( app_runner.ServerRunner, 'run', lambda: called.append( True ) )
    AppRunner.run()

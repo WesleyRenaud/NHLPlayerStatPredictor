@@ -5,6 +5,7 @@ from api.other_league_season_years import OtherLeagueSeasonYears
 from api.other_league_skater_season import OtherLeagueSkaterSeason
 from api.season import Season
 from api.shared.enums.position import Position
+from api.skater_position import SkaterPosition
 
 
 def _league( index: Position ) -> str:
@@ -19,6 +20,7 @@ def _season(
       player_id=player_id,
       season_id=season_id,
       league=league,
+      position=SkaterPosition( 'C' ),
       age=17.0,
       games_played=1,
       goals=0,

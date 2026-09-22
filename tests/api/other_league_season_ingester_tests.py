@@ -8,6 +8,7 @@ import api.other_league_season_ingester as other_league_season_ingester
 from api.other_league_season_ingester import OtherLeagueSeasonIngester
 from api.other_league_skater_season import OtherLeagueSkaterSeason
 from api.season_length import SeasonLength
+from api.skater_position import SkaterPosition
 
 
 def Test_BuildRows_TestLanding_ExpectBuilderRows(
@@ -22,6 +23,7 @@ def Test_BuildRows_TestLanding_ExpectBuilderRows(
          player_id=player_id,
          season_id=20252026,
          league='AAA',
+         position=SkaterPosition( 'C' ),
          age=20.8,
          games_played=46,
          goals=6,
@@ -60,6 +62,7 @@ def Test_BuildRows_TestMultiplePlayers_ExpectPlayerOrder(
          player_id=first_id,
          season_id=20252026,
          league='AAA',
+         position=SkaterPosition( 'C' ),
          age=20.8,
          games_played=46,
          goals=6,
@@ -71,6 +74,7 @@ def Test_BuildRows_TestMultiplePlayers_ExpectPlayerOrder(
          player_id=second_id,
          season_id=20252026,
          league='AAA',
+         position=SkaterPosition( 'C' ),
          age=20.8,
          games_played=46,
          goals=6,
@@ -101,6 +105,7 @@ def Test_BuildRows_TestMissingLandingAmongPlayers_ExpectRemaining(
       player_id=ok_id,
       season_id=20252026,
       league='AAA',
+      position=SkaterPosition( 'C' ),
       age=20.8,
       games_played=46,
       goals=6,

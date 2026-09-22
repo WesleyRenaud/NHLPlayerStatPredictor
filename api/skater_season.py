@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .skater_position import SkaterPosition
+
 
 @dataclass( frozen=True )
 class SkaterSeason():
@@ -14,3 +16,8 @@ class SkaterSeason():
    points: int
    g_pace: float
    a_pace: float
+   position: SkaterPosition
+
+
+   def completed_age( self ) -> int:
+      return int( self.age )

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from ..aging_factor import AgingFactor
-from .career_pace import CareerPace
 from ..nhl_skater_season import NhlSkaterSeason
 from .player_aging_fitter import PlayerAgingFitter
+from .season_pace import SeasonPace
 from ..shared.enums.position import Position
 
 
@@ -14,10 +14,10 @@ class AgingPaceAdjuster():
    @classmethod
    def adjust(
          cls,
-         pace: CareerPace,
+         pace: SeasonPace,
          age: int,
          factors: list[ AgingFactor ],
-         seasons: list[ NhlSkaterSeason ] ) -> CareerPace:
+         seasons: list[ NhlSkaterSeason ] ) -> SeasonPace:
       league = cls._factor_for( age, factors )
       player_rate = PlayerAgingFitter.fit( seasons )
 
@@ -33,8 +33,8 @@ class AgingPaceAdjuster():
 
 
    @classmethod
-   def _scale( cls, pace: CareerPace, goals: float, assists: float ) -> CareerPace:
-      return CareerPace(
+   def _scale( cls, pace: SeasonPace, goals: float, assists: float ) -> SeasonPace:
+      return SeasonPace(
          goals=pace.goals * ( 1.0 + goals ),
          assists=pace.assists * ( 1.0 + assists ) )
 

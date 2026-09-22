@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from .last_season_group import LastSeasonGroup
-from .last_season_nhl_skater import LastSeasonNhlSkater
-from .last_season_skater import LastSeasonSkater
+from .previous_season_group import PreviousSeasonGroup
+from .previous_season_nhl_skater import PreviousSeasonNhlSkater
+from .previous_season_skater import PreviousSeasonSkater
 from ..roster_skater import RosterSkater
-from ..team import Team
 from .team_environment import TeamEnvironment
 from .team_quality_calculator import TeamQualityCalculator
 
@@ -15,59 +14,60 @@ class TeamEnvironmentResolver():
          cls,
          player_id: int,
          roster: list[ RosterSkater ],
-         last_season: LastSeasonGroup ) -> TeamEnvironment:
+         previous_season: PreviousSeasonGroup ) -> TeamEnvironment:
+      nhl = previous_season.nhl
       return TeamEnvironment(
-         cls._roster_quality( player_id, roster, last_season ),
-         cls._last_season_quality( player_id, last_season.nhl ) )
-
-
-   @classmethod
-   def _roster_quality(
-         cls,
-         player_id: int,
-         roster: list[ RosterSkater ],
-         last_season: LastSeasonGroup ) -> float:
-      return cls._quality(
-         player_id,
-         cls._team( player_id, roster ),
-         roster,
-         last_season.skaters() )
-
-
-   @classmethod
-   def _last_season_quality(
-         cls,
-         player_id: int,
-         nhl: list[ LastSeasonNhlSkater ] ) -> float:
-      return cls._quality(
-         player_id,
-         cls._team( player_id, nhl ),
-         nhl,
-         nhl )
+         cls._quality(
+            player_id,
+            previous_season.skaters(),
+            cls._roster_ids( player_id, roster ) ),
+         cls._quality(
+            player_id,
+            nhl,
+            cls._nhl_ids( player_id, nhl ) ) )
 
 
    @classmethod
    def _quality(
          cls,
          player_id: int,
-         team: Team | None,
-         clubs: list[ RosterSkater ] | list[ LastSeasonNhlSkater ],
-         paces: list[ LastSeasonSkater ] | list[ LastSeasonNhlSkater ] ) -> float:
+         paces: list[ PreviousSeasonSkater ],
+         club_ids: set[ int ] ) -> float:
       return TeamQualityCalculator.average(
-         cls._mates( player_id, paces, cls._ids( team, clubs ) ) )
+         cls._mates( player_id, paces, club_ids ) )
 
 
    @classmethod
-   def _ids(
+   def _roster_ids(
          cls,
-         team: Team | None,
-         clubs: list[ RosterSkater ] | list[ LastSeasonNhlSkater ] ) -> set[ int ]:
+         player_id: int,
+         roster: list[ RosterSkater ] ) -> set[ int ]:
+      for skater in roster:
+         if skater.player_id == player_id:
+            return {
+               other.player_id
+               for other in roster
+               if other.team == skater.team }
+
+
+   @classmethod
+   def _nhl_ids(
+         cls,
+         player_id: int,
+         nhl: list[ PreviousSeasonNhlSkater ] ) -> set[ int ]:
+      team = None
+
+      for skater in nhl:
+         if skater.player_id == player_id:
+            team = skater.team
+            break
+
       if team is None:
-         return { skater.player_id for skater in clubs }
+         return { skater.player_id for skater in nhl }
 
       return {
          skater.player_id
-         for skater in clubs
+         for skater in nhl
          if skater.team == team }
 
 
@@ -75,21 +75,9 @@ class TeamEnvironmentResolver():
    def _mates(
          cls,
          player_id: int,
-         paces: list[ LastSeasonSkater ] | list[ LastSeasonNhlSkater ],
-         club_ids: set[ int ] ) -> list[ LastSeasonSkater ] | list[ LastSeasonNhlSkater ]:
+         paces: list[ PreviousSeasonSkater ],
+         club_ids: set[ int ] ) -> list[ PreviousSeasonSkater ]:
       return [
          skater
          for skater in paces
          if skater.player_id in club_ids and skater.player_id != player_id ]
-
-
-   @classmethod
-   def _team(
-         cls,
-         player_id: int,
-         skaters: list[ RosterSkater ] | list[ LastSeasonNhlSkater ] ) -> Team | None:
-      for skater in skaters:
-         if skater.player_id == player_id:
-            return skater.team
-
-      return None

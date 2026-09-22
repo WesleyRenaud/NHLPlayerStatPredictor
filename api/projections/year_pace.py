@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .season_pace import SeasonPace
+
 
 @dataclass( frozen=True )
-class TeamEnvironment():
-   current_roster_quality: float
-   previous_roster_quality: float
+class YearPace():
+   pace: SeasonPace
+   games: int

@@ -6,6 +6,7 @@ from api.other_league_season_provider import OtherLeagueSeasonProvider
 from api.other_league_season_store import OtherLeagueSeasonStore
 from api.other_league_skater_season import OtherLeagueSkaterSeason
 from api.shared.enums.position import Position
+from api.skater_position import SkaterPosition
 
 
 def _season( player_id: int, season_id: int ) -> OtherLeagueSkaterSeason:
@@ -13,6 +14,7 @@ def _season( player_id: int, season_id: int ) -> OtherLeagueSkaterSeason:
       player_id=player_id,
       season_id=season_id,
       league='AAA',
+      position=SkaterPosition( 'C' ),
       age=20.8,
       games_played=46,
       goals=6,
