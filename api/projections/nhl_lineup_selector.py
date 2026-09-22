@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from collections import defaultdict
-
 from .nhl_lineup_row import NhlLineupRow
 from ..skater_position import SkaterPosition
-from ..team import Team
+from .team_lineup import TeamLineup
 
 
 class NhlLineupSelector():
@@ -21,25 +19,20 @@ class NhlLineupSelector():
 
 
    @classmethod
-   def select( cls, rows: list[ NhlLineupRow ] ) -> list[ NhlLineupRow ]:
-      by_team: dict[ Team, list[ NhlLineupRow ] ] = defaultdict( list )
-
-      for row in rows:
-         by_team[ row.team ].append( row )
-
-      selected: list[ NhlLineupRow ] = []
-
-      for team_rows in by_team.values():
-         selected.extend(
-            cls._top(
-               cls._matching( team_rows, cls.FORWARD_POSITIONS ),
-               cls.FORWARDS ) )
-         selected.extend(
-            cls._top(
-               cls._matching( team_rows, cls.DEFENSE_POSITIONS ),
-               cls.DEFENSE ) )
-
-      return selected
+   def select( cls, rows: list[ NhlLineupRow ] ) -> list[ TeamLineup ]:
+      return [
+         TeamLineup(
+            lineup.team,
+            [
+               *cls._top(
+                  cls._matching( lineup.skaters, cls.FORWARD_POSITIONS ),
+                  cls.FORWARDS ),
+               *cls._top(
+                  cls._matching( lineup.skaters, cls.DEFENSE_POSITIONS ),
+                  cls.DEFENSE ),
+            ] )
+         for lineup in TeamLineup.group( rows )
+      ]
 
 
    @classmethod
