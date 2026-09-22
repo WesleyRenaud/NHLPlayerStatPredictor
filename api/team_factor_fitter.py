@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from .projections.current_season_nhl_skater import CurrentSeasonNhlSkater
-from .projections.nhl_lineup_row import NhlLineupRow
 from .projections.nhl_lineup_selector import NhlLineupSelector
 from .projections.previous_season_nhl_skater import PreviousSeasonNhlSkater
-from .projections.team_quality_calculator import TeamQualityCalculator
+from .projections.team_lineup import TeamLineup
 from .team_factor import TeamFactor
+from .team_factor_skater import TeamFactorSkater
 
 
 class TeamFactorFitter():
@@ -32,19 +32,18 @@ class TeamFactorFitter():
    def _factors(
          cls,
          season: int,
-         rows: list[ NhlLineupRow ] ) -> list[ TeamFactor ]:
-      teams = { skater.team for skater in rows }
-
-      if not teams:
+         lineups: list[ TeamLineup ] ) -> list[ TeamFactor ]:
+      if not lineups:
          return []
 
-      totals = {
-         team: TeamQualityCalculator.total(
-            [ skater for skater in rows if skater.team == team ] )
-         for team in teams
-      }
-      league = sum( totals.values() ) / len( totals )
+      league = sum( lineup.total() for lineup in lineups ) / len( lineups )
       return [
-         TeamFactor( season, team, total / league )
-         for team, total in totals.items()
+         TeamFactor(
+            season,
+            lineup.team,
+            lineup.total() / league,
+            [
+               TeamFactorSkater( skater.player_id, skater.contribution )
+               for skater in lineup.skaters ] )
+         for lineup in lineups
       ]

@@ -195,7 +195,11 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    previous_season_id = 20212022
    current_season = 20222023
    team_factors = [
-      TeamFactor( previous_season_id, list( Team )[ Position.FIRST ], 0.87 )
+      TeamFactor(
+         previous_season_id,
+         list( Team )[ Position.FIRST ],
+         0.87,
+         [] )
    ]
    roster_paces = [
       CurrentSeasonNhlSkater(

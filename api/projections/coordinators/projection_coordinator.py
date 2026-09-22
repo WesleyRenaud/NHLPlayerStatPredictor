@@ -46,8 +46,16 @@ class ProjectionCoordinator():
          factors = TeamFactorStore.read()
          scaled = TeamPaceAdjuster.adjust(
             aged,
-            TeamFactor.rate( factors, target_season_id, current_team ),
-            TeamFactor.rate( factors, previous.season_id, previous.team ) )
+            TeamFactor.mate_rate(
+               factors,
+               target_season_id,
+               current_team,
+               player_id ),
+            TeamFactor.mate_rate(
+               factors,
+               previous.season_id,
+               previous.team,
+               player_id ) )
       goals = round( scaled.goals )
       assists = round( scaled.assists )
       return Projection(

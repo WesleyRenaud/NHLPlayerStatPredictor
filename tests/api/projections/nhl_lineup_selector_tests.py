@@ -4,6 +4,7 @@ from api.projections.current_season_nhl_skater import CurrentSeasonNhlSkater
 from api.projections.nhl_lineup_selector import NhlLineupSelector
 from api.projections.previous_season_nhl_skater import PreviousSeasonNhlSkater
 from api.projections.season_pace import SeasonPace
+from api.projections.team_lineup import TeamLineup
 from api.shared.enums.position import Position
 from api.skater_position import SkaterPosition
 from api.team import Team
@@ -50,8 +51,12 @@ def Test_Select_TestExcessDepth_ExpectTopForwardsAndDefense() -> None:
       for player_id in range( 101, 101 + NhlLineupSelector.DEFENSE + 1 )
    ]
    assert NhlLineupSelector.select( [ *forwards, *defense ] ) == [
-      *forwards[ :NhlLineupSelector.FORWARDS ],
-      *defense[ :NhlLineupSelector.DEFENSE ],
+      TeamLineup(
+         team,
+         [
+            *forwards[ :NhlLineupSelector.FORWARDS ],
+            *defense[ :NhlLineupSelector.DEFENSE ],
+         ] ),
    ]
 
 
@@ -68,7 +73,7 @@ def Test_Select_TestWings_ExpectForwardSlots() -> None:
       position=SkaterPosition( 'L' ) )
    defense = _pace( 50, team, 40.0, position=SkaterPosition( 'D' ) )
    assert NhlLineupSelector.select(
-      [ *centers, wing, defense ] ) == [ *centers, defense ]
+      [ *centers, wing, defense ] ) == [ TeamLineup( team, [ *centers, defense ] ) ]
 
 
 def Test_Select_TestTeams_ExpectIsolatedCuts() -> None:
@@ -84,8 +89,10 @@ def Test_Select_TestTeams_ExpectIsolatedCuts() -> None:
    ]
    assert NhlLineupSelector.select(
       [ *now_forwards, *previous_forwards ] ) == [
-         *now_forwards[ :NhlLineupSelector.FORWARDS ],
-         *previous_forwards[ :NhlLineupSelector.FORWARDS ],
+         TeamLineup( now, now_forwards[ :NhlLineupSelector.FORWARDS ] ),
+         TeamLineup(
+            previous,
+            previous_forwards[ :NhlLineupSelector.FORWARDS ] ),
       ]
 
 
@@ -93,4 +100,6 @@ def Test_Select_TestSweaterPoints_ExpectGamesWeightedRank() -> None:
    team = list( Team )[ Position.FIRST ]
    injured = _split( 1, team, 80.0, 10 )
    regular = _split( 2, team, 20.0, 82 )
-   assert NhlLineupSelector.select( [ injured, regular ] ) == [ regular, injured ]
+   assert NhlLineupSelector.select( [ injured, regular ] ) == [
+      TeamLineup( team, [ regular, injured ] ),
+   ]
