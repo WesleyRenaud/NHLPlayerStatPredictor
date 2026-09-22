@@ -3,10 +3,11 @@ from __future__ import annotations
 from api.club_league import ClubLeague
 from api.nhl_client import NhlClient
 from api.nhl_team_split_builder import NhlTeamSplitBuilder
-from api.projections.career_pace import CareerPace
-from api.projections.last_season_nhl_skater import LastSeasonNhlSkater
+from api.projections.previous_season_nhl_skater import PreviousSeasonNhlSkater
+from api.projections.season_pace import SeasonPace
 from api.season import Season
 from api.shared.enums.position import Position
+from api.skater_position import SkaterPosition
 from api.team import Team
 
 
@@ -50,6 +51,7 @@ def _landing(
 
    return {
       'playerId': player_id,
+      'position': SkaterPosition( 'C' ).value,
       'seasonTotals': totals,
    }
 
@@ -66,12 +68,13 @@ def Test_Build_TestNhlClubSeason_ExpectPacedRow() -> None:
       season_id,
       pace_games )
    assert rows == [
-      LastSeasonNhlSkater(
+      PreviousSeasonNhlSkater(
          8482259,
-         float( games_played ),
-         CareerPace(
+         games_played,
+         SeasonPace(
             Season.pace( float( goals ), float( games_played ), pace_games ),
             Season.pace( float( assists ), float( games_played ), pace_games ) ),
+         SkaterPosition( 'C' ),
          team )
    ]
 
@@ -108,12 +111,12 @@ def Test_Build_TestSplitSeason_ExpectOneRowPerClub() -> None:
    assert [ ( row.team, row.games, row.pace.goals, row.pace.assists ) for row in rows ] == [
       (
          first,
-         60.0,
+         60,
          Season.pace( 19.0, 60.0, pace_games ),
          Season.pace( 13.0, 60.0, pace_games ) ),
       (
          second,
-         18.0,
+         18,
          Season.pace( 10.0, 18.0, pace_games ),
          Season.pace( 4.0, 18.0, pace_games ) ),
    ]
@@ -125,6 +128,7 @@ def Test_Build_TestAccentedClubName_ExpectTeam() -> None:
       {
          1: {
             'playerId': 1,
+            'position': SkaterPosition( 'C' ).value,
             'seasonTotals': [
                {
                   'leagueAbbrev': 'NHL',
@@ -150,6 +154,7 @@ def Test_Build_TestDottedClubName_ExpectTeam() -> None:
       {
          1: {
             'playerId': 1,
+            'position': SkaterPosition( 'C' ).value,
             'seasonTotals': [
                {
                   'leagueAbbrev': 'NHL',

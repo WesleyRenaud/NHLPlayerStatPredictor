@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from api.aging_pair_totals import AgingPairTotals
+from api.skater_position import SkaterPosition
 from api.skater_season import SkaterSeason
 
 
@@ -14,7 +15,8 @@ def _season( g_pace: float, a_pace: float ) -> SkaterSeason:
       assists=0,
       points=0,
       g_pace=g_pace,
-      a_pace=a_pace )
+      a_pace=a_pace,
+      position=SkaterPosition( 'C' ) )
 
 
 def Test_Adding_TestPair_ExpectPaceAndChange() -> None:

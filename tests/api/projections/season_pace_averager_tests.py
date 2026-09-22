@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date
 
 from api.nhl_skater_season import NhlSkaterSeason
-from api.projections.career_pace_averager import CareerPaceAverager
+from api.projections.season_pace_averager import SeasonPaceAverager
 from api.recency_weight import RecencyWeight
 from api.season import Season
 from api.shared.enums.position import Position
@@ -41,7 +41,7 @@ def Test_Average_TestWeightedSeasons_ExpectWeightedGoalsAssistsAndSummedPoints()
    later_weight = by_lag[ Season.recency_lag( target_season_id, later.season_id ) ]
    earlier_weight = by_lag[ Season.recency_lag( target_season_id, earlier.season_id ) ]
    total = later_weight + earlier_weight
-   pace = CareerPaceAverager.average( [ later, earlier ], weights, target_season_id )
+   pace = SeasonPaceAverager.average( [ later, earlier ], weights, target_season_id )
    assert pace.goals == (
       later.g_pace * later_weight + earlier.g_pace * earlier_weight ) / total
    assert pace.assists == (
@@ -53,6 +53,6 @@ def Test_Average_TestMissingLag_ExpectRenormalizedOverPresentWeights() -> None:
    dropped = _season( 90.0, 90.0, 20202021 )
    target_season_id = 20232024
    weights = [ RecencyWeight( 0, 0.75 ), RecencyWeight( 1, 0.25 ) ]
-   pace = CareerPaceAverager.average( [ kept, dropped ], weights, target_season_id )
+   pace = SeasonPaceAverager.average( [ kept, dropped ], weights, target_season_id )
    assert pace.goals == kept.g_pace
    assert pace.assists == kept.a_pace

@@ -49,6 +49,7 @@ def _other(
       player_id=player_id,
       season_id=season_id,
       league=league,
+      position=SkaterPosition( 'C' ),
       age=age,
       games_played=10,
       goals=1,

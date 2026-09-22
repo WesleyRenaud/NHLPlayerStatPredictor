@@ -14,7 +14,6 @@ from .types import Types
 @dataclass( frozen=True )
 class NhlSkaterSeason( SkaterSeason ):
    player_name: str
-   position: SkaterPosition
    birth_date: date
    team: Team
    schedule_games: int

@@ -24,10 +24,10 @@ class OtherLeagueSeasonStore():
             cursor.executemany(
                '''
                INSERT INTO OtherLeagueSeason (
-                  PLAYER_ID, SEASON_ID, LEAGUE, AGE, GAMES_PLAYED, GOALS, ASSISTS,
+                  PLAYER_ID, SEASON_ID, LEAGUE, POSITION, AGE, GAMES_PLAYED, GOALS, ASSISTS,
                   POINTS, G_PACE, A_PACE
                ) VALUES (
-                  :player_id, :season_id, :league, :age, :games_played, :goals, :assists,
+                  :player_id, :season_id, :league, :position, :age, :games_played, :goals, :assists,
                   :points, :g_pace, :a_pace
                )
                ''',

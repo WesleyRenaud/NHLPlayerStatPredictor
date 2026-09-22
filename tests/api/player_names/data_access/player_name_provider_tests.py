@@ -46,6 +46,7 @@ def _other( player_id: int ) -> OtherLeagueSkaterSeason:
       player_id=player_id,
       season_id=20252026,
       league='AAA',
+      position=SkaterPosition( 'C' ),
       age=20.8,
       games_played=46,
       goals=6,

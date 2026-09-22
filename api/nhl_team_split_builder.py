@@ -1,7 +1,8 @@
 from .nhl_client import NhlClient
-from .projections.career_pace import CareerPace
-from .projections.last_season_nhl_skater import LastSeasonNhlSkater
+from .projections.previous_season_nhl_skater import PreviousSeasonNhlSkater
+from .projections.season_pace import SeasonPace
 from .season import Season
+from .skater_position import SkaterPosition
 from .team import Team
 from .types import Types
 
@@ -12,8 +13,8 @@ class NhlTeamSplitBuilder():
          cls,
          landings: dict[ int, Types.JsonObject ],
          season_id: int,
-         pace_games: int ) -> list[ LastSeasonNhlSkater ]:
-      rows: list[ LastSeasonNhlSkater ] = []
+         pace_games: int ) -> list[ PreviousSeasonNhlSkater ]:
+      rows: list[ PreviousSeasonNhlSkater ] = []
 
       for landing in landings.values():
          rows.extend( cls._rows( landing, season_id, pace_games ) )
@@ -28,10 +29,11 @@ class NhlTeamSplitBuilder():
          cls,
          landing: Types.JsonObject,
          season_id: int,
-         pace_games: int ) -> list[ LastSeasonNhlSkater ]:
+         pace_games: int ) -> list[ PreviousSeasonNhlSkater ]:
       player_id = int( landing[ 'playerId' ] )
+      position = SkaterPosition( str( landing[ 'position' ] ) )
       return [
-         cls._parse( player_id, raw, pace_games )
+         cls._parse( player_id, position, raw, pace_games )
          for raw in cls._totals( landing, season_id )
       ]
 
@@ -40,18 +42,19 @@ class NhlTeamSplitBuilder():
    def _parse(
          cls,
          player_id: int,
+         position: SkaterPosition,
          raw: Types.JsonObject,
-         pace_games: int ) -> LastSeasonNhlSkater:
+         pace_games: int ) -> PreviousSeasonNhlSkater:
       games_played = int( raw[ 'gamesPlayed' ] )
       goals = float( raw[ 'goals' ] )
       assists = float( raw[ 'assists' ] )
-      games = float( games_played )
-      return LastSeasonNhlSkater(
+      return PreviousSeasonNhlSkater(
          player_id,
-         games,
-         CareerPace(
-            Season.pace( goals, games, pace_games ),
-            Season.pace( assists, games, pace_games ) ),
+         games_played,
+         SeasonPace(
+            Season.pace( goals, games_played, pace_games ),
+            Season.pace( assists, games_played, pace_games ) ),
+         position,
          cls._team( raw ) )
 
 

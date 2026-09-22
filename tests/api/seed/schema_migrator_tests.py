@@ -6,6 +6,7 @@ import sqlite3
 from api.other_league_season_provider import OtherLeagueSeasonProvider
 from api.other_league_season_store import OtherLeagueSeasonStore
 from api.other_league_skater_season import OtherLeagueSkaterSeason
+from api.seed.schema_creator import SchemaCreator
 from api.seed.schema_migrator import SchemaMigrator
 from api.shared.enums.position import Position
 from api.skater_position import SkaterPosition
@@ -26,16 +27,7 @@ def _row() -> OtherLeagueSkaterSeason:
       a_pace=20.0 )
 
 
-def Test_InsertRows_TestInsertedSeason_ExpectReadableByPlayer( tmp_path: Path ) -> None:
-   db_path = str( tmp_path / 'skaters.sqlite' )
-   row = _row()
-   OtherLeagueSeasonStore.insert_rows( [ row ], db_path=db_path )
-   rows = OtherLeagueSeasonProvider.seasons_for_player_id( row.player_id, db_path )
-   assert len( rows ) == 1
-   assert rows[ Position.FIRST ] == row
-
-
-def Test_InsertRows_TestPriorSchema_ExpectReadableByPlayer( tmp_path: Path ) -> None:
+def Test_Migrate_TestPriorSchema_ExpectReadableByPlayer( tmp_path: Path ) -> None:
    db_path = str( tmp_path / 'skaters.sqlite' )
    conn = sqlite3.connect( db_path )
 
@@ -59,6 +51,25 @@ def Test_InsertRows_TestPriorSchema_ExpectReadableByPlayer( tmp_path: Path ) -> 
    finally:
       conn.close()
 
+   SchemaMigrator.migrate( db_path )
+   row = _row()
+   OtherLeagueSeasonStore.insert_rows( [ row ], db_path=db_path )
+   rows = OtherLeagueSeasonProvider.seasons_for_player_id( row.player_id, db_path )
+   assert len( rows ) == 1
+   assert rows[ Position.FIRST ] == row
+
+
+def Test_Migrate_TestCurrentSchema_ExpectIdempotent( tmp_path: Path ) -> None:
+   db_path = str( tmp_path / 'skaters.sqlite' )
+   conn = sqlite3.connect( db_path )
+
+   try:
+      SchemaCreator.create( conn.cursor() )
+      conn.commit()
+   finally:
+      conn.close()
+
+   SchemaMigrator.migrate( db_path )
    SchemaMigrator.migrate( db_path )
    row = _row()
    OtherLeagueSeasonStore.insert_rows( [ row ], db_path=db_path )

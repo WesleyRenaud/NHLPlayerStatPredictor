@@ -21,3 +21,15 @@ class LeagueFactor():
          'league': self.league,
          'rate': self.rate,
       }
+
+
+   @classmethod
+   def rate(
+         cls,
+         factors: list[ LeagueFactor ],
+         league: str ) -> float | None:
+      for factor in factors:
+         if factor.league == league:
+            return factor.rate
+
+      return None

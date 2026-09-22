@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .league_factor import LeagueFactor
 from .other_league_season_key import OtherLeagueSeasonKey
+from .projections.season_pace import SeasonPace
+from .skater_position import SkaterPosition
 from .skater_season import SkaterSeason
 from .types import Types
 
@@ -24,8 +27,18 @@ class OtherLeagueSkaterSeason( SkaterSeason ):
          points=int( row[ 'POINTS' ] ),
          g_pace=float( row[ 'G_PACE' ] ),
          a_pace=float( row[ 'A_PACE' ] ),
-         league=str( row[ 'LEAGUE' ] ) )
+         league=str( row[ 'LEAGUE' ] ),
+         position=SkaterPosition( str( row[ 'POSITION' ] ) ) )
 
 
    def key( self ) -> OtherLeagueSeasonKey:
       return OtherLeagueSeasonKey( self.player_id, self.season_id, self.league )
+
+
+   def nhl_pace( self, factors: list[ LeagueFactor ] ) -> SeasonPace | None:
+      rate = LeagueFactor.rate( factors, self.league )
+
+      if rate is None:
+         return None
+
+      return SeasonPace( self.g_pace * rate, self.a_pace * rate )
