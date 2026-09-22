@@ -20,7 +20,7 @@ class TeamFactorFitter():
          [
             *cls._factors(
                previous_season_id,
-               NhlLineupSelector.select( nhl_splits ) ),
+               TeamLineup.group( nhl_splits ) ),
             *cls._factors(
                current_season,
                NhlLineupSelector.select( roster_paces ) ),

@@ -5,6 +5,7 @@ from api.projections.nhl_lineup_row import NhlLineupRow
 from api.projections.nhl_lineup_selector import NhlLineupSelector
 from api.projections.previous_season_nhl_skater import PreviousSeasonNhlSkater
 from api.projections.season_pace import SeasonPace
+from api.projections.team_lineup import TeamLineup
 from api.projections.team_quality_calculator import TeamQualityCalculator
 from api.shared.enums.position import Position
 from api.skater_position import SkaterPosition
@@ -50,17 +51,34 @@ def _skaters( rows: list[ NhlLineupRow ] ) -> list[ TeamFactorSkater ]:
       for row in rows ]
 
 
-def _factor(
+def _from_lineup(
       season: int,
       team: Team,
-      rows: list[ NhlLineupRow ],
+      lineup: TeamLineup,
       league: float ) -> TeamFactor:
-   [ lineup ] = NhlLineupSelector.select( rows )
    return TeamFactor(
       season,
       team,
       lineup.total() / league,
       _skaters( lineup.skaters ) )
+
+
+def _previous_factor(
+      season: int,
+      team: Team,
+      rows: list[ NhlLineupRow ],
+      league: float ) -> TeamFactor:
+   [ lineup ] = TeamLineup.group( rows )
+   return _from_lineup( season, team, lineup, league )
+
+
+def _current_factor(
+      season: int,
+      team: Team,
+      rows: list[ NhlLineupRow ],
+      league: float ) -> TeamFactor:
+   [ lineup ] = NhlLineupSelector.select( rows )
+   return _from_lineup( season, team, lineup, league )
 
 
 def Test_Fit_TestTeams_ExpectLeagueRelativeRates() -> None:
@@ -93,9 +111,9 @@ def Test_Fit_TestTeams_ExpectLeagueRelativeRates() -> None:
       _total( previous_rows ) + _total( elsewhere_rows ) ) / 2.0
    expected = sorted(
       [
-         _factor( previous_season_id, previous, previous_rows, last_league ),
-         _factor( previous_season_id, elsewhere, elsewhere_rows, last_league ),
-         _factor( current_season, now, now_rows, _total( now_rows ) ),
+         _previous_factor( previous_season_id, previous, previous_rows, last_league ),
+         _previous_factor( previous_season_id, elsewhere, elsewhere_rows, last_league ),
+         _current_factor( current_season, now, now_rows, _total( now_rows ) ),
       ],
       key=lambda factor: ( factor.season, factor.team.value ) )
    assert TeamFactorFitter.fit(
@@ -132,9 +150,9 @@ def Test_Fit_TestSplitSeason_ExpectSweaterTotals() -> None:
       _total( previous_rows ) + _total( elsewhere_rows ) ) / 2.0
    expected = sorted(
       [
-         _factor( previous_season_id, previous, previous_rows, last_league ),
-         _factor( previous_season_id, elsewhere, elsewhere_rows, last_league ),
-         _factor( current_season, now, now_rows, _total( now_rows ) ),
+         _previous_factor( previous_season_id, previous, previous_rows, last_league ),
+         _previous_factor( previous_season_id, elsewhere, elsewhere_rows, last_league ),
+         _current_factor( current_season, now, now_rows, _total( now_rows ) ),
       ],
       key=lambda factor: ( factor.season, factor.team.value ) )
    assert TeamFactorFitter.fit(
@@ -168,10 +186,10 @@ def Test_Fit_TestRookie_ExpectLineupSum() -> None:
    current_league = ( _total( now_rows ) + _total( previous_now ) ) / 2.0
    expected = sorted(
       [
-         _factor( previous_season_id, now, last_now, last_league ),
-         _factor( previous_season_id, previous, last_previous, last_league ),
-         _factor( current_season, now, now_rows, current_league ),
-         _factor( current_season, previous, previous_now, current_league ),
+         _previous_factor( previous_season_id, now, last_now, last_league ),
+         _previous_factor( previous_season_id, previous, last_previous, last_league ),
+         _current_factor( current_season, now, now_rows, current_league ),
+         _current_factor( current_season, previous, previous_now, current_league ),
       ],
       key=lambda factor: ( factor.season, factor.team.value ) )
    assert TeamFactorFitter.fit(
@@ -208,13 +226,13 @@ def Test_Fit_TestUnequalRosters_ExpectUnitTeamMean() -> None:
       current,
       key=lambda factor: factor.team.value ) == sorted(
       [
-         _factor( current_season, now, now_rows, league ),
-         _factor( current_season, previous, previous_rows, league ),
+         _current_factor( current_season, now, now_rows, league ),
+         _current_factor( current_season, previous, previous_rows, league ),
       ],
       key=lambda factor: factor.team.value )
 
 
-def Test_Fit_TestExcessPreviousSeason_ExpectSweaterCut() -> None:
+def Test_Fit_TestPreviousSeasonDepth_ExpectAllSweaterTotals() -> None:
    now = list( Team )[ Position.FIRST ]
    previous = list( Team )[ Position.SECOND ]
    current_season = 20262027
@@ -223,19 +241,18 @@ def Test_Fit_TestExcessPreviousSeason_ExpectSweaterCut() -> None:
       _split( player_id, previous, 100.0 - player_id )
       for player_id in range( 1, NhlLineupSelector.FORWARDS + 2 )
    ]
-   kept = forwards[ :NhlLineupSelector.FORWARDS ]
    outsider = _split( 50, now, 40.0 )
-   last_league = ( _total( kept ) + _total( [ outsider ] ) ) / 2.0
+   last_league = ( _total( forwards ) + _total( [ outsider ] ) ) / 2.0
    current_previous = [ _pace( 1, previous, 90.0 ) ]
    current_now = [ _pace( 50, now, 40.0 ) ]
    current_league = (
       _total( current_previous ) + _total( current_now ) ) / 2.0
    expected = sorted(
       [
-         _factor( previous_season_id, previous, kept, last_league ),
-         _factor( previous_season_id, now, [ outsider ], last_league ),
-         _factor( current_season, previous, current_previous, current_league ),
-         _factor( current_season, now, current_now, current_league ),
+         _previous_factor( previous_season_id, previous, forwards, last_league ),
+         _previous_factor( previous_season_id, now, [ outsider ], last_league ),
+         _current_factor( current_season, previous, current_previous, current_league ),
+         _current_factor( current_season, now, current_now, current_league ),
       ],
       key=lambda factor: ( factor.season, factor.team.value ) )
    assert TeamFactorFitter.fit(
