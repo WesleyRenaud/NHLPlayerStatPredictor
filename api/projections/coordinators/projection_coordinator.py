@@ -8,8 +8,8 @@ from ...pace_games_resolver import PaceGamesResolver
 from ...paths import Paths
 from ..projection import Projection
 from ...recency_target_resolver import RecencyTargetResolver
-from ...recency_weight_store import RecencyWeightStore
 from ...roster_skater_provider import RosterSkaterProvider
+from ...scoring_weight_store import ScoringWeightStore
 from ...shared.enums.position import Position
 from ...skater import Skater
 from ...skater_season_provider import SkaterSeasonProvider
@@ -30,7 +30,7 @@ class ProjectionCoordinator():
                *nhl,
                *OtherLeagueSeasonProvider.seasons_for_player_id( player_id, db_path ),
             ] ),
-         RecencyWeightStore.read(),
+         ScoringWeightStore.read(),
          target_season_id,
          LeagueFactorStore.read(),
          AgingFactorStore.read() )

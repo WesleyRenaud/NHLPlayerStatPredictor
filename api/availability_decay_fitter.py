@@ -7,8 +7,8 @@ from .season import Season
 from .skater_season_years import SkaterSeasonYears
 
 
-class RecencyDecayFitter():
-   WINDOW = 4
+class AvailabilityDecayFitter():
+   WINDOW = 6
 
 
    @classmethod
@@ -22,30 +22,31 @@ class RecencyDecayFitter():
 
       for player_seasons in SkaterSeasonYears.by_player( seasons ).values():
          for current in player_seasons:
-            samples.extend( cls._year_samples( player_seasons, current ) )
+            sample = cls._sample( player_seasons, current )
+
+            if sample is not None:
+               samples.append( sample )
 
       return samples
 
 
    @classmethod
-   def _year_samples(
+   def _sample(
          cls,
          seasons: list[ NhlSkaterSeason ],
-         current: NhlSkaterSeason ) -> list[ list[ float ] ]:
-      goals: list[ float ] = []
-      assists: list[ float ] = []
+         current: NhlSkaterSeason ) -> list[ float ] | None:
+      if current.gp_share is None:
+         return None
+
+      priors: list[ float ] = []
       year = Season.start_year( current.season_id )
 
-      for lag in range( RecencyDecayFitter.WINDOW ):
+      for lag in range( AvailabilityDecayFitter.WINDOW ):
          prior = SkaterSeasonYears.at_year( seasons, year - lag - 1 )
 
-         if prior is None:
-            return []
+         if prior is None or prior.gp_share is None:
+            return None
 
-         goals.append( prior.g_pace )
-         assists.append( prior.a_pace )
+         priors.append( prior.gp_share )
 
-      return [
-         [ current.g_pace, *goals ],
-         [ current.a_pace, *assists ],
-      ]
+      return [ current.gp_share, *priors ]

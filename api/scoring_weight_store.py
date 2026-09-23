@@ -7,8 +7,9 @@ from .paths import Paths
 from .recency_weight import RecencyWeight
 
 
-class RecencyWeightStore():
-   FILE_NAME = 'recency_weights.json'
+class ScoringWeightStore():
+   FILE_NAME = 'scoring_weights.json'
+
 
    @classmethod
    def path( cls ) -> Path:

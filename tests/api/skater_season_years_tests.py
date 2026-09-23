@@ -37,13 +37,8 @@ def Test_ByPlayer_TestSeasons_ExpectYearsByPlayer() -> None:
    other = _season( 2, 20232024 )
    by_player = SkaterSeasonYears.by_player( [ first, second, other ] )
    assert by_player == {
-      first.player_id: {
-         Season.start_year( first.season_id ): first,
-         Season.start_year( second.season_id ): second,
-      },
-      other.player_id: {
-         Season.start_year( other.season_id ): other,
-      },
+      first.player_id: [ first, second ],
+      other.player_id: [ other ],
    }
 
 
@@ -59,3 +54,18 @@ def Test_Consecutive_TestGapYear_ExpectSkipped() -> None:
    current = _season( 1, 20212022 )
    later = _season( 1, 20232024 )
    assert SkaterSeasonYears.consecutive( [ current, later ] ) == []
+
+
+def Test_AtYear_TestMatchingSeason_ExpectSeason() -> None:
+   first = _season( 1, 20222023 )
+   second = _season( 1, 20232024 )
+   assert SkaterSeasonYears.at_year(
+      [ first, second ],
+      Season.start_year( second.season_id ) ) == second
+
+
+def Test_AtYear_TestMissingYear_ExpectNone() -> None:
+   first = _season( 1, 20222023 )
+   assert SkaterSeasonYears.at_year(
+      [ first ],
+      Season.start_year( first.season_id ) + 1 ) is None
