@@ -6,10 +6,11 @@ import shutil
 import tempfile
 
 from .aging_factor_store import AgingFactorStore
+from .availability_weight_store import AvailabilityWeightStore
 from .github_cli import GithubCli
 from .league_factor_store import LeagueFactorStore
 from .paths import Paths
-from .recency_weight_store import RecencyWeightStore
+from .scoring_weight_store import ScoringWeightStore
 from .shared.enums.position import Position
 from .team_factor_store import TeamFactorStore
 
@@ -42,7 +43,10 @@ class IngestArtifactPuller():
    def install( cls, artifact_root: Path ) -> None:
       Paths.PROCESSED_DIR.mkdir( parents=True, exist_ok=True )
       shutil.copy2( cls._source_db( artifact_root ), Paths.DB_PATH )
-      shutil.copy2( cls._source_weights( artifact_root ), RecencyWeightStore.path() )
+      shutil.copy2( cls._source_scoring( artifact_root ), ScoringWeightStore.path() )
+      shutil.copy2(
+         cls._source_availability( artifact_root ),
+         AvailabilityWeightStore.path() )
       shutil.copy2( cls._source_aging( artifact_root ), AgingFactorStore.path() )
       shutil.copy2( cls._source_leagues( artifact_root ), LeagueFactorStore.path() )
       shutil.copy2( cls._source_teams( artifact_root ), TeamFactorStore.path() )
@@ -67,7 +71,8 @@ class IngestArtifactPuller():
          if (
                not cls._source_db( artifact_root ).is_file()
                or not cls._source_raw( artifact_root ).is_dir()
-               or not cls._source_weights( artifact_root ).is_file()
+               or not cls._source_scoring( artifact_root ).is_file()
+               or not cls._source_availability( artifact_root ).is_file()
                or not cls._source_aging( artifact_root ).is_file()
                or not cls._source_leagues( artifact_root ).is_file()
                or not cls._source_teams( artifact_root ).is_file() ):
@@ -174,8 +179,13 @@ class IngestArtifactPuller():
 
 
    @classmethod
-   def _source_weights( cls, artifact_root: Path ) -> Path:
-      return artifact_root / RecencyWeightStore.path().relative_to( Paths.ROOT )
+   def _source_scoring( cls, artifact_root: Path ) -> Path:
+      return artifact_root / ScoringWeightStore.path().relative_to( Paths.ROOT )
+
+
+   @classmethod
+   def _source_availability( cls, artifact_root: Path ) -> Path:
+      return artifact_root / AvailabilityWeightStore.path().relative_to( Paths.ROOT )
 
 
    @classmethod

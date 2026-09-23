@@ -19,7 +19,7 @@ def _season(
       player_id=player_id,
       season_id=season_id,
       player_name='Stub Skater',
-      position=list( SkaterPosition )[ Position.FIRST ],
+      position=SkaterPosition( 'C' ),
       birth_date=date( 1997, 1, 13 ),
       age=28.7,
       team=list( Team )[ Position.FIRST ],
@@ -35,34 +35,50 @@ def _season(
       gp_share=1.0 )
 
 
-def Test_Weights_TestDecay_ExpectNormalizedGeometric() -> None:
-   decay = 0.5
-   raw = [
-      decay ** lag
+def _run( player_id: int, values: list[ float ] ) -> list[ NhlSkaterSeason ]:
+   start = 2018
+   return [
+      _season(
+         player_id,
+         ( start + offset ) * 10000 + ( start + offset + 1 ),
+         value,
+         value )
+      for offset, value in enumerate( values )
+   ]
+
+
+def Test_Fit_TestLastYearMatches_ExpectFirstWeightOne() -> None:
+   seasons: list[ NhlSkaterSeason ] = []
+
+   for lag in range( RecencyDecayFitter.WINDOW ):
+      values = [ 0.0 ] * ( RecencyDecayFitter.WINDOW + 1 )
+      current = 10.0 * ( lag + 1 )
+      values[ RecencyDecayFitter.WINDOW ] = current
+      values[ RecencyDecayFitter.WINDOW - 1 ] = current
+
+      if lag:
+         values[ RecencyDecayFitter.WINDOW - 1 - lag ] = 5.0
+
+      seasons.extend( _run( lag + 1, values ) )
+
+   assert RecencyDecayFitter.fit( seasons ) == [
+      RecencyWeight( lag, 1.0 if lag == Position.FIRST else 0.0 )
       for lag in range( RecencyDecayFitter.WINDOW )
    ]
-   total = sum( raw )
-   assert RecencyDecayFitter.weights( decay ) == [
-      RecencyWeight( lag=lag, weight=raw[ lag ] / total )
+
+
+def Test_Fit_TestMeanOfWindow_ExpectEqualWeights() -> None:
+   seasons: list[ NhlSkaterSeason ] = []
+
+   for lag in range( RecencyDecayFitter.WINDOW ):
+      values = [ 0.0 ] * ( RecencyDecayFitter.WINDOW + 1 )
+      values[ RecencyDecayFitter.WINDOW ] = 1.0
+      values[ RecencyDecayFitter.WINDOW - 1 - lag ] = float(
+         RecencyDecayFitter.WINDOW )
+      seasons.extend( _run( lag + 1, values ) )
+
+   weight = 1.0 / RecencyDecayFitter.WINDOW
+   assert RecencyDecayFitter.fit( seasons ) == [
+      RecencyWeight( lag, weight )
       for lag in range( RecencyDecayFitter.WINDOW )
    ]
-
-
-def Test_Fit_TestLastYearMatches_ExpectZeroDecay() -> None:
-   seasons = [
-      _season( 1, 20202021, 10.0, 10.0 ),
-      _season( 1, 20212022, 80.0, 80.0 ),
-      _season( 1, 20222023, 80.0, 80.0 ),
-   ]
-   assert RecencyDecayFitter.fit( seasons ) == 0.0
-
-
-def Test_Fit_TestMeanOfWindow_ExpectFullDecay() -> None:
-   seasons = [
-      _season( 1, 20182019, 70.0, 70.0 ),
-      _season( 1, 20192020, 70.0, 70.0 ),
-      _season( 1, 20202021, 70.0, 70.0 ),
-      _season( 1, 20212022, 10.0, 10.0 ),
-      _season( 1, 20222023, 55.0, 55.0 ),
-   ]
-   assert RecencyDecayFitter.fit( seasons ) == 1.0

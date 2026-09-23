@@ -37,7 +37,8 @@ jobs:
           name: skaters
           path: |
             data/processed/skaters.sqlite
-            data/processed/recency_weights.json
+            data/processed/scoring_weights.json
+            data/processed/availability_weights.json
             data/processed/aging_factors.json
             data/processed/league_factors.json
             data/processed/team_factors.json

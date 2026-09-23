@@ -6,11 +6,12 @@ from pathlib import Path
 import pytest
 
 from api.aging_factor_store import AgingFactorStore
+from api.availability_weight_store import AvailabilityWeightStore
 from api.github_cli_result import GithubCliResult
 import api.ingest_artifact_puller as ingest_artifact_puller
 from api.ingest_artifact_puller import IngestArtifactPuller
 from api.league_factor_store import LeagueFactorStore
-from api.recency_weight_store import RecencyWeightStore
+from api.scoring_weight_store import ScoringWeightStore
 from api.shared.enums.position import Position
 from api.team_factor_store import TeamFactorStore
 
@@ -40,10 +41,14 @@ def _write_artifact( root: Path ) -> None:
    db_path.write_bytes( b'sqlite' )
    raw_path.mkdir( parents=True, exist_ok=True )
    ( raw_path / 'seasons.json' ).write_text( '[]' )
-   weights_path = root / RecencyWeightStore.path().relative_to(
+   weights_path = root / ScoringWeightStore.path().relative_to(
       ingest_artifact_puller.Paths.ROOT )
    weights_path.parent.mkdir( parents=True, exist_ok=True )
    weights_path.write_text( '[]' )
+   availability_path = root / AvailabilityWeightStore.path().relative_to(
+      ingest_artifact_puller.Paths.ROOT )
+   availability_path.parent.mkdir( parents=True, exist_ok=True )
+   availability_path.write_text( '[]' )
    aging_path = root / AgingFactorStore.path().relative_to(
       ingest_artifact_puller.Paths.ROOT )
    aging_path.parent.mkdir( parents=True, exist_ok=True )
@@ -101,7 +106,8 @@ def Test_Install_TestArtifactTree_ExpectCopiedDbAndRaw(
    IngestArtifactPuller.install( artifact_root )
    assert ingest_artifact_puller.Paths.DB_PATH.read_bytes() == b'sqlite'
    assert ( ingest_artifact_puller.Paths.RAW_DIR / 'seasons.json' ).read_text() == '[]'
-   assert RecencyWeightStore.path().read_text() == '[]'
+   assert ScoringWeightStore.path().read_text() == '[]'
+   assert AvailabilityWeightStore.path().read_text() == '[]'
    assert AgingFactorStore.path().read_text() == '[]'
    assert LeagueFactorStore.path().read_text() == '[]'
    assert TeamFactorStore.path().read_text() == '[]'

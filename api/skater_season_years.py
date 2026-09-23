@@ -8,14 +8,25 @@ class SkaterSeasonYears():
    @classmethod
    def by_player(
          cls,
-         seasons: list[ NhlSkaterSeason ] ) -> dict[ int, dict[ int, NhlSkaterSeason ] ]:
-      by_player: dict[ int, dict[ int, NhlSkaterSeason ] ] = {}
+         seasons: list[ NhlSkaterSeason ] ) -> dict[ int, list[ NhlSkaterSeason ] ]:
+      by_player: dict[ int, list[ NhlSkaterSeason ] ] = {}
 
       for season in seasons:
-         years = by_player.setdefault( season.player_id, {} )
-         years[ Season.start_year( season.season_id ) ] = season
+         by_player.setdefault( season.player_id, [] ).append( season )
 
       return by_player
+
+
+   @classmethod
+   def at_year(
+         cls,
+         seasons: list[ NhlSkaterSeason ],
+         year: int ) -> NhlSkaterSeason | None:
+      for season in seasons:
+         if Season.start_year( season.season_id ) == year:
+            return season
+
+      return None
 
 
    @classmethod
@@ -24,9 +35,11 @@ class SkaterSeasonYears():
          seasons: list[ NhlSkaterSeason ] ) -> list[ tuple[ NhlSkaterSeason, NhlSkaterSeason ] ]:
       pairs: list[ tuple[ NhlSkaterSeason, NhlSkaterSeason ] ] = []
 
-      for years in cls.by_player( seasons ).values():
-         for year, current in sorted( years.items() ):
-            following = years.get( year + 1 )
+      for player_seasons in cls.by_player( seasons ).values():
+         for current in player_seasons:
+            following = cls.at_year(
+               player_seasons,
+               Season.start_year( current.season_id ) + 1 )
 
             if following is None:
                continue

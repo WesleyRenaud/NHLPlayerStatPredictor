@@ -8,9 +8,12 @@ import pytest
 from api.aging_curve_fitter import AgingCurveFitter
 from api.aging_factor import AgingFactor
 from api.aging_factor_store import AgingFactorStore
+from api.availability_decay_fitter import AvailabilityDecayFitter
+from api.availability_weight_store import AvailabilityWeightStore
 from api.league_factor import LeagueFactor
 from api.league_factor_fitter import LeagueFactorFitter
 from api.league_factor_store import LeagueFactorStore
+from api.nhl_only_season_filter import NhlOnlySeasonFilter
 from api.nhl_skater_season import NhlSkaterSeason
 from api.paths import Paths
 from api.player_status import PlayerStatus
@@ -19,8 +22,8 @@ from api.projections.previous_season_nhl_skater import PreviousSeasonNhlSkater
 from api.projections.season_pace import SeasonPace
 from api.recency_decay_fitter import RecencyDecayFitter
 from api.recency_weight import RecencyWeight
-from api.recency_weight_store import RecencyWeightStore
 from api.roster_skater import RosterSkater
+from api.scoring_weight_store import ScoringWeightStore
 from api.season_length import SeasonLength
 from api.shared.enums.position import Position
 from api.skater_bio import SkaterBio
@@ -33,9 +36,14 @@ from api.team_factor import TeamFactor
 from api.team_factor_store import TeamFactorStore
 
 
-def _season( season_id: int, p_pace: float ) -> NhlSkaterSeason:
+def _season(
+      season_id: int,
+      p_pace: float,
+      gp_share: float,
+      player_id: int = 1 ) -> NhlSkaterSeason:
+   half = p_pace / 2.0
    return NhlSkaterSeason(
-      player_id=1,
+      player_id=player_id,
       season_id=season_id,
       player_name='Stub Skater',
       position=list( SkaterPosition )[ Position.FIRST ],
@@ -48,10 +56,10 @@ def _season( season_id: int, p_pace: float ) -> NhlSkaterSeason:
       points=0,
       schedule_games=1,
       pace_games=1,
-      g_pace=0.0,
-      a_pace=0.0,
+      g_pace=half,
+      a_pace=half,
       p_pace=p_pace,
-      gp_share=1.0 )
+      gp_share=gp_share )
 
 
 def Test_BuildRows_TestRegularSeason_ExpectPacedTotals() -> None:
@@ -129,7 +137,25 @@ def Test_Seasons_TestBeforeFirstSeason_ExpectExcluded(
 def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       monkeypatch: pytest.MonkeyPatch,
       tmp_path: Path ) -> None:
-   rows = [ _season( 20202021, 50.0 ), _season( 20212022, 80.0 ) ]
+   rows: list[ NhlSkaterSeason ] = []
+
+   for lag in range( AvailabilityDecayFitter.WINDOW ):
+      shares = [ 0.0 ] * ( AvailabilityDecayFitter.WINDOW + 1 )
+      current = 0.10 * ( lag + 1 )
+      shares[ AvailabilityDecayFitter.WINDOW ] = current
+      shares[ AvailabilityDecayFitter.WINDOW - 1 ] = current
+
+      if lag:
+         shares[ AvailabilityDecayFitter.WINDOW - 1 - lag ] = 0.05
+
+      for offset, share in enumerate( shares ):
+         year = 2010 + offset
+         rows.append(
+            _season(
+               year * 10000 + year + 1,
+               20.0 + lag * 8.0 + offset * 3.0,
+               share,
+               lag + 1 ) )
    db_path = tmp_path / 'skaters.sqlite'
    inserted: list[ tuple[ list[ NhlSkaterSeason ], str ] ] = []
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
@@ -172,10 +198,11 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       lambda player_ids, force=False: (
          fetched.append( player_ids )
          or { 1: landing, 2: roster_landing } ) )
+   other_rows = []
    monkeypatch.setattr(
       skater_season_ingester.OtherLeagueSeasonIngester,
       'build_rows',
-      lambda player_ids, landings, seasons, pace_games: [] )
+      lambda player_ids, landings, seasons, pace_games: other_rows )
    monkeypatch.setattr(
       skater_season_ingester.OtherLeagueSeasonStore,
       'insert_rows',
@@ -242,17 +269,20 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    SkaterSeasonIngester.main()
    assert inserted == [ ( rows, str( db_path ) ) ]
    assert roster_inserted == [ ( roster_rows, str( db_path ) ) ]
-   assert fetched == [ [ 1, 2 ] ]
+   assert fetched == [ list( range( 1, AvailabilityDecayFitter.WINDOW + 1 ) ) ]
    assert statuses == [
       ( [ PlayerStatus( 1, True ), PlayerStatus( 2, True ) ], str( db_path ) )
    ]
-   weights = RecencyDecayFitter.weights( RecencyDecayFitter.fit( rows ) )
-   assert RecencyWeightStore.read() == weights
-   aging_factors = AgingCurveFitter.fit( rows, [] )
+   weights = RecencyDecayFitter.fit( rows )
+   assert ScoringWeightStore.read() == weights
+   availability_weights = AvailabilityDecayFitter.fit(
+      NhlOnlySeasonFilter.keep( rows, other_rows ) )
+   assert AvailabilityWeightStore.read() == availability_weights
+   aging_factors = AgingCurveFitter.fit( rows, other_rows )
    assert AgingFactorStore.read() == aging_factors
    league_factors = LeagueFactorFitter.fit(
       rows,
-      [],
+      other_rows,
       aging_factors )
    assert LeagueFactorStore.read() == league_factors
    assert TeamFactorStore.read() == team_factors

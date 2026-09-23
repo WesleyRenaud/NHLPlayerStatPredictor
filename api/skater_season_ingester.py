@@ -4,10 +4,13 @@ from concurrent.futures import ThreadPoolExecutor
 
 from .aging_curve_fitter import AgingCurveFitter
 from .aging_factor_store import AgingFactorStore
+from .availability_decay_fitter import AvailabilityDecayFitter
+from .availability_weight_store import AvailabilityWeightStore
 from .config import Config
 from .league_factor_fitter import LeagueFactorFitter
 from .league_factor_store import LeagueFactorStore
 from .nhl_client import NhlClient
+from .nhl_only_season_filter import NhlOnlySeasonFilter
 from .nhl_skater_season import NhlSkaterSeason
 from .nhl_team_split_builder import NhlTeamSplitBuilder
 from .other_league_season_ingester import OtherLeagueSeasonIngester
@@ -19,10 +22,10 @@ from .player_status_store import PlayerStatusStore
 from .projections.baseline_roster_pace_builder import BaselineRosterPaceBuilder
 from .recency_decay_fitter import RecencyDecayFitter
 from .recency_target_resolver import RecencyTargetResolver
-from .recency_weight_store import RecencyWeightStore
 from .roster_skater import RosterSkater
 from .roster_skater_ingester import RosterSkaterIngester
 from .roster_skater_store import RosterSkaterStore
+from .scoring_weight_store import ScoringWeightStore
 from .season import Season
 from .season_length import SeasonLength
 from .skater_bio import SkaterBio
@@ -54,8 +57,11 @@ class SkaterSeasonIngester():
       PlayerStatusStore.insert_rows(
          PlayerStatusBuilder.build_all( player_ids, landings ),
          str( Paths.DB_PATH ) )
-      weights = RecencyDecayFitter.weights( RecencyDecayFitter.fit( rows ) )
-      RecencyWeightStore.write( weights )
+      weights = RecencyDecayFitter.fit( rows )
+      ScoringWeightStore.write( weights )
+      AvailabilityWeightStore.write(
+         AvailabilityDecayFitter.fit(
+            NhlOnlySeasonFilter.keep( rows, other_rows ) ) )
       aging_factors = AgingCurveFitter.fit( rows, other_rows )
       AgingFactorStore.write( aging_factors )
       league_factors = LeagueFactorFitter.fit( rows, other_rows, aging_factors )

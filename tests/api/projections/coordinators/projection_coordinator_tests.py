@@ -89,7 +89,7 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
       'seasons_for_player_id',
       lambda requested_id, path: captured.append( ( requested_id, path ) ) or seasons )
    monkeypatch.setattr(
-      projection_coordinator.RecencyWeightStore,
+      projection_coordinator.ScoringWeightStore,
       'read',
       lambda: weights )
    monkeypatch.setattr(
@@ -145,7 +145,7 @@ def Test_GetProjection_TestMissingPace_ExpectNone(
       'seasons_for_player_id',
       lambda requested_id, path: [] )
    monkeypatch.setattr(
-      projection_coordinator.RecencyWeightStore,
+      projection_coordinator.ScoringWeightStore,
       'read',
       lambda: [] )
    monkeypatch.setattr(
@@ -207,7 +207,7 @@ def Test_GetProjection_TestTeamFactor_ExpectScaledProjection(
       'seasons_for_player_id',
       lambda requested_id, path: seasons )
    monkeypatch.setattr(
-      projection_coordinator.RecencyWeightStore,
+      projection_coordinator.ScoringWeightStore,
       'read',
       lambda: weights )
    monkeypatch.setattr(
@@ -292,7 +292,7 @@ def Test_GetProjection_TestPlayerInLineup_ExpectMateScaledProjection(
       'seasons_for_player_id',
       lambda requested_id, path: seasons )
    monkeypatch.setattr(
-      projection_coordinator.RecencyWeightStore,
+      projection_coordinator.ScoringWeightStore,
       'read',
       lambda: weights )
    monkeypatch.setattr(
