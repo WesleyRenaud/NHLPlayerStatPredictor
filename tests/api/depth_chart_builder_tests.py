@@ -113,7 +113,8 @@ def Test_Build_TestHalfAvailable_ExpectMoreThanHealthyShare() -> None:
       [ SlotAverage( 7, 15.0, 2.0, 12.0 ) ],
       DepthGroup.defense(),
       Position.SECOND )
-   assert chart.regulars[ Position.FIRST ][ Position.LAST ] > 20.0
+   assert chart.regulars[ Position.FIRST ][ Position.LAST ] > (
+      DepthGroup.DEFENSE_ICE_MINUTES / NhlLineupSelector.DRESSED_DEFENSE )
    assert chart.skater_group is SkaterGroup.DEFENSE
 
 

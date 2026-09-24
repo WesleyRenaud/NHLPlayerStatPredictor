@@ -14,7 +14,7 @@ from .team import Team
 @dataclass( frozen=True )
 class DepthGroup():
    FORWARD_ICE_MINUTES: ClassVar[ float ] = 180.0
-   DEFENSE_ICE_MINUTES: ClassVar[ float ] = 120.0
+   DEFENSE_ICE_MINUTES: ClassVar[ float ] = 117.0
 
 
    dressed_count: int
