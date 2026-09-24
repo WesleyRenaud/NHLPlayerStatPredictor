@@ -8,6 +8,7 @@ import pytest
 from api.depth_chart_recorder import DepthChartRecorder
 from api.depth_chart_store import DepthChartStore
 from api.depth_group import DepthGroup
+from api.games_share import GamesShare
 from api.paths import Paths
 from api.recency_target_resolver import RecencyTargetResolver
 from api.roster_skater import RosterSkater
@@ -18,6 +19,8 @@ from api.skater_group import SkaterGroup
 from api.skater_position import SkaterPosition
 from api.slot_average import SlotAverage
 from api.slot_average_store import SlotAverageStore
+from api.slot_chosen_share import SlotChosenShare
+from api.slot_chosen_share_store import SlotChosenShareStore
 from api.team import Team
 
 
@@ -34,6 +37,18 @@ def _write_slots() -> None:
          SlotAverage( DepthGroup.forwards().spare_slot, 10.0, 1.0, 8.0 ),
          SlotAverage( DepthGroup.defense().spare_slot, 15.0, 2.0, 12.0 ),
       ] )
+   shares = []
+
+   for group in ( DepthGroup.forwards(), DepthGroup.defense() ):
+      for slot in range( 1, group.dressed_count + 1 ):
+         shares.append(
+            SlotChosenShare(
+               slot,
+               group.skater_group,
+               GamesShare.FULL,
+               GamesShare.FULL ) )
+
+   SlotChosenShareStore.write( shares )
 
 
 def Test_Record_TestRosterAndUsage_ExpectStoredChart(

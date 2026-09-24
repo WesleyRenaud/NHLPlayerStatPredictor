@@ -21,6 +21,8 @@ from .skater_season_provider import SkaterSeasonProvider
 from .skater_season_years import SkaterSeasonYears
 from .slot_average import SlotAverage
 from .slot_average_store import SlotAverageStore
+from .slot_chosen_share import SlotChosenShare
+from .slot_chosen_share_store import SlotChosenShareStore
 from .team import Team
 
 
@@ -44,6 +46,7 @@ class DepthChartRecorder():
       roster = RosterSkaterIngester.build_rows( force=force )
       availabilities = cls._availabilities( roster )
       slot_averages = SlotAverageStore.read()
+      chosen_shares = SlotChosenShareStore.read()
       charts = []
 
       for team in cls._teams( roster ):
@@ -54,6 +57,7 @@ class DepthChartRecorder():
                ice_usages,
                availabilities,
                slot_averages,
+               chosen_shares,
                pace_games ) )
 
       return charts
@@ -67,6 +71,7 @@ class DepthChartRecorder():
          ice_usages: dict[ int, IceUsage ],
          availabilities: dict[ int, float ],
          slot_averages: list[ SlotAverage ],
+         chosen_shares: list[ SlotChosenShare ],
          pace_games: int ) -> list[ DepthChart ]:
       charts = []
 
@@ -82,6 +87,7 @@ class DepthChartRecorder():
                   ice_usages,
                   availabilities ),
                slot_averages,
+               chosen_shares,
                group,
                pace_games ) )
 
