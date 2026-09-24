@@ -15,6 +15,7 @@ from .scoring_weight_store import ScoringWeightStore
 from .shared.enums.position import Position
 from .skater_ice_store import SkaterIceStore
 from .slot_average_store import SlotAverageStore
+from .slot_chosen_share_store import SlotChosenShareStore
 from .team_factor_store import TeamFactorStore
 
 
@@ -56,6 +57,7 @@ class IngestArtifactPuller():
       shutil.copy2( cls._source_charts( artifact_root ), DepthChartStore.path() )
       shutil.copy2( cls._source_slots( artifact_root ), SlotAverageStore.path() )
       shutil.copy2( cls._source_ice( artifact_root ), SkaterIceStore.path() )
+      shutil.copy2( cls._source_chosen( artifact_root ), SlotChosenShareStore.path() )
 
       if Paths.RAW_DIR.exists():
          shutil.rmtree( Paths.RAW_DIR )
@@ -84,7 +86,8 @@ class IngestArtifactPuller():
                or not cls._source_teams( artifact_root ).is_file()
                or not cls._source_charts( artifact_root ).is_file()
                or not cls._source_slots( artifact_root ).is_file()
-               or not cls._source_ice( artifact_root ).is_file() ):
+               or not cls._source_ice( artifact_root ).is_file()
+               or not cls._source_chosen( artifact_root ).is_file() ):
             return False
 
          cls.install( artifact_root )
@@ -220,6 +223,11 @@ class IngestArtifactPuller():
    @classmethod
    def _source_slots( cls, artifact_root: Path ) -> Path:
       return artifact_root / SlotAverageStore.path().relative_to( Paths.ROOT )
+
+
+   @classmethod
+   def _source_chosen( cls, artifact_root: Path ) -> Path:
+      return artifact_root / SlotChosenShareStore.path().relative_to( Paths.ROOT )
 
 
    @classmethod

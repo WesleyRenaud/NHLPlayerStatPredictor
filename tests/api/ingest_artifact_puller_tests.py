@@ -16,6 +16,7 @@ from api.scoring_weight_store import ScoringWeightStore
 from api.shared.enums.position import Position
 from api.skater_ice_store import SkaterIceStore
 from api.slot_average_store import SlotAverageStore
+from api.slot_chosen_share_store import SlotChosenShareStore
 from api.team_factor_store import TeamFactorStore
 
 
@@ -76,6 +77,10 @@ def _write_artifact( root: Path ) -> None:
       ingest_artifact_puller.Paths.ROOT )
    ice_path.parent.mkdir( parents=True, exist_ok=True )
    ice_path.write_text( '[]' )
+   chosen_path = root / SlotChosenShareStore.path().relative_to(
+      ingest_artifact_puller.Paths.ROOT )
+   chosen_path.parent.mkdir( parents=True, exist_ok=True )
+   chosen_path.write_text( '[]' )
 
 
 def Test_ListedRunId_TestRuns_ExpectFirstId( monkeypatch: pytest.MonkeyPatch ) -> None:
@@ -128,6 +133,7 @@ def Test_Install_TestArtifactTree_ExpectCopiedDbAndRaw(
    assert TeamFactorStore.path().read_text() == '[]'
    assert DepthChartStore.path().read_text() == '[]'
    assert SlotAverageStore.path().read_text() == '[]'
+   assert SlotChosenShareStore.path().read_text() == '[]'
 
 
 def Test_ArtifactRoot_TestNestedArtifactDir_ExpectNested(
