@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from api.depth_chart_builder import DepthChartBuilder
 from api.depth_group import DepthGroup
+from api.games_share import GamesShare
 from api.ice_skater import IceSkater
 from api.projections.nhl_lineup_selector import NhlLineupSelector
 from api.shared.enums.position import Position
 from api.skater_group import SkaterGroup
 from api.skater_position import SkaterPosition
 from api.slot_average import SlotAverage
+from api.slot_chosen_share import SlotChosenShare
 from api.slot_filler import SlotFiller
 from api.team import Team
 
@@ -23,6 +25,17 @@ def _skater(
       implied,
       implied,
       1.0 )
+
+
+def _chosen( group: DepthGroup ) -> list[ SlotChosenShare ]:
+   return [
+      SlotChosenShare(
+         slot,
+         group.skater_group,
+         GamesShare.FULL,
+         GamesShare.FULL )
+      for slot in range( 1, group.dressed_count + 1 )
+   ]
 
 
 def Test_Build_TestSevenRegulars_ExpectSixAndPie() -> None:
@@ -41,6 +54,7 @@ def Test_Build_TestSevenRegulars_ExpectSixAndPie() -> None:
          _skater( 8, 11.0 ),
       ],
       [],
+      _chosen( DepthGroup.defense() ),
       DepthGroup.defense(),
       pace_games )
    assert chart.team == team
@@ -69,6 +83,7 @@ def Test_Build_TestLowGamesHighToi_ExpectRegular() -> None:
          _skater( 6, 15.0 ),
       ],
       [],
+      _chosen( DepthGroup.defense() ),
       DepthGroup.defense(),
       Position.SECOND )
    assert chart.regulars[ Position.FIRST ][ Position.FIRST ].player_id == 9
@@ -88,6 +103,7 @@ def Test_Build_TestSixRegulars_ExpectLeagueSeventh() -> None:
          _skater( 6, 15.0 ),
       ],
       slot_averages,
+      _chosen( DepthGroup.defense() ),
       DepthGroup.defense(),
       Position.SECOND )
    extra = chart.extras[ Position.FIRST ]
@@ -111,6 +127,7 @@ def Test_Build_TestHalfAvailable_ExpectMoreThanHealthyShare() -> None:
          for player_id in range( 1, 7 )
       ],
       [ SlotAverage( 7, 15.0, 2.0, 12.0 ) ],
+      _chosen( DepthGroup.defense() ),
       DepthGroup.defense(),
       Position.SECOND )
    assert chart.regulars[ Position.FIRST ][ Position.LAST ] > (
@@ -124,6 +141,7 @@ def Test_Build_TestTwelveForwards_ExpectForwardPie() -> None:
       team,
       [ _skater( index, 15.0 ) for index in range( 1, NhlLineupSelector.DRESSED_FORWARDS + 1 ) ],
       [ SlotAverage( 13, 10.0, 1.0, 8.0 ) ],
+      _chosen( DepthGroup.forwards() ),
       DepthGroup.forwards(),
       Position.SECOND )
    assert chart.skater_group is SkaterGroup.FORWARD
@@ -149,6 +167,75 @@ def Test_Build_TestForwardHalfAvailable_ExpectMoreThanHealthyShare() -> None:
          for player_id in range( 1, NhlLineupSelector.DRESSED_FORWARDS + 1 )
       ],
       [ SlotAverage( 13, 10.0, 1.0, 8.0 ) ],
+      _chosen( DepthGroup.forwards() ),
       DepthGroup.forwards(),
       Position.SECOND )
    assert chart.regulars[ Position.FIRST ][ Position.LAST ] > 15.0
+
+
+def Test_Build_TestBottomChosen_ExpectRegularScaledAndExtraFull() -> None:
+   group = DepthGroup.defense()
+   shares = _chosen( group )
+   shares[ Position.LAST ] = SlotChosenShare(
+      group.dressed_count,
+      group.skater_group,
+      0.5,
+      0.5 )
+   chart = DepthChartBuilder.build(
+      list( Team )[ Position.FIRST ],
+      [
+         _skater( 1, 26.0 ),
+         _skater( 2, 24.0 ),
+         _skater( 3, 20.0 ),
+         _skater( 4, 19.0 ),
+         _skater( 5, 16.0 ),
+         _skater( 6, 15.0 ),
+         _skater( 7, 12.0 ),
+      ],
+      [],
+      shares,
+      group,
+      Position.SECOND )
+   by_id = {
+      skater.player_id: skater.availability
+      for skater, _toi in chart.regulars
+   }
+   assert by_id[ 1 ] == GamesShare.FULL
+   assert by_id[ 6 ] == 0.5
+   assert chart.extras[ Position.FIRST ].availability == GamesShare.FULL
+
+
+def Test_Build_TestBottomChosen_ExpectTopGetsMore() -> None:
+   group = DepthGroup.defense()
+   skaters = [
+      _skater( 1, 26.0 ),
+      _skater( 2, 24.0 ),
+      _skater( 3, 20.0 ),
+      _skater( 4, 19.0 ),
+      _skater( 5, 16.0 ),
+      _skater( 6, 15.0 ),
+      _skater( 7, 12.0 ),
+   ]
+   team = list( Team )[ Position.FIRST ]
+   full = DepthChartBuilder.build(
+      team,
+      skaters,
+      [],
+      _chosen( group ),
+      group,
+      Position.SECOND )
+   shares = _chosen( group )
+   shares[ Position.LAST ] = SlotChosenShare(
+      group.dressed_count,
+      group.skater_group,
+      0.5,
+      0.5 )
+   scratched = DepthChartBuilder.build(
+      team,
+      skaters,
+      [],
+      shares,
+      group,
+      Position.SECOND )
+   assert scratched.regulars[ Position.FIRST ][ Position.LAST ] > (
+      full.regulars[ Position.FIRST ][ Position.LAST ] )
