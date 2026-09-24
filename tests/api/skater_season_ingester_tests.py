@@ -221,6 +221,14 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       lambda seasons: 84 )
    previous_season_id = 20212022
    current_season = 20222023
+   monkeypatch.setattr(
+      skater_season_ingester.Season,
+      'prior',
+      lambda seasons: SeasonLength(
+         previous_season_id,
+         82,
+         date( 2021, 10, 12 ),
+         date( 2022, 4, 29 ) ) )
    team_factors = [
       TeamFactor(
          previous_season_id,
@@ -246,7 +254,9 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       int,
       int,
       list[ PreviousSeasonNhlSkater ],
-      list[ CurrentSeasonNhlSkater ] ] ] = []
+      list[ CurrentSeasonNhlSkater ],
+      object,
+      object ] ] = []
    monkeypatch.setattr(
       skater_season_ingester.RecencyTargetResolver,
       'prior',
@@ -262,10 +272,44 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
          ( roster, seasons, recency_weights, target, leagues, aging ) )
       or roster_paces )
    monkeypatch.setattr(
+      skater_season_ingester.NhlClient,
+      'skater_timeonice',
+      lambda season_id, force=False: [] )
+   monkeypatch.setattr(
       skater_season_ingester.TeamFactorFitter,
       'fit',
-      lambda current, previous, splits, paces: fitted.append(
-         ( current, previous, splits, paces ) ) or team_factors )
+      lambda current, previous, splits, paces, season_length, slots=None, charts=None,
+            usages=None, ice=None, availabilities=None: fitted.append(
+         (
+            current,
+            previous,
+            splits,
+            paces,
+            season_length,
+            slots,
+            charts,
+            usages ) ) or team_factors )
+   recorded: list[ bool ] = []
+   monkeypatch.setattr(
+      skater_season_ingester.DepthChartRecorder,
+      'record',
+      lambda force=False, season_length=None, pace_games=None: recorded.append( force ) or [] )
+   monkeypatch.setattr(
+      skater_season_ingester.DepthChartStore,
+      'write',
+      lambda charts: None )
+   monkeypatch.setattr(
+      skater_season_ingester.SkaterIceRecorder,
+      'record',
+      lambda charts: [] )
+   monkeypatch.setattr(
+      skater_season_ingester.SkaterIceStore,
+      'write',
+      lambda rows: None )
+   monkeypatch.setattr(
+      skater_season_ingester.DepthChartRecorder,
+      '_availabilities',
+      lambda roster: {} )
    SkaterSeasonIngester.main()
    assert inserted == [ ( rows, str( db_path ) ) ]
    assert roster_inserted == [ ( roster_rows, str( db_path ) ) ]
@@ -300,5 +344,10 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
          current_season,
          previous_season_id,
          [],
-         roster_paces )
+         roster_paces,
+         82,
+         [],
+         [],
+         {} )
    ]
+   assert recorded == [ False ]

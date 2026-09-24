@@ -79,3 +79,15 @@ def Test_SeasonsForSeasonId_TestMixedSeasons_ExpectMatchingYear( tmp_path: Path 
    SkaterSeasonStore.insert_rows( [ matching, other ], db_path=db_path )
    rows = SkaterSeasonProvider.seasons_for_season_id( wanted, db_path )
    assert rows == [ matching ]
+
+
+def Test_SeasonsForPlayerIds_TestMixedPlayers_ExpectRequested(
+      tmp_path: Path ) -> None:
+   db_path = str( tmp_path / 'skaters.sqlite' )
+   wanted = _season( 1, 20252026 )
+   other = _season( 2, 20252026 )
+   SkaterSeasonStore.insert_rows( [ wanted, other ], db_path=db_path )
+   rows = SkaterSeasonProvider.seasons_for_player_ids(
+      [ wanted.player_id ],
+      db_path )
+   assert rows == [ wanted ]

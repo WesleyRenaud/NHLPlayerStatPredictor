@@ -34,7 +34,7 @@ class TeamEnvironmentResolver():
          paces: list[ PreviousSeasonSkater ],
          club_ids: set[ int ] ) -> float:
       return TeamQualityCalculator.average(
-         cls._mates( player_id, paces, club_ids ) )
+         cls._teammates( player_id, paces, club_ids ) )
 
 
    @classmethod
@@ -72,7 +72,7 @@ class TeamEnvironmentResolver():
 
 
    @classmethod
-   def _mates(
+   def _teammates(
          cls,
          player_id: int,
          paces: list[ PreviousSeasonSkater ],

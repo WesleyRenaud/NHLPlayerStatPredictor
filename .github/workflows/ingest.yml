@@ -42,6 +42,9 @@ jobs:
             data/processed/aging_factors.json
             data/processed/league_factors.json
             data/processed/team_factors.json
+            data/processed/depth_charts.json
+            data/processed/slot_averages.json
+            data/processed/skater_ice.json
             data/raw
           if-no-files-found: error
           retention-days: 14

@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+from .depth_chart import DepthChart
+from .ice_usage import IceUsage
 from .projections.current_season_nhl_skater import CurrentSeasonNhlSkater
-from .projections.nhl_lineup_selector import NhlLineupSelector
 from .projections.previous_season_nhl_skater import PreviousSeasonNhlSkater
 from .projections.team_lineup import TeamLineup
+from .skater_group import SkaterGroup
+from .skater_ice import SkaterIce
+from .slot_average import SlotAverage
+from .team import Team
 from .team_factor import TeamFactor
-from .team_factor_skater import TeamFactorSkater
+from .team_factor_current_builder import TeamFactorCurrentBuilder
+from .team_factor_previous_builder import TeamFactorPreviousBuilder
 
 
 class TeamFactorFitter():
@@ -15,35 +21,100 @@ class TeamFactorFitter():
          current_season: int,
          previous_season_id: int,
          nhl_splits: list[ PreviousSeasonNhlSkater ],
-         roster_paces: list[ CurrentSeasonNhlSkater ] ) -> list[ TeamFactor ]:
+         roster_paces: list[ CurrentSeasonNhlSkater ],
+         season_length: int,
+         slots: list[ SlotAverage ] | None = None,
+         charts: list[ DepthChart ] | None = None,
+         usages: dict[ int, IceUsage ] | None = None,
+         ice: dict[ int, SkaterIce ] | None = None,
+         availabilities: dict[ int, float ] | None = None ) -> list[ TeamFactor ]:
+      fills = slots or []
+      by_chart = {
+         ( chart.team, chart.skater_group ): chart
+         for chart in charts or []
+      }
+      ice_usages = usages or {}
       return sorted(
          [
-            *cls._factors(
+            *cls._previous(
                previous_season_id,
-               TeamLineup.group( nhl_splits ) ),
-            *cls._factors(
+               nhl_splits,
+               fills,
+               ice_usages,
+               season_length ),
+            *cls._current(
                current_season,
-               NhlLineupSelector.select( roster_paces ) ),
+               roster_paces,
+               fills,
+               by_chart,
+               ice_usages,
+               season_length,
+               ice or {},
+               availabilities or {} ),
          ],
          key=lambda factor: ( factor.season, factor.team.value ) )
 
 
    @classmethod
-   def _factors(
+   def _previous(
          cls,
          season: int,
-         lineups: list[ TeamLineup ] ) -> list[ TeamFactor ]:
-      if not lineups:
-         return []
+         splits: list[ PreviousSeasonNhlSkater ],
+         slots: list[ SlotAverage ],
+         usages: dict[ int, IceUsage ],
+         season_length: int ) -> list[ TeamFactor ]:
+      return cls._rated(
+         [
+            TeamFactor(
+               season,
+               group.team,
+               0.0,
+               TeamFactorPreviousBuilder.build(
+                  group,
+                  slots,
+                  usages,
+                  season_length ) )
+            for group in TeamLineup.group( splits )
+         ] )
 
-      league = sum( lineup.total() for lineup in lineups ) / len( lineups )
+
+   @classmethod
+   def _current(
+         cls,
+         season: int,
+         roster_paces: list[ CurrentSeasonNhlSkater ],
+         slots: list[ SlotAverage ],
+         charts: dict[ tuple[ Team, SkaterGroup ], DepthChart ],
+         usages: dict[ int, IceUsage ],
+         season_length: int,
+         ice: dict[ int, SkaterIce ],
+         availabilities: dict[ int, float ] ) -> list[ TeamFactor ]:
+      return cls._rated(
+         [
+            TeamFactor(
+               season,
+               lineup.team,
+               0.0,
+               TeamFactorCurrentBuilder.build(
+                  lineup,
+                  slots,
+                  charts,
+                  usages,
+                  season_length,
+                  ice,
+                  availabilities ) )
+            for lineup in TeamLineup.group( roster_paces )
+         ] )
+
+
+   @classmethod
+   def _rated( cls, factors: list[ TeamFactor ] ) -> list[ TeamFactor ]:
+      league = sum( factor.dressed_total() for factor in factors ) / len( factors )
       return [
          TeamFactor(
-            season,
-            lineup.team,
-            lineup.total() / league,
-            [
-               TeamFactorSkater( skater.player_id, skater.contribution )
-               for skater in lineup.skaters ] )
-         for lineup in lineups
+            factor.season,
+            factor.team,
+            factor.dressed_total() / league,
+            factor.skaters )
+         for factor in factors
       ]

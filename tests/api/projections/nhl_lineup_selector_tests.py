@@ -103,3 +103,17 @@ def Test_Select_TestSweaterPoints_ExpectGamesWeightedRank() -> None:
    assert NhlLineupSelector.select( [ injured, regular ] ) == [
       TeamLineup( team, [ regular, injured ] ),
    ]
+
+
+def Test_Forwards_TestExcess_ExpectDressedForwardsOnly() -> None:
+   team = list( Team )[ Position.FIRST ]
+   forwards = [
+      _pace( player_id, team, 100.0 - player_id )
+      for player_id in range( 1, NhlLineupSelector.DRESSED_FORWARDS + 2 )
+   ]
+   defense = _pace( 50, team, 40.0, position=SkaterPosition( 'D' ) )
+   assert NhlLineupSelector.forwards( [ *forwards, defense ] ) == [
+      TeamLineup(
+         team,
+         forwards[ :NhlLineupSelector.DRESSED_FORWARDS ] ),
+   ]

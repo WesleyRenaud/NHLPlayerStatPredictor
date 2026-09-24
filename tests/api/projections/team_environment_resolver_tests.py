@@ -42,7 +42,7 @@ def _nhl(
       position=list( SkaterPosition )[ Position.FIRST ] )
 
 
-def Test_Resolve_TestCurrentRosterMates_ExpectPreviousSeasonPaceFromAnyClub() -> None:
+def Test_Resolve_TestCurrentRosterTeammates_ExpectPreviousSeasonPaceFromAnyClub() -> None:
    now = list( Team )[ Position.FIRST ]
    previous = list( Team )[ Position.SECOND ]
    elsewhere = list( Team )[ Position.THIRD ]
@@ -72,18 +72,18 @@ def Test_Resolve_TestMissingLastNhlTeam_ExpectLeagueNhlAverage() -> None:
    now = list( Team )[ Position.FIRST ]
    other = list( Team )[ Position.SECOND ]
    player_id = 1
-   mate = 2
+   teammate = 2
    outsider = 3
    roster = [
       _roster( player_id, now ),
-      _roster( mate, now ),
+      _roster( teammate, now ),
    ]
-   mate_row = _nhl( mate, other, 80.0 )
+   teammate_row = _nhl( teammate, other, 80.0 )
    outsider_row = _nhl( outsider, other, 20.0 )
    previous_season = PreviousSeasonGroup(
-      [ mate_row, outsider_row ],
+      [ teammate_row, outsider_row ],
       [ _other( player_id, 40.0 ) ] )
    environment = TeamEnvironmentResolver.resolve( player_id, roster, previous_season )
    assert environment == TeamEnvironment(
-      current_roster_quality=TeamQualityCalculator.average( [ mate_row ] ),
-      previous_roster_quality=TeamQualityCalculator.average( [ mate_row, outsider_row ] ) )
+      current_roster_quality=TeamQualityCalculator.average( [ teammate_row ] ),
+      previous_roster_quality=TeamQualityCalculator.average( [ teammate_row, outsider_row ] ) )

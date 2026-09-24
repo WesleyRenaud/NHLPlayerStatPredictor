@@ -7,12 +7,15 @@ import pytest
 
 from api.aging_factor_store import AgingFactorStore
 from api.availability_weight_store import AvailabilityWeightStore
+from api.depth_chart_store import DepthChartStore
 from api.github_cli_result import GithubCliResult
 import api.ingest_artifact_puller as ingest_artifact_puller
 from api.ingest_artifact_puller import IngestArtifactPuller
 from api.league_factor_store import LeagueFactorStore
 from api.scoring_weight_store import ScoringWeightStore
 from api.shared.enums.position import Position
+from api.skater_ice_store import SkaterIceStore
+from api.slot_average_store import SlotAverageStore
 from api.team_factor_store import TeamFactorStore
 
 
@@ -61,6 +64,18 @@ def _write_artifact( root: Path ) -> None:
       ingest_artifact_puller.Paths.ROOT )
    teams_path.parent.mkdir( parents=True, exist_ok=True )
    teams_path.write_text( '[]' )
+   charts_path = root / DepthChartStore.path().relative_to(
+      ingest_artifact_puller.Paths.ROOT )
+   charts_path.parent.mkdir( parents=True, exist_ok=True )
+   charts_path.write_text( '[]' )
+   slots_path = root / SlotAverageStore.path().relative_to(
+      ingest_artifact_puller.Paths.ROOT )
+   slots_path.parent.mkdir( parents=True, exist_ok=True )
+   slots_path.write_text( '[]' )
+   ice_path = root / SkaterIceStore.path().relative_to(
+      ingest_artifact_puller.Paths.ROOT )
+   ice_path.parent.mkdir( parents=True, exist_ok=True )
+   ice_path.write_text( '[]' )
 
 
 def Test_ListedRunId_TestRuns_ExpectFirstId( monkeypatch: pytest.MonkeyPatch ) -> None:
@@ -111,6 +126,8 @@ def Test_Install_TestArtifactTree_ExpectCopiedDbAndRaw(
    assert AgingFactorStore.path().read_text() == '[]'
    assert LeagueFactorStore.path().read_text() == '[]'
    assert TeamFactorStore.path().read_text() == '[]'
+   assert DepthChartStore.path().read_text() == '[]'
+   assert SlotAverageStore.path().read_text() == '[]'
 
 
 def Test_ArtifactRoot_TestNestedArtifactDir_ExpectNested(

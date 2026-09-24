@@ -55,6 +55,14 @@ class NhlClient():
 
 
    @classmethod
+   def skater_timeonice(
+         cls,
+         season_id: int,
+         force: bool = False ) -> Types.JsonObjectList:
+      return cls._skater_report( 'timeonice', season_id, force )
+
+
+   @classmethod
    def _skater_report(
          cls,
          report: str,

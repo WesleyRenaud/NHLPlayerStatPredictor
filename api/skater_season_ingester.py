@@ -7,6 +7,10 @@ from .aging_factor_store import AgingFactorStore
 from .availability_decay_fitter import AvailabilityDecayFitter
 from .availability_weight_store import AvailabilityWeightStore
 from .config import Config
+from .depth_chart_recorder import DepthChartRecorder
+from .depth_chart_store import DepthChartStore
+from .depth_group import DepthGroup
+from .ice_usage_parser import IceUsageParser
 from .league_factor_fitter import LeagueFactorFitter
 from .league_factor_store import LeagueFactorStore
 from .nhl_client import NhlClient
@@ -20,6 +24,7 @@ from .player_landing_fetcher import PlayerLandingFetcher
 from .player_status_builder import PlayerStatusBuilder
 from .player_status_store import PlayerStatusStore
 from .projections.baseline_roster_pace_builder import BaselineRosterPaceBuilder
+from .projections.season_pace import SeasonPace
 from .recency_decay_fitter import RecencyDecayFitter
 from .recency_target_resolver import RecencyTargetResolver
 from .roster_skater import RosterSkater
@@ -29,9 +34,13 @@ from .scoring_weight_store import ScoringWeightStore
 from .season import Season
 from .season_length import SeasonLength
 from .skater_bio import SkaterBio
+from .skater_ice_recorder import SkaterIceRecorder
+from .skater_ice_store import SkaterIceStore
 from .skater_season_key import SkaterSeasonKey
 from .skater_season_store import SkaterSeasonStore
 from .skater_summary import SkaterSummary
+from .slot_average_fitter import SlotAverageFitter
+from .slot_average_store import SlotAverageStore
 from .team_factor_fitter import TeamFactorFitter
 from .team_factor_store import TeamFactorStore
 
@@ -68,6 +77,40 @@ class SkaterSeasonIngester():
       LeagueFactorStore.write( league_factors )
       previous_season_id = RecencyTargetResolver.prior()
       current_season = RecencyTargetResolver.resolve()
+      usages = IceUsageParser.parse(
+         NhlClient.skater_timeonice( previous_season_id, force ) )
+      paces = {
+         row.player_id: SeasonPace( row.g_pace, row.a_pace )
+         for row in rows
+         if row.season_id == previous_season_id
+      }
+      d_usages = {
+         player_id: usage
+         for player_id, usage in usages.items()
+         if DepthGroup.defense().contains( usage.position )
+      }
+      f_usages = {
+         player_id: usage
+         for player_id, usage in usages.items()
+         if DepthGroup.forwards().contains( usage.position )
+      }
+      slots = SlotAverageFitter.fit(
+         d_usages,
+         paces,
+         DepthGroup.defense().spare_slot ) + SlotAverageFitter.fit(
+            f_usages,
+            paces,
+            DepthGroup.forwards().spare_slot )
+      SlotAverageStore.write( slots )
+      seasons = NhlClient.seasons( force=force )
+      season_length = Season.prior( seasons ).number_of_games
+      charts = DepthChartRecorder.record(
+         force=force,
+         season_length=season_length,
+         pace_games=Season.pace_games( seasons ) )
+      DepthChartStore.write( charts )
+      ice_rows = SkaterIceRecorder.record( charts )
+      SkaterIceStore.write( ice_rows )
       TeamFactorStore.write(
          TeamFactorFitter.fit(
             current_season,
@@ -82,7 +125,13 @@ class SkaterSeasonIngester():
                weights,
                current_season,
                league_factors,
-               aging_factors ) ) )
+               aging_factors ),
+            season_length,
+            slots,
+            charts,
+            usages,
+            { row.player_id: row for row in ice_rows },
+            DepthChartRecorder._availabilities( roster_rows ) ) )
       print( f'Ingested { len( rows ) } skater-seasons.', flush=True )
 
 
@@ -154,9 +203,7 @@ class SkaterSeasonIngester():
          points = float( summary.points )
          birth_date = bio.birth_date
          age = Season.age_on( birth_date, season.start_date )
-         gp_share = (
-            games_played / float( season.number_of_games )
-            if season.number_of_games else None )
+         gp_share = games_played / float( season.number_of_games )
 
          rows.append( NhlSkaterSeason(
             player_id=summary.player_id,
