@@ -3,6 +3,7 @@ from __future__ import annotations
 from .depth_group import DepthGroup
 from .games_share import GamesShare
 from .ice_skater import IceSkater
+from .league_filler import LeagueFiller
 from .slot_average import SlotAverage
 from .team import Team
 
@@ -18,6 +19,23 @@ class SlotFiller():
             return row
 
       return None
+
+
+   @classmethod
+   def spare_averages(
+         cls,
+         slots: list[ SlotAverage ],
+         first_spare: int ) -> list[ SlotAverage ]:
+      averages = []
+      slot = first_spare
+      average = cls.average( slots, slot )
+
+      while average is not None:
+         averages.append( average )
+         slot += 1
+         average = cls.average( slots, slot )
+
+      return averages
 
 
    @classmethod
@@ -39,14 +57,12 @@ class SlotFiller():
          team: Team ) -> IceSkater:
       average = cls.average( slots, slot )
       return IceSkater(
-         -slot,
+         LeagueFiller.player_id( slot ),
          f'League { slot }{ group.label }',
          group.skater_group.position,
          team,
          average.toi,
          average.toi,
-         None,
-         False,
          GamesShare.FULL )
 
 
@@ -58,13 +74,11 @@ class SlotFiller():
          group: DepthGroup,
          team: Team ) -> list[ IceSkater ]:
       filled = list( extras )
+      needed = group.extra_count - len( filled )
 
-      while len( filled ) < group.extra_count:
-         filled.append(
-            cls.skater(
-               slots,
-               group.spare_slot + len( filled ),
-               group,
-               team ) )
+      for average in cls.spare_averages(
+            slots,
+            group.spare_slot + len( filled ) )[ :needed ]:
+         filled.append( cls.skater( slots, average.slot, group, team ) )
 
       return filled

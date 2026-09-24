@@ -15,8 +15,6 @@ def _skater( player_id: int, availability: float ) -> IceSkater:
       list( Team )[ Position.FIRST ],
       20.0,
       20.0,
-      80,
-      False,
       availability )
 
 

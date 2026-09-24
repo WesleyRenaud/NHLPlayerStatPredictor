@@ -19,7 +19,7 @@ def Test_Forwards_TestLineup_ExpectForwardConstants() -> None:
    assert group.ice_minutes == DepthGroup.FORWARD_ICE_MINUTES
    assert group.label == 'F'
    assert group.skater_group is SkaterGroup.FORWARD
-   assert group.positions == NhlLineupSelector.FORWARD_POSITIONS
+   assert group.positions == SkaterGroup.FORWARD.positions
 
 
 def Test_Defense_TestLineup_ExpectDefenseConstants() -> None:
@@ -31,7 +31,7 @@ def Test_Defense_TestLineup_ExpectDefenseConstants() -> None:
    assert group.ice_minutes == DepthGroup.DEFENSE_ICE_MINUTES
    assert group.label == 'D'
    assert group.skater_group is SkaterGroup.DEFENSE
-   assert group.positions == NhlLineupSelector.DEFENSE_POSITIONS
+   assert group.positions == SkaterGroup.DEFENSE.positions
 
 
 def Test_Skaters_TestTeamAndPosition_ExpectGroupMembers() -> None:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from .games_share import GamesShare
 from .ice_usage import IceUsage
+from .last_toi import LastToi
 from .shared.enums.position import Position
 from .skater_position import SkaterPosition
 from .team import Team
@@ -76,7 +77,10 @@ class LastCore():
          if usage.team == team
          and usage.position in positions
       ]
-      rows.sort( key=lambda item: ( -item[ Position.LAST ].toi, item[ Position.FIRST ] ) )
+      rows.sort(
+         key=lambda item: LastToi.key(
+            item[ Position.FIRST ],
+            item[ Position.LAST ].toi ) )
       return rows
 
 

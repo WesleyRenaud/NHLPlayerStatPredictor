@@ -8,7 +8,7 @@ from api.skater_position import SkaterPosition
 from api.team import Team
 
 
-def Test_Build_TestMover_ExpectLastToiAndMoved() -> None:
+def Test_Build_TestUsage_ExpectLastToi() -> None:
    now = Team( 'CHI' )
    last = Team( 'BUF' )
    roster = [
@@ -22,10 +22,10 @@ def Test_Build_TestMover_ExpectLastToiAndMoved() -> None:
       roster,
       ice_usages,
       { 1: 1.0, 2: 1.0 } )
-   assert skaters[ Position.FIRST ].moved is True
    assert skaters[ Position.FIRST ].implied == 22.34
+   assert skaters[ Position.FIRST ].last_toi == 22.34
    assert skaters[ Position.SECOND ].implied == 0.0
-   assert skaters[ Position.SECOND ].moved is False
+   assert skaters[ Position.SECOND ].last_toi is None
 
 
 def Test_Build_TestAvailability_ExpectProjectedShare() -> None:

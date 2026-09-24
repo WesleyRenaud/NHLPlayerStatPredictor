@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 from .ice_skater import IceSkater
+from .last_toi import LastToi
 
 
 class AvailabilityBinder():
@@ -13,7 +14,7 @@ class AvailabilityBinder():
          shares: list[ float ] ) -> list[ IceSkater ]:
       ranked = sorted(
          skaters,
-         key=lambda skater: ( -skater.implied, skater.player_id ) )
+         key=lambda skater: LastToi.key( skater.player_id, skater.implied ) )
       bound = {}
 
       for index, skater in enumerate( ranked ):

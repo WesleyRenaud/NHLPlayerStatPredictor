@@ -23,34 +23,30 @@ class TeamFactorFitter():
          nhl_splits: list[ PreviousSeasonNhlSkater ],
          roster_paces: list[ CurrentSeasonNhlSkater ],
          season_length: int,
-         slots: list[ SlotAverage ] | None = None,
-         charts: list[ DepthChart ] | None = None,
-         usages: dict[ int, IceUsage ] | None = None,
-         ice: dict[ int, SkaterIce ] | None = None,
-         availabilities: dict[ int, float ] | None = None ) -> list[ TeamFactor ]:
-      fills = slots or []
+         slots: list[ SlotAverage ],
+         charts: list[ DepthChart ],
+         usages: dict[ int, IceUsage ],
+         ice: dict[ int, SkaterIce ] ) -> list[ TeamFactor ]:
       by_chart = {
          ( chart.team, chart.skater_group ): chart
-         for chart in charts or []
+         for chart in charts
       }
-      ice_usages = usages or {}
       return sorted(
          [
             *cls._previous(
                previous_season_id,
                nhl_splits,
-               fills,
-               ice_usages,
+               slots,
+               usages,
                season_length ),
             *cls._current(
                current_season,
                roster_paces,
-               fills,
+               slots,
                by_chart,
-               ice_usages,
+               usages,
                season_length,
-               ice or {},
-               availabilities or {} ),
+               ice ),
          ],
          key=lambda factor: ( factor.season, factor.team.value ) )
 
@@ -87,8 +83,7 @@ class TeamFactorFitter():
          charts: dict[ tuple[ Team, SkaterGroup ], DepthChart ],
          usages: dict[ int, IceUsage ],
          season_length: int,
-         ice: dict[ int, SkaterIce ],
-         availabilities: dict[ int, float ] ) -> list[ TeamFactor ]:
+         ice: dict[ int, SkaterIce ] ) -> list[ TeamFactor ]:
       return cls._rated(
          [
             TeamFactor(
@@ -101,8 +96,7 @@ class TeamFactorFitter():
                   charts,
                   usages,
                   season_length,
-                  ice,
-                  availabilities ) )
+                  ice ) )
             for lineup in TeamLineup.group( roster_paces )
          ] )
 

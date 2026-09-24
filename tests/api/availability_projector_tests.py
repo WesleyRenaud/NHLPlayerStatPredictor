@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date
 
 from api.availability_projector import AvailabilityProjector
+from api.games_share import GamesShare
 from api.nhl_skater_season import NhlSkaterSeason
 from api.recency_weight import RecencyWeight
 from api.shared.enums.position import Position
@@ -53,14 +54,14 @@ def Test_Resolve_TestEmpty_ExpectFull() -> None:
    assert AvailabilityProjector.resolve(
       [],
       [ RecencyWeight( 0, 1.0 ) ],
-      20262027 ) == AvailabilityProjector.FULL
+      20262027 ) == GamesShare.FULL
 
 
 def Test_Resolve_TestMissingShare_ExpectFull() -> None:
    assert AvailabilityProjector.resolve(
       [ _season( 20252026, None ) ],
       [ RecencyWeight( 0, 1.0 ) ],
-      20262027 ) == AvailabilityProjector.FULL
+      20262027 ) == GamesShare.FULL
 
 
 def Test_Resolve_TestInjuredNhlYear_ExpectShare() -> None:

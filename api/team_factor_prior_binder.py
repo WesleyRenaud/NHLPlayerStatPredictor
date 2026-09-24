@@ -4,6 +4,7 @@ from .depth_chart import DepthChart
 from .depth_group import DepthGroup
 from .ice_usage import IceUsage
 from .last_core import LastCore
+from .last_toi import LastToi
 from .teammate_skater import TeammateSkater
 
 
@@ -40,5 +41,5 @@ class TeamFactorPriorBinder():
    def _rank_ids( cls, chart: DepthChart ) -> list[ int ]:
       ranked = sorted(
          [ skater for skater, _toi in chart.regulars ],
-         key=lambda skater: ( -skater.implied, skater.player_id ) )
+         key=lambda skater: LastToi.key( skater.player_id, skater.implied ) )
       return [ skater.player_id for skater in ranked ]

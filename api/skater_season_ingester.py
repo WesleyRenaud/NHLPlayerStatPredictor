@@ -130,8 +130,7 @@ class SkaterSeasonIngester():
             slots,
             charts,
             usages,
-            { row.player_id: row for row in ice_rows },
-            DepthChartRecorder._availabilities( roster_rows ) ) )
+            { row.player_id: row for row in ice_rows } ) )
       print( f'Ingested { len( rows ) } skater-seasons.', flush=True )
 
 

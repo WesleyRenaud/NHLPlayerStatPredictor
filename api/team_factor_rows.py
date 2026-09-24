@@ -7,17 +7,15 @@ from .teammate_skater import TeammateSkater
 
 class TeamFactorRows():
    @classmethod
-   def build(
+   def group(
          cls,
-         forwards: list[ TeammateSkater ],
-         f_extras: list[ TeammateSkater ],
          regulars: list[ TeammateSkater ],
-         extras: list[ TeammateSkater ] ) -> list[ TeamFactorSkater ]:
-      rows = cls._tagged( forwards, DepthGroup.forwards(), False )
-      rows.extend( cls._tagged( f_extras, DepthGroup.forwards(), True ) )
-      rows.extend( cls._tagged( regulars, DepthGroup.defense(), False ) )
-      rows.extend( cls._tagged( extras, DepthGroup.defense(), True ) )
-      return rows
+         extras: list[ TeammateSkater ],
+         group: DepthGroup ) -> list[ TeamFactorSkater ]:
+      return [
+         *cls._tagged( regulars, group, False ),
+         *cls._tagged( extras, group, True ),
+      ]
 
 
    @classmethod

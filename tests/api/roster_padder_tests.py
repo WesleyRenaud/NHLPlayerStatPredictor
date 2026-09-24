@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from api.depth_group import DepthGroup
+from api.league_filler import LeagueFiller
 from api.projections.current_season_nhl_skater import CurrentSeasonNhlSkater
 from api.projections.nhl_lineup_selector import NhlLineupSelector
 from api.projections.season_pace import SeasonPace
@@ -36,7 +37,7 @@ def Test_Pad_TestSixDefense_ExpectSeventhPace() -> None:
    seventh = next(
       skater
       for skater in padded
-      if skater.player_id < 0 )
+      if LeagueFiller.owns( skater.player_id ) )
    assert seventh.contribution == slots[ Position.FIRST ].contribution
    assert seventh.position == SkaterPosition( 'D' )
    assert len(
@@ -68,7 +69,7 @@ def Test_Pad_TestTwelveForwards_ExpectThirteenthPace() -> None:
    thirteenth = next(
       skater
       for skater in padded
-      if skater.player_id < 0 )
+      if LeagueFiller.owns( skater.player_id ) )
    assert thirteenth.contribution == slots[ Position.FIRST ].contribution
    assert thirteenth.position == SkaterPosition( 'F' )
    assert len(

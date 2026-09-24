@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from .ice_usage import IceUsage
+from .last_toi import LastToi
 from .projections.season_pace import SeasonPace
 from .shared.enums.position import Position
 from .slot_average import SlotAverage
@@ -60,9 +61,9 @@ class SlotAverageFitter():
 
       for team, skaters in by_team.items():
          skaters.sort(
-            key=lambda player_id: (
-               -usages[ player_id ].toi,
-               player_id ) )
+            key=lambda player_id: LastToi.key(
+               player_id,
+               usages[ player_id ].toi ) )
          by_team[ team ] = skaters
 
       return by_team

@@ -27,8 +27,6 @@ class IceSkaterAssembler():
                   row.team,
                   0.0,
                   None,
-                  None,
-                  False,
                   availability ) )
             continue
 
@@ -40,8 +38,6 @@ class IceSkaterAssembler():
                row.team,
                usage.toi,
                usage.toi,
-               usage.games,
-               usage.team != row.team,
                availability ) )
 
       return skaters

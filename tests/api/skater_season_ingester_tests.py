@@ -278,8 +278,8 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    monkeypatch.setattr(
       skater_season_ingester.TeamFactorFitter,
       'fit',
-      lambda current, previous, splits, paces, season_length, slots=None, charts=None,
-            usages=None, ice=None, availabilities=None: fitted.append(
+      lambda current, previous, splits, paces, season_length, slots, charts,
+            usages, ice: fitted.append(
          (
             current,
             previous,
@@ -288,7 +288,8 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
             season_length,
             slots,
             charts,
-            usages ) ) or team_factors )
+            usages,
+            ice ) ) or team_factors )
    recorded: list[ bool ] = []
    monkeypatch.setattr(
       skater_season_ingester.DepthChartRecorder,
@@ -306,10 +307,6 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       skater_season_ingester.SkaterIceStore,
       'write',
       lambda rows: None )
-   monkeypatch.setattr(
-      skater_season_ingester.DepthChartRecorder,
-      '_availabilities',
-      lambda roster: {} )
    SkaterSeasonIngester.main()
    assert inserted == [ ( rows, str( db_path ) ) ]
    assert roster_inserted == [ ( roster_rows, str( db_path ) ) ]
@@ -348,6 +345,7 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
          82,
          [],
          [],
+         {},
          {} )
    ]
    assert recorded == [ False ]

@@ -21,19 +21,18 @@ class TeamFactorPreviousBuilder():
          slots: list[ SlotAverage ],
          usages: dict[ int, IceUsage ],
          season_length: int ) -> list[ TeamFactorSkater ]:
-      forwards, f_extras = cls._skaters(
-         lineup,
-         slots,
-         usages,
-         season_length,
-         DepthGroup.forwards() )
-      defense, extras = cls._skaters(
-         lineup,
-         slots,
-         usages,
-         season_length,
-         DepthGroup.defense() )
-      return TeamFactorRows.build( forwards, f_extras, defense, extras )
+      rows = []
+
+      for group in ( DepthGroup.forwards(), DepthGroup.defense() ):
+         regulars, extras = cls._skaters(
+            lineup,
+            slots,
+            usages,
+            season_length,
+            group )
+         rows.extend( TeamFactorRows.group( regulars, extras, group ) )
+
+      return rows
 
 
    @classmethod
