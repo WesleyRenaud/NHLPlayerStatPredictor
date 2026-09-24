@@ -41,6 +41,8 @@ from .skater_season_store import SkaterSeasonStore
 from .skater_summary import SkaterSummary
 from .slot_average_fitter import SlotAverageFitter
 from .slot_average_store import SlotAverageStore
+from .slot_chosen_share_fitter import SlotChosenShareFitter
+from .slot_chosen_share_store import SlotChosenShareStore
 from .team_factor_fitter import TeamFactorFitter
 from .team_factor_store import TeamFactorStore
 
@@ -104,6 +106,15 @@ class SkaterSeasonIngester():
       SlotAverageStore.write( slots )
       seasons = NhlClient.seasons( force=force )
       season_length = Season.prior( seasons ).number_of_games
+      SlotChosenShareStore.write(
+         SlotChosenShareFitter.fit(
+            d_usages,
+            season_length,
+            DepthGroup.defense() )
+         + SlotChosenShareFitter.fit(
+            f_usages,
+            season_length,
+            DepthGroup.forwards() ) )
       charts = DepthChartRecorder.record(
          force=force,
          pace_games=Season.pace_games( seasons ) )

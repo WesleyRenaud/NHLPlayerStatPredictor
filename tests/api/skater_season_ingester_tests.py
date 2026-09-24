@@ -31,6 +31,7 @@ from api.skater_position import SkaterPosition
 import api.skater_season_ingester as skater_season_ingester
 from api.skater_season_ingester import SkaterSeasonIngester
 from api.skater_summary import SkaterSummary
+from api.slot_chosen_share_store import SlotChosenShareStore
 from api.team import Team
 from api.team_factor import TeamFactor
 from api.team_factor_store import TeamFactorStore
@@ -349,3 +350,4 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
          {} )
    ]
    assert recorded == [ False ]
+   assert SlotChosenShareStore.read() == []
