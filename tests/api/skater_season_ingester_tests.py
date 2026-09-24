@@ -294,7 +294,7 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    monkeypatch.setattr(
       skater_season_ingester.DepthChartRecorder,
       'record',
-      lambda force=False, season_length=None, pace_games=None: recorded.append( force ) or [] )
+      lambda force=False, pace_games=None: recorded.append( force ) or [] )
    monkeypatch.setattr(
       skater_season_ingester.DepthChartStore,
       'write',

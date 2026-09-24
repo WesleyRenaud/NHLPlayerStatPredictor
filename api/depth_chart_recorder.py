@@ -30,7 +30,6 @@ class DepthChartRecorder():
       seasons = NhlClient.seasons( force=force )
       DepthChartStore.write(
          cls.record(
-            Season.prior( seasons ).number_of_games,
             Season.pace_games( seasons ),
             force ) )
 
@@ -38,7 +37,6 @@ class DepthChartRecorder():
    @classmethod
    def record(
          cls,
-         season_length: int,
          pace_games: int,
          force: bool = False ) -> list[ DepthChart ]:
       ice_usages = IceUsageParser.parse(
@@ -56,7 +54,6 @@ class DepthChartRecorder():
                ice_usages,
                availabilities,
                slot_averages,
-               season_length,
                pace_games ) )
 
       return charts
@@ -70,7 +67,6 @@ class DepthChartRecorder():
          ice_usages: dict[ int, IceUsage ],
          availabilities: dict[ int, float ],
          slot_averages: list[ SlotAverage ],
-         season_length: int,
          pace_games: int ) -> list[ DepthChart ]:
       charts = []
 
@@ -86,8 +82,6 @@ class DepthChartRecorder():
                   ice_usages,
                   availabilities ),
                slot_averages,
-               ice_usages,
-               season_length,
                group,
                pace_games ) )
 
