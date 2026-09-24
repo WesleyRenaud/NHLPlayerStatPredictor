@@ -3,7 +3,6 @@ from __future__ import annotations
 from api.depth_chart_builder import DepthChartBuilder
 from api.depth_group import DepthGroup
 from api.ice_skater import IceSkater
-from api.ice_usage import IceUsage
 from api.projections.nhl_lineup_selector import NhlLineupSelector
 from api.shared.enums.position import Position
 from api.skater_group import SkaterGroup
@@ -42,8 +41,6 @@ def Test_Build_TestSevenRegulars_ExpectSixAndPie() -> None:
          _skater( 8, 11.0 ),
       ],
       [],
-      {},
-      82,
       DepthGroup.defense(),
       pace_games )
    assert chart.team == team
@@ -72,8 +69,6 @@ def Test_Build_TestLowGamesHighToi_ExpectRegular() -> None:
          _skater( 6, 15.0 ),
       ],
       [],
-      {},
-      82,
       DepthGroup.defense(),
       Position.SECOND )
    assert chart.regulars[ Position.FIRST ][ Position.FIRST ].player_id == 9
@@ -93,8 +88,6 @@ def Test_Build_TestSixRegulars_ExpectLeagueSeventh() -> None:
          _skater( 6, 15.0 ),
       ],
       slot_averages,
-      {},
-      82,
       DepthGroup.defense(),
       Position.SECOND )
    extra = chart.extras[ Position.FIRST ]
@@ -102,12 +95,8 @@ def Test_Build_TestSixRegulars_ExpectLeagueSeventh() -> None:
    assert extra.last_toi == 15.0
 
 
-def Test_Build_TestPriorEqualsCurrent_ExpectHealthyPie() -> None:
+def Test_Build_TestHalfAvailable_ExpectMoreThanHealthyShare() -> None:
    team = list( Team )[ Position.FIRST ]
-   ice_usages = {
-      player_id: IceUsage( 20.0, 41, team, SkaterPosition( 'D' ) )
-      for player_id in range( 1, 7 )
-   }
    chart = DepthChartBuilder.build(
       team,
       [
@@ -122,12 +111,9 @@ def Test_Build_TestPriorEqualsCurrent_ExpectHealthyPie() -> None:
          for player_id in range( 1, 7 )
       ],
       [ SlotAverage( 7, 15.0, 2.0, 12.0 ) ],
-      ice_usages,
-      82,
       DepthGroup.defense(),
       Position.SECOND )
-   total = sum( toi for _skater_row, toi in chart.regulars )
-   assert abs( total - DepthGroup.DEFENSE_ICE_MINUTES ) < 0.001
+   assert chart.regulars[ Position.FIRST ][ Position.LAST ] > 20.0
    assert chart.skater_group is SkaterGroup.DEFENSE
 
 
@@ -137,8 +123,6 @@ def Test_Build_TestTwelveForwards_ExpectForwardPie() -> None:
       team,
       [ _skater( index, 15.0 ) for index in range( 1, NhlLineupSelector.DRESSED_FORWARDS + 1 ) ],
       [ SlotAverage( 13, 10.0, 1.0, 8.0 ) ],
-      {},
-      82,
       DepthGroup.forwards(),
       Position.SECOND )
    assert chart.skater_group is SkaterGroup.FORWARD
@@ -148,12 +132,8 @@ def Test_Build_TestTwelveForwards_ExpectForwardPie() -> None:
    assert abs( chart.regulars[ Position.FIRST ][ Position.LAST ] - 15.0 ) < 0.001
 
 
-def Test_Build_TestForwardPriorEqualsCurrent_ExpectHealthyPie() -> None:
+def Test_Build_TestForwardHalfAvailable_ExpectMoreThanHealthyShare() -> None:
    team = list( Team )[ Position.FIRST ]
-   ice_usages = {
-      player_id: IceUsage( 15.0, 41, team, SkaterPosition( 'C' ) )
-      for player_id in range( 1, NhlLineupSelector.DRESSED_FORWARDS + 1 )
-   }
    chart = DepthChartBuilder.build(
       team,
       [
@@ -168,8 +148,6 @@ def Test_Build_TestForwardPriorEqualsCurrent_ExpectHealthyPie() -> None:
          for player_id in range( 1, NhlLineupSelector.DRESSED_FORWARDS + 1 )
       ],
       [ SlotAverage( 13, 10.0, 1.0, 8.0 ) ],
-      ice_usages,
-      82,
       DepthGroup.forwards(),
       Position.SECOND )
-   assert abs( chart.regulars[ Position.FIRST ][ Position.LAST ] - 15.0 ) < 0.001
+   assert chart.regulars[ Position.FIRST ][ Position.LAST ] > 15.0

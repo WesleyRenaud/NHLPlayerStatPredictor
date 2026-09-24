@@ -39,16 +39,11 @@ def _six( availability: float = GamesShare.FULL ) -> list[ IceSkater ]:
 
 def _project(
       regulars: list[ IceSkater ],
-      extras: list[ IceSkater ],
-      prior_shares: list[ float ] | None = None ) -> list[ tuple[ IceSkater, float ] ]:
-   shares = prior_shares
-   if shares is None:
-      shares = [ GamesShare.FULL ] * len( regulars )
+      extras: list[ IceSkater ] ) -> list[ tuple[ IceSkater, float ] ]:
    return IceAllocator.project(
       regulars,
       extras,
       [],
-      shares,
       DepthGroup.defense() )
 
 
@@ -135,34 +130,10 @@ def Test_Project_TestTwoHalfOut_ExpectOverlapBoost() -> None:
    assert _toi( two_half, 1 ) > _toi( one_half, 1 )
 
 
-def Test_Project_TestSamePrior_ExpectHealthyPie() -> None:
-   projected = _project(
-      _six( 0.5 ),
-      [ _skater( 7, 16.0 ) ],
-      [ 0.5 ] * NhlLineupSelector.DRESSED_DEFENSE )
-   total = sum( toi for _skater_row, toi in projected )
-   assert abs( total - DepthGroup.DEFENSE_ICE_MINUTES ) < 0.001
-   assert abs( _toi( projected, 1 ) - 20.0 ) < 0.001
-
-
-def Test_Project_TestPriorSicker_ExpectLessThanHealthy() -> None:
-   projected = _project(
-      _six(),
-      [ _skater( 7, 16.0 ) ],
-      [ 0.5 ] * NhlLineupSelector.DRESSED_DEFENSE )
-   assert _toi( projected, 1 ) < 20.0
-
-
-def Test_Project_TestPriorHealthier_ExpectInjuredBoost() -> None:
-   even = _project(
-      _six(),
-      [ _skater( 7, 16.0 ) ],
-      [ 1.0 ] * NhlLineupSelector.DRESSED_DEFENSE )
-   boosted = _project(
-      [ _skater( 1, 20.0 ), _skater( 2, 20.0, 0.5 ), *_six()[ 2: ] ],
-      [ _skater( 7, 16.0 ) ],
-      [ 1.0 ] * NhlLineupSelector.DRESSED_DEFENSE )
-   assert _toi( boosted, 1 ) > _toi( even, 1 )
+def Test_Project_TestHalfAvailable_ExpectMoreThanHealthyShare() -> None:
+   even = _project( _six(), [ _skater( 7, 16.0 ) ] )
+   mixed = _project( _six( 0.5 ), [ _skater( 7, 16.0 ) ] )
+   assert _toi( mixed, 1 ) > _toi( even, 1 )
 
 
 def Test_Project_TestForwardPie_ExpectOneEighty() -> None:
@@ -174,7 +145,6 @@ def Test_Project_TestForwardPie_ExpectOneEighty() -> None:
       regulars,
       [],
       [],
-      [ GamesShare.FULL ] * NhlLineupSelector.DRESSED_FORWARDS,
       DepthGroup.forwards() )
    total = sum( toi for _skater_row, toi in projected )
    assert abs( total - DepthGroup.FORWARD_ICE_MINUTES ) < 0.001

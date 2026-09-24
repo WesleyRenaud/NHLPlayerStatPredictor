@@ -106,7 +106,6 @@ class SkaterSeasonIngester():
       season_length = Season.prior( seasons ).number_of_games
       charts = DepthChartRecorder.record(
          force=force,
-         season_length=season_length,
          pace_games=Season.pace_games( seasons ) )
       DepthChartStore.write( charts )
       ice_rows = SkaterIceRecorder.record( charts )

@@ -86,7 +86,7 @@ def Test_Record_TestRosterAndUsage_ExpectStoredChart(
    monkeypatch.setattr(
       'api.depth_chart_recorder.NhlClient.seasons',
       lambda force=False: _seasons() )
-   charts = DepthChartRecorder.record( 82, Position.SECOND )
+   charts = DepthChartRecorder.record( Position.SECOND )
    defense = next(
       chart
       for chart in charts
@@ -136,7 +136,7 @@ def Test_Record_TestForwardAndDefense_ExpectBothCharts(
       DepthChartRecorder,
       '_availabilities',
       lambda roster: { row.player_id: 1.0 for row in roster } )
-   charts = DepthChartRecorder.record( 82, Position.SECOND )
+   charts = DepthChartRecorder.record( Position.SECOND )
    assert len( charts ) == 2
    assert charts[ Position.FIRST ].skater_group is SkaterGroup.FORWARD
    assert charts[ Position.SECOND ].skater_group is SkaterGroup.DEFENSE
