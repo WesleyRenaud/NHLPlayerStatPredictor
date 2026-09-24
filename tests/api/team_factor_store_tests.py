@@ -5,8 +5,10 @@ from pathlib import Path
 
 import pytest
 
+from api.games_share import GamesShare
 from api.paths import Paths
 from api.shared.enums.position import Position
+from api.skater_group import SkaterGroup
 from api.team import Team
 from api.team_factor import TeamFactor
 from api.team_factor_skater import TeamFactorSkater
@@ -22,12 +24,12 @@ def Test_Write_TestFactors_ExpectReadable(
          20252026,
          list( Team )[ Position.FIRST ],
          0.87,
-         [ TeamFactorSkater( 97, 120.5 ) ] ),
+         [ TeamFactorSkater( 97, 120.5, SkaterGroup( 'F' ), GamesShare.FULL, False, None ) ] ),
       TeamFactor(
          20262027,
          list( Team )[ Position.SECOND ],
          1.12,
-         [ TeamFactorSkater( 29, 88.0 ) ] ),
+         [ TeamFactorSkater( 29, 88.0, SkaterGroup( 'F' ), GamesShare.FULL, False, None ) ] ),
    ]
    TeamFactorStore.write( factors )
    assert TeamFactorStore.read() == factors

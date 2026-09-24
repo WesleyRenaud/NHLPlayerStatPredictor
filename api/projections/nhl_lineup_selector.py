@@ -1,21 +1,17 @@
 from __future__ import annotations
 
 from .nhl_lineup_row import NhlLineupRow
-from ..skater_position import SkaterPosition
+from ..skater_group import SkaterGroup
 from .team_lineup import TeamLineup
 
 
 class NhlLineupSelector():
    FORWARDS = 13
    DEFENSE = 7
-   FORWARD_POSITIONS = {
-      SkaterPosition.CENTER,
-      SkaterPosition.LEFT_WING,
-      SkaterPosition.RIGHT_WING,
-   }
-   DEFENSE_POSITIONS = {
-      SkaterPosition.DEFENSE,
-   }
+   DRESSED_FORWARDS = 12
+   DRESSED_DEFENSE = 6
+   FORWARD_POSITIONS = SkaterGroup.FORWARD.positions
+   DEFENSE_POSITIONS = SkaterGroup.DEFENSE.positions
 
 
    @classmethod
@@ -25,10 +21,10 @@ class NhlLineupSelector():
             lineup.team,
             [
                *cls._top(
-                  cls._matching( lineup.skaters, cls.FORWARD_POSITIONS ),
+                  cls.matching( lineup.skaters, SkaterGroup.FORWARD ),
                   cls.FORWARDS ),
                *cls._top(
-                  cls._matching( lineup.skaters, cls.DEFENSE_POSITIONS ),
+                  cls.matching( lineup.skaters, SkaterGroup.DEFENSE ),
                   cls.DEFENSE ),
             ] )
          for lineup in TeamLineup.group( rows )
@@ -36,11 +32,11 @@ class NhlLineupSelector():
 
 
    @classmethod
-   def _matching(
+   def matching(
          cls,
          rows: list[ NhlLineupRow ],
-         allowed: set[ SkaterPosition ] ) -> list[ NhlLineupRow ]:
-      return [ row for row in rows if row.position in allowed ]
+         allowed: SkaterGroup ) -> list[ NhlLineupRow ]:
+      return [ row for row in rows if SkaterGroup.of( row.position ) is allowed ]
 
 
    @classmethod
@@ -52,3 +48,15 @@ class NhlLineupSelector():
          rows,
          key=lambda row: ( -row.contribution, row.player_id ) )
       return ranked[ :limit ]
+
+
+   @classmethod
+   def forwards( cls, rows: list[ NhlLineupRow ] ) -> list[ TeamLineup ]:
+      return [
+         TeamLineup(
+            lineup.team,
+            cls._top(
+               cls.matching( lineup.skaters, SkaterGroup.FORWARD ),
+               cls.DRESSED_FORWARDS ) )
+         for lineup in TeamLineup.group( rows )
+      ]

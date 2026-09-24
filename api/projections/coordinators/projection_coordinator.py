@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from ...aging_factor_store import AgingFactorStore
 from ..baseline_pace_resolver import BaselinePaceResolver
+from ...ice_pace_scaler import IcePaceScaler
 from ...league_factor_store import LeagueFactorStore
 from ...other_league_season_provider import OtherLeagueSeasonProvider
 from ...pace_games_resolver import PaceGamesResolver
@@ -12,6 +13,7 @@ from ...roster_skater_provider import RosterSkaterProvider
 from ...scoring_weight_store import ScoringWeightStore
 from ...shared.enums.position import Position
 from ...skater import Skater
+from ...skater_ice_store import SkaterIceStore
 from ...skater_season_provider import SkaterSeasonProvider
 from ...team_factor import TeamFactor
 from ...team_factor_store import TeamFactorStore
@@ -46,16 +48,25 @@ class ProjectionCoordinator():
          factors = TeamFactorStore.read()
          scaled = TeamPaceAdjuster.adjust(
             aged,
-            TeamFactor.mate_rate(
+            TeamFactor.teammate_rate(
                factors,
                target_season_id,
                current_team,
                player_id ),
-            TeamFactor.mate_rate(
+            TeamFactor.teammate_rate(
                factors,
                previous.season_id,
                previous.team,
                player_id ) )
+
+      ice = SkaterIceStore.by_player().get( player_id )
+
+      if ice is not None and ice.last_toi is not None:
+         scaled = IcePaceScaler.adjust(
+            scaled,
+            ice.last_toi,
+            ice.projected_toi )
+
       goals = round( scaled.goals )
       assists = round( scaled.assists )
       return Projection(

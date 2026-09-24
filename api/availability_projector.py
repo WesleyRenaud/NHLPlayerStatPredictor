@@ -1,0 +1,38 @@
+from __future__ import annotations
+
+from .nhl_skater_season import NhlSkaterSeason
+from .recency_weight import RecencyWeight
+from .season import Season
+
+
+class AvailabilityProjector():
+   FULL = 1.0
+
+
+   @classmethod
+   def resolve(
+         cls,
+         seasons: list[ NhlSkaterSeason ],
+         weights: list[ RecencyWeight ],
+         target_season_id: int ) -> float:
+      by_lag = {
+         Season.recency_lag( target_season_id, season.season_id ): season
+         for season in seasons
+         if season.gp_share is not None
+      }
+      total = 0.0
+      share = 0.0
+
+      for weight in weights:
+         season = by_lag.get( weight.lag )
+
+         if season is None:
+            continue
+
+         share += season.gp_share * weight.weight
+         total += weight.weight
+
+      if not total:
+         return cls.FULL
+
+      return share / total
