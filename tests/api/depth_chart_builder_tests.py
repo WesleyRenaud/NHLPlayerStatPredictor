@@ -15,8 +15,7 @@ from api.team import Team
 
 def _skater(
       player_id: int,
-      implied: float,
-      games: int = 80 ) -> IceSkater:
+      implied: float ) -> IceSkater:
    return IceSkater(
       player_id,
       str( player_id ),
@@ -24,8 +23,6 @@ def _skater(
       list( Team )[ Position.FIRST ],
       implied,
       implied,
-      games,
-      False,
       1.0 )
 
 
@@ -66,9 +63,9 @@ def Test_Build_TestLowGamesHighToi_ExpectRegular() -> None:
    chart = DepthChartBuilder.build(
       team,
       [
-         _skater( 1, 26.0, games=80 ),
-         _skater( 2, 24.0, games=80 ),
-         _skater( 9, 30.0, games=1 ),
+         _skater( 1, 26.0 ),
+         _skater( 2, 24.0 ),
+         _skater( 9, 30.0 ),
          _skater( 3, 20.0 ),
          _skater( 4, 19.0 ),
          _skater( 5, 16.0 ),
@@ -121,8 +118,6 @@ def Test_Build_TestPriorEqualsCurrent_ExpectHealthyPie() -> None:
             team,
             20.0,
             20.0,
-            41,
-            False,
             0.5 )
          for player_id in range( 1, 7 )
       ],
@@ -169,8 +164,6 @@ def Test_Build_TestForwardPriorEqualsCurrent_ExpectHealthyPie() -> None:
             team,
             15.0,
             15.0,
-            41,
-            False,
             0.5 )
          for player_id in range( 1, NhlLineupSelector.DRESSED_FORWARDS + 1 )
       ],

@@ -3,7 +3,6 @@ from __future__ import annotations
 from api.depth_chart import DepthChart
 from api.depth_group import DepthGroup
 from api.games_share import GamesShare
-from api.games_share import GamesShare
 from api.ice_skater import IceSkater
 from api.ice_usage import IceUsage
 from api.shared.enums.position import Position
@@ -22,8 +21,6 @@ def _skater( player_id: int, implied: float ) -> IceSkater:
       list( Team )[ Position.FIRST ],
       implied,
       implied,
-      80,
-      False,
       1.0 )
 
 

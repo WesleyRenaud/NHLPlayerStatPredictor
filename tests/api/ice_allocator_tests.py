@@ -21,8 +21,6 @@ def _skater(
       list( Team )[ Position.FIRST ],
       implied,
       implied,
-      80,
-      False,
       availability )
 
 

@@ -14,11 +14,10 @@ def Test_Fields_TestSkater_ExpectValues() -> None:
       list( Team )[ Position.FIRST ],
       24.1,
       24.68,
-      80,
-      False,
       1.0 )
    assert skater.player_id == 7
    assert skater.player_name == 'Brock Faber'
    assert skater.position == SkaterPosition( 'D' )
    assert skater.implied == 24.1
+   assert skater.last_toi == 24.68
    assert skater.availability == 1.0

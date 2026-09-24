@@ -1,14 +1,12 @@
 from __future__ import annotations
 
+from .games_share import GamesShare
 from .nhl_skater_season import NhlSkaterSeason
 from .recency_weight import RecencyWeight
 from .season import Season
 
 
 class AvailabilityProjector():
-   FULL = 1.0
-
-
    @classmethod
    def resolve(
          cls,
@@ -33,6 +31,6 @@ class AvailabilityProjector():
          total += weight.weight
 
       if not total:
-         return cls.FULL
+         return GamesShare.FULL
 
       return share / total

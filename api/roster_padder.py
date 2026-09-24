@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from .depth_group import DepthGroup
+from .league_filler import LeagueFiller
 from .projections.current_season_nhl_skater import CurrentSeasonNhlSkater
 from .projections.season_pace import SeasonPace
 from .shared.enums.position import Position
@@ -53,7 +54,7 @@ class RosterPadder():
 
          spares.append(
             CurrentSeasonNhlSkater(
-               -next_slot,
+               LeagueFiller.player_id( next_slot ),
                SeasonPace( average.goals, average.assists ),
                skaters[ Position.FIRST ].team,
                group.skater_group.position ) )

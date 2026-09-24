@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from api.depth_group import DepthGroup
 from api.games_share import GamesShare
 from api.ice_usage import IceUsage
 from api.last_core import LastCore
@@ -28,7 +29,7 @@ def Test_Shares_TestRankedByToi_ExpectDressedGamesShare() -> None:
       },
       82,
       NhlLineupSelector.DRESSED_DEFENSE,
-      NhlLineupSelector.DEFENSE_POSITIONS )
+      DepthGroup.defense().positions )
    assert shares[ Position.FIRST ] == 1.0
    assert shares[ Position.SECOND ] == 0.5
    assert shares[ Position.THIRD ] == 1.0
@@ -46,7 +47,7 @@ def Test_Shares_TestLowGames_ExpectRankedByToi() -> None:
       },
       82,
       NhlLineupSelector.DRESSED_DEFENSE,
-      NhlLineupSelector.DEFENSE_POSITIONS )
+      DepthGroup.defense().positions )
    assert shares[ Position.FIRST ] == 6 / 82
    assert shares[ Position.SECOND ] == 1.0
 
@@ -65,7 +66,7 @@ def Test_Teammates_TestTopSix_ExpectPacesAndShares() -> None:
       False,
       NhlLineupSelector.DRESSED_DEFENSE,
       LastCore.EXTRA,
-      NhlLineupSelector.DEFENSE_POSITIONS )
+      DepthGroup.defense().positions )
    assert [ skater.player_id for skater in regulars ] == list( range( 1, 7 ) )
    assert regulars[ Position.FIRST ].availability == 81 / 82
    assert extras[ Position.FIRST ].player_id == 7
@@ -86,7 +87,7 @@ def Test_Teammates_TestHealthy_ExpectFullShare() -> None:
       True,
       NhlLineupSelector.DRESSED_DEFENSE,
       LastCore.EXTRA,
-      NhlLineupSelector.DEFENSE_POSITIONS )
+      DepthGroup.defense().positions )
    assert regulars[ Position.FIRST ].availability == GamesShare.FULL
 
 
@@ -104,6 +105,6 @@ def Test_Shares_TestForwardOnTeam_ExpectDefenseOnly() -> None:
       },
       82,
       NhlLineupSelector.DRESSED_DEFENSE,
-      NhlLineupSelector.DEFENSE_POSITIONS )
+      DepthGroup.defense().positions )
    assert shares[ Position.FIRST ] == 1.0
    assert shares[ Position.SECOND ] == GamesShare.FULL

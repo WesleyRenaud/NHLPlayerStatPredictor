@@ -4,6 +4,7 @@ from api.depth_core_builder import DepthCoreBuilder
 from api.depth_group import DepthGroup
 from api.ice_skater import IceSkater
 from api.last_core import LastCore
+from api.league_filler import LeagueFiller
 from api.projections.nhl_lineup_selector import NhlLineupSelector
 from api.shared.enums.position import Position
 from api.skater_position import SkaterPosition
@@ -19,8 +20,6 @@ def _skater( player_id: int, implied: float ) -> IceSkater:
       list( Team )[ Position.FIRST ],
       implied,
       implied,
-      80,
-      False,
       1.0 )
 
 
@@ -50,5 +49,6 @@ def Test_Build_TestShortRoster_ExpectLeagueExtra() -> None:
    core = DepthCoreBuilder.build( [ _skater( 1, 22.0 ) ], group, slots )
    assert [ skater.player_id for skater in core.regulars ] == [ 1 ]
    assert len( core.extras ) == LastCore.EXTRA
-   assert core.extras[ Position.FIRST ].player_id == -group.spare_slot
+   assert core.extras[ Position.FIRST ].player_id == LeagueFiller.player_id(
+      group.spare_slot )
    assert core.extras[ Position.FIRST ].implied == 14.0

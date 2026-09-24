@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+from api.depth_chart import DepthChart
+from api.depth_group import DepthGroup
 from api.games_share import GamesShare
+from api.ice_skater import IceSkater
+from api.last_toi import LastToi
 from api.projections.current_season_nhl_skater import CurrentSeasonNhlSkater
 from api.projections.nhl_lineup_row import NhlLineupRow
 from api.projections.nhl_lineup_selector import NhlLineupSelector
@@ -56,16 +60,74 @@ def _pace_total( rows: list[ PreviousSeasonNhlSkater | CurrentSeasonNhlSkater ] 
    return sum( _pace_points( row ) for row in rows )
 
 
-def _skaters( rows: list[ NhlLineupRow ] ) -> list[ TeamFactorSkater ]:
+def _skaters(
+      rows: list[ NhlLineupRow ],
+      extra: bool = False,
+      prior_availability: float | None = None ) -> list[ TeamFactorSkater ]:
    return [
       TeamFactorSkater(
          row.player_id,
          row.contribution,
          SkaterGroup.of( row.position ),
          GamesShare.FULL,
-         False,
-         None )
+         extra,
+         prior_availability )
       for row in rows ]
+
+
+def _ice( row: CurrentSeasonNhlSkater ) -> IceSkater:
+   return IceSkater(
+      row.player_id,
+      str( row.player_id ),
+      row.position,
+      row.team,
+      row.contribution,
+      None,
+      GamesShare.FULL )
+
+
+def _charts( rows: list[ CurrentSeasonNhlSkater ] ) -> list[ DepthChart ]:
+   charts = []
+
+   for lineup in TeamLineup.group( rows ):
+      for group in ( DepthGroup.forwards(), DepthGroup.defense() ):
+         matching = [
+            _ice( skater )
+            for skater in lineup.skaters
+            if group.contains( skater.position )
+         ]
+         ranked = sorted(
+            matching,
+            key=lambda skater: LastToi.key( skater.player_id, skater.implied ) )
+         count = group.dressed_count
+         charts.append(
+            DepthChart(
+               lineup.team,
+               [ ( skater, skater.implied ) for skater in ranked[ : count ] ],
+               ranked[ count: count + group.extra_count ],
+               [],
+               group.skater_group ) )
+
+   return charts
+
+
+def _fit(
+      current_season: int,
+      previous_season_id: int,
+      splits: list[ PreviousSeasonNhlSkater ],
+      paces: list[ CurrentSeasonNhlSkater ],
+      season_length: int,
+      slots: list[ SlotAverage ] | None = None ) -> list[ TeamFactor ]:
+   return TeamFactorFitter.fit(
+      current_season,
+      previous_season_id,
+      splits,
+      paces,
+      season_length,
+      [] if slots is None else slots,
+      _charts( paces ),
+      {},
+      {} )
 
 
 def _previous_skaters(
@@ -90,7 +152,9 @@ def _from_lineup(
       season,
       team,
       lineup.total() / league,
-      _skaters( lineup.skaters ) )
+      _skaters(
+         lineup.skaters,
+         prior_availability=GamesShare.FULL ) )
 
 
 def _previous_factor(
@@ -147,7 +211,7 @@ def Test_Fit_TestTeams_ExpectLeagueRelativeRates() -> None:
          _current_factor( current_season, now, now_rows, _total( now_rows ) ),
       ],
       key=lambda factor: ( factor.season, factor.team.value ) )
-   assert TeamFactorFitter.fit(
+   assert _fit(
       current_season,
       previous_season_id,
       [ *previous_rows, *elsewhere_rows ],
@@ -194,7 +258,7 @@ def Test_Fit_TestSplitSeason_ExpectSweaterTotals() -> None:
          _current_factor( current_season, now, now_rows, _total( now_rows ) ),
       ],
       key=lambda factor: ( factor.season, factor.team.value ) )
-   assert TeamFactorFitter.fit(
+   assert _fit(
       current_season,
       previous_season_id,
       [ *previous_rows, *elsewhere_rows ],
@@ -232,7 +296,7 @@ def Test_Fit_TestRookie_ExpectLineupSum() -> None:
          _current_factor( current_season, previous, previous_now, current_league ),
       ],
       key=lambda factor: ( factor.season, factor.team.value ) )
-   assert TeamFactorFitter.fit(
+   assert _fit(
       current_season,
       previous_season_id,
       [ *last_now, *last_previous ],
@@ -251,7 +315,7 @@ def Test_Fit_TestUnequalRosters_ExpectUnitTeamMean() -> None:
    ]
    previous_rows = [ _pace( 3, previous, 40.0 ) ]
    league = ( _total( now_rows ) + _total( previous_rows ) ) / 2.0
-   factors = TeamFactorFitter.fit(
+   factors = _fit(
       current_season,
       previous_season_id,
       [
@@ -320,7 +384,7 @@ def Test_Fit_TestPreviousSeasonDepth_ExpectAllSweaterTotals() -> None:
          _current_factor( current_season, now, current_now, current_league ),
       ],
       key=lambda factor: ( factor.season, factor.team.value ) )
-   assert TeamFactorFitter.fit(
+   assert _fit(
       current_season,
       previous_season_id,
       [ *forwards, outsider ],
@@ -343,7 +407,7 @@ def Test_Fit_TestShortDefense_ExpectPaddedSeventh() -> None:
       for player_id in range( 1, NhlLineupSelector.DEFENSE )
    ]
    outsider = _pace( 50, previous, 40.0, position=SkaterPosition( 'D' ) )
-   factors = TeamFactorFitter.fit(
+   factors = _fit(
       current_season,
       previous_season_id,
       [ _split( 50, previous, 40.0, position=SkaterPosition( 'D' ) ) ],
@@ -375,7 +439,7 @@ def Test_Fit_TestPreviousDefense_ExpectHealthySix() -> None:
       for player_id in range( 1, 8 )
    ]
    outsider = _split( 50, now, 40.0, position=SkaterPosition( 'D' ) )
-   factors = TeamFactorFitter.fit(
+   factors = _fit(
       current_season,
       previous_season_id,
       [ *defense, outsider ],

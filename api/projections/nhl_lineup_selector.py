@@ -10,8 +10,6 @@ class NhlLineupSelector():
    DEFENSE = 7
    DRESSED_FORWARDS = 12
    DRESSED_DEFENSE = 6
-   FORWARD_POSITIONS = SkaterGroup.FORWARD.positions
-   DEFENSE_POSITIONS = SkaterGroup.DEFENSE.positions
 
 
    @classmethod

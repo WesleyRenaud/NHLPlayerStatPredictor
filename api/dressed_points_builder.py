@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from .depth_group import DepthGroup
+from .dressed_filler import DressedFiller
 from .dressed_points import DressedPoints
 from .slot_average import SlotAverage
 from .slot_filler import SlotFiller
@@ -15,35 +16,16 @@ class DressedPointsBuilder():
          extras: list[ TeammateSkater ],
          slot_averages: list[ SlotAverage ],
          group: DepthGroup ) -> DressedPoints:
-      dressed = []
-      for skater in present:
-         if cls._complete( dressed, group ):
-            break
-
-         dressed.append( skater.contribution )
-
-      next_slot = group.spare_slot
-      for extra in extras:
-         if cls._complete( dressed, group ):
-            break
-
-         dressed.append( extra.contribution )
-         next_slot += 1
-
-      while not cls._complete( dressed, group ):
-         average = SlotFiller.average( slot_averages, next_slot )
-
-         if average is None:
-            break
-
-         dressed.append( average.contribution )
-         next_slot += 1
-
-      return DressedPoints( dressed )
-
-
-   @staticmethod
-   def _complete(
-         dressed: list[ float ],
-         group: DepthGroup ) -> bool:
-      return len( dressed ) >= group.dressed_count
+      claims = [ skater.contribution for skater in present ]
+      extra_claims = [ skater.contribution for skater in extras ]
+      return DressedPoints(
+         DressedFiller.fill(
+            claims,
+            extra_claims,
+            [ average.contribution for average in SlotFiller.spare_averages(
+               slot_averages,
+               DressedFiller.spare_slot(
+                  len( claims ),
+                  len( extra_claims ),
+                  group ) ) ],
+            group.dressed_count ) )

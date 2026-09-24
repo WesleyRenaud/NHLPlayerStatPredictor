@@ -9,6 +9,4 @@ from .roster_skater import RosterSkater
 class IceSkater( RosterSkater ):
    implied: float
    last_toi: float | None
-   last_games: int | None
-   moved: bool
    availability: float
