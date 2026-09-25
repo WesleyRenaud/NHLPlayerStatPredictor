@@ -13,8 +13,8 @@ from .depth_group import DepthGroup
 from .ice_usage_parser import IceUsageParser
 from .league_factor_fitter import LeagueFactorFitter
 from .league_factor_store import LeagueFactorStore
+from .mixed_season_share_binder import MixedSeasonShareBinder
 from .nhl_client import NhlClient
-from .nhl_only_season_filter import NhlOnlySeasonFilter
 from .nhl_skater_season import NhlSkaterSeason
 from .nhl_team_split_builder import NhlTeamSplitBuilder
 from .other_league_season_ingester import OtherLeagueSeasonIngester
@@ -72,7 +72,7 @@ class SkaterSeasonIngester():
       ScoringWeightStore.write( weights )
       AvailabilityWeightStore.write(
          AvailabilityDecayFitter.fit(
-            NhlOnlySeasonFilter.keep( rows, other_rows ) ) )
+            MixedSeasonShareBinder.bind( rows, other_rows ) ) )
       aging_factors = AgingCurveFitter.fit( rows, other_rows )
       AgingFactorStore.write( aging_factors )
       league_factors = LeagueFactorFitter.fit( rows, other_rows, aging_factors )
