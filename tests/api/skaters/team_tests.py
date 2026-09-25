@@ -19,3 +19,7 @@ def Test_FromName_TestAccentedName_ExpectTeam() -> None:
 
 def Test_FromName_TestDottedName_ExpectTeam() -> None:
    assert Team.from_name( 'St. Louis Blues' ) == Team( 'STL' )
+
+
+def Test_FromName_TestUtahHockeyClub_ExpectMammoth() -> None:
+   assert Team.from_name( 'Utah Hockey Club' ) == Team( 'UTA' )

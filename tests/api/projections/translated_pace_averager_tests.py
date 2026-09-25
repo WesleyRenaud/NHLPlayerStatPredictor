@@ -109,6 +109,32 @@ def Test_Average_TestNoUsableYears_ExpectNone() -> None:
       [], weights, 20262027, [] ) is None
 
 
+def Test_Average_TestSkippedYear_ExpectRenormalizedWeights() -> None:
+   later = _nhl( 40.0, 50.0, 20242025 )
+   earlier = _nhl( 10.0, 20.0, 20232024 )
+   later_recency = 0.3
+   earlier_recency = 0.2
+   later_weight = later_recency * (
+      float( later.games_played )
+      / ( float( later.games_played ) + TranslatedPaceAverager.GAMES_SCALE ) )
+   earlier_weight = earlier_recency * (
+      float( earlier.games_played )
+      / ( float( earlier.games_played ) + TranslatedPaceAverager.GAMES_SCALE ) )
+   total = later_weight + earlier_weight
+   pace = TranslatedPaceAverager.average(
+      [ later, earlier ],
+      [
+         RecencyWeight( 0, 0.5 ),
+         RecencyWeight( 1, later_recency ),
+         RecencyWeight( 2, earlier_recency ),
+      ],
+      20262027,
+      [] )
+   assert pace == SeasonPace(
+      ( later.g_pace * later_weight + earlier.g_pace * earlier_weight ) / total,
+      ( later.a_pace * later_weight + earlier.a_pace * earlier_weight ) / total )
+
+
 def Test_Average_TestOtherOnlyYear_ExpectTranslatedPace() -> None:
    league = 'AAA'
    factor = LeagueFactor( league, 0.30 )

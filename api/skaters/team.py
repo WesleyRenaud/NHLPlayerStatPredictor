@@ -3,6 +3,8 @@ from __future__ import annotations
 from enum import Enum
 import unicodedata
 
+from .team_name_change import TeamNameChange
+
 
 class Team( str, Enum ):
    ANAHEIM_DUCKS = 'ANA'
@@ -48,4 +50,5 @@ class Team( str, Enum ):
          'ascii',
          'ignore' ).decode()
       key = ascii_name.upper().replace( '.', '' ).replace( "'", '' ).strip()
-      return cls[ key.replace( ' ', '_' ) ]
+      key = key.replace( ' ', '_' )
+      return cls[ TeamNameChange.current( key ) ]
