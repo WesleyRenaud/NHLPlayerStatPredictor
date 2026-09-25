@@ -19,32 +19,51 @@ const PLAYERS = [
 
 
 test('Test_Filter_TestBlankQuery_ExpectEmpty', () => {
-   assert.deepEqual(PlayerNameMatcher.filter(PLAYERS, '  '), []);
-   assert.deepEqual(PlayerNameMatcher.filter(PLAYERS, ''), []);
+   const query = '  ';
+
+   const filtered = PlayerNameMatcher.filter(PLAYERS, query);
+
+   assert.deepEqual(filtered, []);
+});
+
+
+test('Test_Filter_TestEmptyQuery_ExpectEmpty', () => {
+   const query = '';
+
+   const filtered = PlayerNameMatcher.filter(PLAYERS, query);
+
+   assert.deepEqual(filtered, []);
 });
 
 
 test('Test_Filter_TestStartsWithBeforeContains_ExpectOrdered', () => {
-   assert.deepEqual(
-      PlayerNameMatcher.filter(PLAYERS, 'a'),
-      PLAYERS
-   );
+   const query = 'a';
+
+   const filtered = PlayerNameMatcher.filter(PLAYERS, query);
+
+   assert.deepEqual(filtered, PLAYERS);
 });
 
 
 test('Test_Filter_TestMaxResults_ExpectSliced', () => {
+   const query = 'a';
+   const maxResults = 2;
+
+   const filtered = PlayerNameMatcher.filter(PLAYERS, query, maxResults);
+
    assert.deepEqual(
-      PlayerNameMatcher.filter(PLAYERS, 'a', 2),
+      filtered,
       [PLAYERS[Position.FIRST], PLAYERS[Position.SECOND]]
    );
 });
 
 
 test('Test_Filter_TestContainsOnly_ExpectMatches', () => {
-   assert.deepEqual(
-      PlayerNameMatcher.filter(PLAYERS, 'amma'),
-      [PLAYERS[Position.FOURTH]]
-   );
+   const query = 'amma';
+
+   const filtered = PlayerNameMatcher.filter(PLAYERS, query);
+
+   assert.deepEqual(filtered, [PLAYERS[Position.FOURTH]]);
 });
 
 
@@ -52,22 +71,49 @@ test('Test_Filter_TestSharedName_ExpectBothPlayers', () => {
    const sharedName = 'Shared Skater';
    const first = { playerId: 1, playerName: sharedName };
    const second = { playerId: 2, playerName: sharedName };
-   assert.deepEqual(
-      PlayerNameMatcher.filter([first, second], sharedName),
-      [first, second]
-   );
+   const players = [first, second];
+
+   const filtered = PlayerNameMatcher.filter(players, sharedName);
+
+   assert.deepEqual(filtered, players);
 });
 
 
 test('Test_Filter_TestDiacritics_ExpectAsciiQueryMatches', () => {
    const player = { playerName: 'Viggo Björck' };
-   assert.deepEqual(PlayerNameMatcher.filter([player], 'bjork'), [player]);
-   assert.deepEqual(PlayerNameMatcher.filter([player], 'viggo'), [player]);
+   const query = 'bjork';
+
+   const filtered = PlayerNameMatcher.filter([player], query);
+
+   assert.deepEqual(filtered, [player]);
+});
+
+
+test('Test_Filter_TestDiacritics_ExpectFirstNameMatches', () => {
+   const player = { playerName: 'Viggo Björck' };
+   const query = 'viggo';
+
+   const filtered = PlayerNameMatcher.filter([player], query);
+
+   assert.deepEqual(filtered, [player]);
 });
 
 
 test('Test_Filter_TestMixedCaseCk_ExpectQueryMatches', () => {
    const player = { playerName: 'Stub McKenna' };
-   assert.deepEqual(PlayerNameMatcher.filter([player], 'mcke'), [player]);
-   assert.deepEqual(PlayerNameMatcher.filter([player], 'McKe'), [player]);
+   const query = 'mcke';
+
+   const filtered = PlayerNameMatcher.filter([player], query);
+
+   assert.deepEqual(filtered, [player]);
+});
+
+
+test('Test_Filter_TestMixedCaseCk_ExpectCasedQueryMatches', () => {
+   const player = { playerName: 'Stub McKenna' };
+   const query = 'McKe';
+
+   const filtered = PlayerNameMatcher.filter([player], query);
+
+   assert.deepEqual(filtered, [player]);
 });

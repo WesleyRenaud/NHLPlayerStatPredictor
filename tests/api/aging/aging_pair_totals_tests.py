@@ -22,7 +22,9 @@ def _season( g_pace: float, a_pace: float ) -> SkaterSeason:
 def Test_Adding_TestPair_ExpectPaceAndChange() -> None:
    current = _season( 10.0, 20.0 )
    following = _season( 12.0, 18.0 )
+
    totals = AgingPairTotals.empty().adding( current, following )
+
    assert totals == AgingPairTotals(
       1,
       current.g_pace,
@@ -35,8 +37,12 @@ def Test_Percent_TestTotals_ExpectRatioOfMeans() -> None:
    first = _season( 10.0, 20.0 )
    second = _season( 12.0, 22.0 )
    third = _season( 8.0, 18.0 )
+
    totals = AgingPairTotals.empty().adding( first, second ).adding( second, third )
-   assert totals.percent() == (
+
+   percent = totals.percent()
+
+   assert percent == (
       totals.goal_change / totals.goal_pace,
       totals.assist_change / totals.assist_pace )
 
@@ -44,5 +50,9 @@ def Test_Percent_TestTotals_ExpectRatioOfMeans() -> None:
 def Test_Percent_TestZeroPace_ExpectNone() -> None:
    current = _season( 0.0, 20.0 )
    following = _season( 5.0, 22.0 )
-   assert AgingPairTotals.empty().adding( current, following ).percent() is None
-   assert AgingPairTotals.empty().percent() is None
+
+   added = AgingPairTotals.empty().adding( current, following ).percent()
+   empty = AgingPairTotals.empty().percent()
+
+   assert added is None
+   assert empty is None

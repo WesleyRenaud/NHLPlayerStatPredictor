@@ -4,13 +4,27 @@ from api.depth.league_filler import LeagueFiller
 
 
 def Test_PlayerId_TestSlot_ExpectNegativeSlot() -> None:
-   assert LeagueFiller.player_id( 7 ) == -7
+   slot = 7
+
+   player_id = LeagueFiller.player_id( slot )
+
+   assert player_id == -slot
 
 
 def Test_Slot_TestFillerId_ExpectSlotNumber() -> None:
-   assert LeagueFiller.slot( -13 ) == 13
+   slot = 13
+
+   resolved = LeagueFiller.slot( -slot )
+
+   assert resolved == slot
 
 
 def Test_IsFiller_TestFillerAndPlayer_ExpectOnlyFiller() -> None:
-   assert LeagueFiller.is_filler( LeagueFiller.player_id( 7 ) )
-   assert not LeagueFiller.is_filler( 1 )
+   slot = 7
+   player_id = 1
+
+   filler = LeagueFiller.is_filler( LeagueFiller.player_id( slot ) )
+   skater = LeagueFiller.is_filler( player_id )
+
+   assert filler
+   assert not skater

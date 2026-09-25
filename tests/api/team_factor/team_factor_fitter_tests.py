@@ -213,12 +213,15 @@ def Test_Fit_TestTeams_ExpectLeagueRelativeRates() -> None:
          _current_factor( current_season, now, now_rows, _total( now_rows ) ),
       ],
       key=lambda factor: ( factor.season, factor.team.value ) )
-   assert _fit(
+
+   factors = _fit(
       current_season,
       previous_season_id,
       [ *previous_rows, *elsewhere_rows ],
       now_rows,
-      82 ) == expected
+      82 )
+
+   assert factors == expected
 
 
 def Test_Fit_TestSplitSeason_ExpectSweaterTotals() -> None:
@@ -260,12 +263,15 @@ def Test_Fit_TestSplitSeason_ExpectSweaterTotals() -> None:
          _current_factor( current_season, now, now_rows, _total( now_rows ) ),
       ],
       key=lambda factor: ( factor.season, factor.team.value ) )
-   assert _fit(
+
+   factors = _fit(
       current_season,
       previous_season_id,
       [ *previous_rows, *elsewhere_rows ],
       now_rows,
-      82 ) == expected
+      82 )
+
+   assert factors == expected
 
 
 def Test_Fit_TestRookie_ExpectLineupSum() -> None:
@@ -298,12 +304,15 @@ def Test_Fit_TestRookie_ExpectLineupSum() -> None:
          _current_factor( current_season, previous, previous_now, current_league ),
       ],
       key=lambda factor: ( factor.season, factor.team.value ) )
-   assert _fit(
+
+   factors = _fit(
       current_season,
       previous_season_id,
       [ *last_now, *last_previous ],
       [ *now_rows, *previous_now ],
-      82 ) == expected
+      82 )
+
+   assert factors == expected
 
 
 def Test_Fit_TestUnequalRosters_ExpectUnitTeamMean() -> None:
@@ -386,12 +395,15 @@ def Test_Fit_TestPreviousSeasonDepth_ExpectAllSweaterTotals() -> None:
          _current_factor( current_season, now, current_now, current_league ),
       ],
       key=lambda factor: ( factor.season, factor.team.value ) )
-   assert _fit(
+
+   factors = _fit(
       current_season,
       previous_season_id,
       [ *forwards, outsider ],
       [ *current_previous, *current_now ],
-      82 ) == expected
+      82 )
+
+   assert factors == expected
 
 
 def Test_Fit_TestShortDefense_ExpectPaddedSeventh() -> None:
@@ -503,7 +515,14 @@ def Test_Fit_TestPreviousDefense_ExpectHealthySix() -> None:
       factor
       for factor in factors
       if factor.season == previous_season_id and factor.team == previous )
-   assert abs( last.dressed_total() - 120.0 ) < 0.001
+   dressed = [
+      skater
+      for skater in last.skaters
+      if not skater.extra
+   ]
+   assert abs(
+      last.dressed_total()
+      - sum( skater.contribution for skater in dressed ) ) < 0.001
 
 
 def Test_Fit_TestCurrentIce_ExpectLastToiScale() -> None:

@@ -6,7 +6,6 @@ from api.projections.previous_season_skater import PreviousSeasonSkater
 from api.projections.season_pace import SeasonPace
 from api.projections.team_environment import TeamEnvironment
 from api.projections.team_environment_resolver import TeamEnvironmentResolver
-from api.projections.team_quality_calculator import TeamQualityCalculator
 from api.shared.enums.position import Position
 from api.skaters.roster_skater import RosterSkater
 from api.skaters.skater_position import SkaterPosition
@@ -17,7 +16,7 @@ def _roster( player_id: int, team: Team ) -> RosterSkater:
    return RosterSkater(
       player_id=player_id,
       player_name='Stub Skater',
-      position=list( SkaterPosition )[ Position.FIRST ],
+      position=SkaterPosition( 'C' ),
       team=team )
 
 
@@ -26,7 +25,7 @@ def _other( player_id: int, points: float, games: int = 82 ) -> PreviousSeasonSk
       player_id=player_id,
       games=games,
       pace=SeasonPace( points / 2.0, points / 2.0 ),
-      position=list( SkaterPosition )[ Position.FIRST ] )
+      position=SkaterPosition( 'C' ) )
 
 
 def _nhl(
@@ -39,7 +38,7 @@ def _nhl(
       games=games,
       pace=SeasonPace( points / 2.0, points / 2.0 ),
       team=team,
-      position=list( SkaterPosition )[ Position.FIRST ] )
+      position=SkaterPosition( 'C' ) )
 
 
 def Test_Resolve_TestCurrentRosterTeammates_ExpectPreviousSeasonPaceFromAnyClub() -> None:
@@ -62,10 +61,12 @@ def Test_Resolve_TestCurrentRosterTeammates_ExpectPreviousSeasonPaceFromAnyClub(
          departed_row,
       ],
       [] )
+
    environment = TeamEnvironmentResolver.resolve( player_id, roster, previous_season )
+
    assert environment == TeamEnvironment(
-      current_roster_quality=TeamQualityCalculator.average( [ incoming_row ] ),
-      previous_roster_quality=TeamQualityCalculator.average( [ departed_row ] ) )
+      current_roster_quality=incoming_row.contribution / incoming_row.games,
+      previous_roster_quality=departed_row.contribution / departed_row.games )
 
 
 def Test_Resolve_TestMissingLastNhlTeam_ExpectLeagueNhlAverage() -> None:
@@ -83,7 +84,11 @@ def Test_Resolve_TestMissingLastNhlTeam_ExpectLeagueNhlAverage() -> None:
    previous_season = PreviousSeasonGroup(
       [ teammate_row, outsider_row ],
       [ _other( player_id, 40.0 ) ] )
+
    environment = TeamEnvironmentResolver.resolve( player_id, roster, previous_season )
+
    assert environment == TeamEnvironment(
-      current_roster_quality=TeamQualityCalculator.average( [ teammate_row ] ),
-      previous_roster_quality=TeamQualityCalculator.average( [ teammate_row, outsider_row ] ) )
+      current_roster_quality=teammate_row.contribution / teammate_row.games,
+      previous_roster_quality=(
+         teammate_row.contribution + outsider_row.contribution
+      ) / ( teammate_row.games + outsider_row.games ) )

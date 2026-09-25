@@ -23,7 +23,10 @@ def Test_Skaters_TestInsertedRows_ExpectAll( tmp_path: Path ) -> None:
       position=list( SkaterPosition )[ Position.FIRST ],
       team=list( Team )[ Position.SECOND ] )
    RosterSkaterStore.insert_rows( [ first, second ], db_path=db_path )
-   assert RosterSkaterProvider.skaters( db_path ) == [ first, second ]
+
+   skaters = RosterSkaterProvider.skaters( db_path )
+
+   assert skaters == [ first, second ]
 
 
 def Test_Team_TestInsertedPlayer_ExpectTeam( tmp_path: Path ) -> None:
@@ -34,10 +37,17 @@ def Test_Team_TestInsertedPlayer_ExpectTeam( tmp_path: Path ) -> None:
       position=list( SkaterPosition )[ Position.FIRST ],
       team=list( Team )[ Position.FIRST ] )
    RosterSkaterStore.insert_rows( [ first ], db_path=db_path )
-   assert RosterSkaterProvider.team( first.player_id, db_path ) == first.team
+
+   team = RosterSkaterProvider.team( first.player_id, db_path )
+
+   assert team == first.team
 
 
 def Test_Team_TestMissingPlayer_ExpectNone( tmp_path: Path ) -> None:
    db_path = str( tmp_path / 'skaters.sqlite' )
+   player_id = 1
    RosterSkaterStore.insert_rows( [], db_path=db_path )
-   assert RosterSkaterProvider.team( 1, db_path ) is None
+
+   team = RosterSkaterProvider.team( player_id, db_path )
+
+   assert team is None

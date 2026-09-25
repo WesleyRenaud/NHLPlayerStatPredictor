@@ -37,17 +37,29 @@ def Test_BuildRows_TestLanding_ExpectBuilderRows(
       'build',
       lambda payload, season_rows, pace: captured.append(
          ( payload, season_rows, pace ) ) or expected )
+
    rows = OtherLeagueSeasonIngester.build_rows(
       [ player_id ],
       { player_id: landing },
       seasons,
       pace_games )
+
    assert rows == expected
    assert captured == [ ( landing, seasons, pace_games ) ]
 
 
 def Test_BuildRows_TestMissingLanding_ExpectSkipped() -> None:
-   rows = OtherLeagueSeasonIngester.build_rows( [ 1 ], {}, [], 84 )
+   player_id = 1
+   landings = {}
+   seasons = []
+   pace_games = 84
+
+   rows = OtherLeagueSeasonIngester.build_rows(
+      [ player_id ],
+      landings,
+      seasons,
+      pace_games )
+
    assert rows == []
 
 
@@ -57,6 +69,7 @@ def Test_BuildRows_TestMultiplePlayers_ExpectPlayerOrder(
    second_id = 8
    seasons = [
       SeasonLength( 20252026, 82, date( 2025, 10, 8 ), date( 2026, 4, 17 ) ) ]
+   pace_games = 84
    expected = {
       first_id: OtherLeagueSkaterSeason(
          player_id=first_id,
@@ -87,6 +100,7 @@ def Test_BuildRows_TestMultiplePlayers_ExpectPlayerOrder(
       other_league_season_ingester.OtherLeagueSeasonBuilder,
       'build',
       lambda payload, season_rows, pace: [ expected[ int( payload[ 'playerId' ] ) ] ] )
+
    rows = OtherLeagueSeasonIngester.build_rows(
       [ first_id, second_id ],
       {
@@ -94,13 +108,16 @@ def Test_BuildRows_TestMultiplePlayers_ExpectPlayerOrder(
          second_id: { 'playerId': second_id },
       },
       seasons,
-      84 )
+      pace_games )
+
    assert rows == [ expected[ first_id ], expected[ second_id ] ]
 
 
 def Test_BuildRows_TestMissingLandingAmongPlayers_ExpectRemaining(
       monkeypatch: pytest.MonkeyPatch ) -> None:
+   missing_id = 1
    ok_id = 8
+   pace_games = 84
    expected = OtherLeagueSkaterSeason(
       player_id=ok_id,
       season_id=20252026,
@@ -117,9 +134,11 @@ def Test_BuildRows_TestMissingLandingAmongPlayers_ExpectRemaining(
       other_league_season_ingester.OtherLeagueSeasonBuilder,
       'build',
       lambda payload, season_rows, pace: [ expected ] )
+
    rows = OtherLeagueSeasonIngester.build_rows(
-      [ 1, ok_id ],
+      [ missing_id, ok_id ],
       { ok_id: { 'playerId': ok_id } },
       [],
-      84 )
+      pace_games )
+
    assert rows == [ expected ]

@@ -25,19 +25,29 @@ def Test_Group_TestTeams_ExpectSeparated() -> None:
    first = _skater( 1, now, 50.0 )
    second = _skater( 2, previous, 40.0 )
    third = _skater( 3, now, 30.0 )
-   assert TeamLineup.group( [ first, second, third ] ) == [
+
+   lineups = TeamLineup.group( [ first, second, third ] )
+
+   assert lineups == [
       TeamLineup( now, [ first, third ] ),
       TeamLineup( previous, [ second ] ),
    ]
 
 
 def Test_Group_TestEmpty_ExpectEmpty() -> None:
-   assert TeamLineup.group( [] ) == []
+   skaters: list[ CurrentSeasonNhlSkater ] = []
+
+   lineups = TeamLineup.group( skaters )
+
+   assert lineups == []
 
 
 def Test_Total_TestRows_ExpectContributionSum() -> None:
    now = list( Team )[ Position.FIRST ]
    first = _skater( 1, now, 50.0 )
    second = _skater( 2, now, 30.0 )
-   assert TeamLineup( now, [ first, second ] ).total() == (
-      first.contribution + second.contribution )
+   lineup = TeamLineup( now, [ first, second ] )
+
+   total = lineup.total()
+
+   assert total == first.contribution + second.contribution

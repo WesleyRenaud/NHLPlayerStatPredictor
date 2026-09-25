@@ -38,34 +38,48 @@ class _RecordingHandler():
 
 
 def Test_Serve_TestUnknownPath_ExpectFalse() -> None:
-   assert StaticPageRoutes.serve( object(), '/missing' ) is False
+   path = '/missing'
+
+   served = StaticPageRoutes.serve( object(), path )
+
+   assert served is False
 
 
 def Test_Serve_TestMappedPage_ExpectSendsFile(
       monkeypatch: pytest.MonkeyPatch ) -> None:
    sent: list[ Path ] = []
+   path = '/stub.html'
+   page = 'pages/stub.html'
    monkeypatch.setattr(
       StaticPageRoutes,
       'PAGES',
-      { '/stub.html': 'pages/stub.html' } )
+      { path: page } )
    monkeypatch.setattr(
       static_page_routes.StaticFileSender,
       'send',
       lambda handler, filepath: sent.append( filepath ) )
-   assert StaticPageRoutes.serve( object(), '/stub.html' ) is True
-   assert sent == [ static_page_routes.Paths.ROOT / 'pages/stub.html' ]
+
+   served = StaticPageRoutes.serve( object(), path )
+
+   assert served is True
+   assert sent == [ static_page_routes.Paths.ROOT / page ]
 
 
 def Test_Serve_TestRedirect_ExpectLocation(
       monkeypatch: pytest.MonkeyPatch ) -> None:
+   source = '/'
+   target = '/stub.html'
+   handler = _RecordingHandler()
    monkeypatch.setattr(
       StaticPageRoutes,
       'REDIRECTS',
-      { '/': '/stub.html' } )
-   handler = _RecordingHandler()
-   assert StaticPageRoutes.serve( handler, '/' ) is True
+      { source: target } )
+
+   served = StaticPageRoutes.serve( handler, source )
+
+   assert served is True
    assert handler.status == 302
-   assert handler.headers[ 'Location' ] == '/stub.html'
+   assert handler.headers[ 'Location' ] == target
 
 
 def Test_Serve_TestPrefixedFile_ExpectSends(
@@ -73,10 +87,15 @@ def Test_Serve_TestPrefixedFile_ExpectSends(
       monkeypatch: pytest.MonkeyPatch ) -> None:
    styles = tmp_path / 'styles'
    styles.mkdir()
-   ( styles / 'app.css' ).write_text( '.stub {}', encoding='utf-8' )
+   css = '.stub {}'
+   ( styles / 'app.css' ).write_text( css, encoding='utf-8' )
+   path = '/styles/app.css'
+   handler = _RecordingHandler()
    monkeypatch.setattr( static_page_routes.Paths, 'ROOT', tmp_path )
    monkeypatch.setattr( StaticPageRoutes, 'PREFIXES', ( '/styles/', ) )
-   handler = _RecordingHandler()
-   assert StaticPageRoutes.serve( handler, '/styles/app.css' ) is True
+
+   served = StaticPageRoutes.serve( handler, path )
+
+   assert served is True
    assert handler.status == 200
-   assert b'.stub {}' in handler.body
+   assert css.encode() in handler.body

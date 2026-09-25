@@ -5,19 +5,25 @@ import { PlayerSearchSummary } from '../../../scripts/api/playerSearchSummary.js
 
 
 test('Test_Normalize_TestRow_ExpectFields', () => {
+   const playerId = 7;
    const playerName = 'Stub Alpha';
+   const position = 'POS';
+   const team = 'TM';
    const firstSeason = '2023-24';
-   const player = PlayerSearchSummary.normalize({
-      playerId: 7,
+   const row = {
+      playerId,
       playerName: ` ${playerName} `,
-      position: ' POS ',
-      team: ' TM ',
+      position: ` ${position} `,
+      team: ` ${team} `,
       firstSeason: ` ${firstSeason} `,
-   });
-   assert.equal(player.playerId, 7);
+   };
+
+   const player = PlayerSearchSummary.normalize(row);
+
+   assert.equal(player.playerId, playerId);
    assert.equal(player.playerName, playerName);
-   assert.equal(player.position, 'POS');
-   assert.equal(player.team, 'TM');
+   assert.equal(player.position, position);
+   assert.equal(player.team, team);
    assert.equal(player.firstSeason, firstSeason);
 });
 
@@ -28,13 +34,16 @@ test('Test_NormalizeAll_TestMissingName_ExpectDropped', () => {
       playerName: 'Stub Alpha',
       firstSeason: '2023-24',
    };
-   assert.deepEqual(
-      PlayerSearchSummary.normalizeAll([
-         { playerId: 7, playerName: '', firstSeason: complete.firstSeason },
-         complete,
-      ]),
-      [PlayerSearchSummary.normalize(complete)]
-   );
+   const missingName = {
+      playerId: complete.playerId,
+      playerName: '',
+      firstSeason: complete.firstSeason,
+   };
+   const rows = [missingName, complete];
+
+   const normalized = PlayerSearchSummary.normalizeAll(rows);
+
+   assert.deepEqual(normalized, [PlayerSearchSummary.normalize(complete)]);
 });
 
 
@@ -44,11 +53,13 @@ test('Test_NormalizeAll_TestMissingPlayerId_ExpectDropped', () => {
       playerName: 'Stub Alpha',
       firstSeason: '2023-24',
    };
-   assert.deepEqual(
-      PlayerSearchSummary.normalizeAll([
-         { playerName: complete.playerName, firstSeason: complete.firstSeason },
-         complete,
-      ]),
-      [PlayerSearchSummary.normalize(complete)]
-   );
+   const missingId = {
+      playerName: complete.playerName,
+      firstSeason: complete.firstSeason,
+   };
+   const rows = [missingId, complete];
+
+   const normalized = PlayerSearchSummary.normalizeAll(rows);
+
+   assert.deepEqual(normalized, [PlayerSearchSummary.normalize(complete)]);
 });

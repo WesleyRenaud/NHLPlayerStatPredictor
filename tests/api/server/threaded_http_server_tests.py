@@ -26,7 +26,11 @@ class _OkHandler( BaseHTTPRequestHandler ):
 
 
 def Test_RequestQueueSize_TestClassDefault_ExpectLargerThanFive() -> None:
-   assert ThreadedHttpServer.request_queue_size > 5
+   minimum = 5
+
+   queue_size = ThreadedHttpServer.request_queue_size
+
+   assert queue_size > minimum
 
 
 def Test_ServeForever_TestParallelGets_ExpectAllSucceed() -> None:
@@ -44,8 +48,8 @@ def Test_ServeForever_TestParallelGets_ExpectAllSucceed() -> None:
 
       with ThreadPoolExecutor( max_workers=PARALLEL_GET_COUNT ) as executor:
          statuses = list( executor.map( lambda _: fetch(), range( PARALLEL_GET_COUNT ) ) )
-
-      assert statuses == [ 200 ] * PARALLEL_GET_COUNT
    finally:
       server.shutdown()
       server.server_close()
+
+   assert statuses == [ 200 ] * PARALLEL_GET_COUNT

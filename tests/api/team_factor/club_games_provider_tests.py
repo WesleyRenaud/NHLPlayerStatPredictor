@@ -24,7 +24,10 @@ def Test_Resolve_TestMissingLanding_ExpectEmpty(
       club_games_provider,
       'JsonFileCache',
       lambda: JsonFileCache( tmp_path ) )
-   assert ClubGamesProvider.resolve( 1, 20252026 ) == []
+
+   clubs = ClubGamesProvider.resolve( 1, 20252026 )
+
+   assert clubs == []
 
 
 def Test_Resolve_TestLanding_ExpectClubGames(
@@ -59,7 +62,10 @@ def Test_Resolve_TestLanding_ExpectClubGames(
             },
          ]
       } )
-   assert ClubGamesProvider.resolve( 1, season_id ) == [
+
+   clubs = ClubGamesProvider.resolve( 1, season_id )
+
+   assert clubs == [
       ClubGames( first, first_games ),
       ClubGames( second, second_games ),
    ]

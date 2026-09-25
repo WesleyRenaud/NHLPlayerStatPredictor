@@ -12,26 +12,28 @@ from api.skaters.team import Team
 
 def Test_Forwards_TestLineup_ExpectForwardConstants() -> None:
    group = DepthGroup.forwards()
+
    assert group.dressed_count == NhlLineupSelector.DRESSED_FORWARDS
    assert group.spare_slot == NhlLineupSelector.DRESSED_FORWARDS + 1
    assert group.extra_count == LastCore.EXTRA
    assert group.roster_count == NhlLineupSelector.DRESSED_FORWARDS + LastCore.EXTRA
    assert group.ice_minutes == DepthGroup.FORWARD_ICE_MINUTES
    assert group.label == 'F'
-   assert group.skater_group is SkaterGroup.FORWARD
-   assert group.positions == SkaterGroup.FORWARD.positions
+   assert group.skater_group is SkaterGroup( 'F' )
+   assert group.positions == SkaterGroup( 'F' ).positions
 
 
 def Test_Defense_TestLineup_ExpectDefenseConstants() -> None:
    group = DepthGroup.defense()
+
    assert group.dressed_count == NhlLineupSelector.DRESSED_DEFENSE
    assert group.spare_slot == NhlLineupSelector.DRESSED_DEFENSE + 1
    assert group.extra_count == LastCore.EXTRA
    assert group.roster_count == NhlLineupSelector.DRESSED_DEFENSE + LastCore.EXTRA
    assert group.ice_minutes == DepthGroup.DEFENSE_ICE_MINUTES
    assert group.label == 'D'
-   assert group.skater_group is SkaterGroup.DEFENSE
-   assert group.positions == SkaterGroup.DEFENSE.positions
+   assert group.skater_group is SkaterGroup( 'D' )
+   assert group.positions == SkaterGroup( 'D' ).positions
 
 
 def Test_Skaters_TestTeamAndPosition_ExpectGroupMembers() -> None:
@@ -41,13 +43,18 @@ def Test_Skaters_TestTeamAndPosition_ExpectGroupMembers() -> None:
    defense = RosterSkater( 2, 'D', SkaterPosition( 'D' ), team )
    elsewhere = RosterSkater( 3, 'C', SkaterPosition( 'C' ), other )
    roster = [ forward, defense, elsewhere ]
-   assert DepthGroup.forwards().skaters( roster, team ) == [ forward ]
-   assert DepthGroup.defense().skaters( roster, team ) == [ defense ]
+
+   forwards = DepthGroup.forwards().skaters( roster, team )
+   defenders = DepthGroup.defense().skaters( roster, team )
+
+   assert forwards == [ forward ]
+   assert defenders == [ defense ]
 
 
 def Test_Contains_TestPositions_ExpectGroupMembership() -> None:
    forwards = DepthGroup.forwards()
    defense = DepthGroup.defense()
+
    assert forwards.contains( SkaterPosition( 'C' ) )
    assert forwards.contains( SkaterPosition( 'L' ) )
    assert forwards.contains( SkaterPosition( 'F' ) )

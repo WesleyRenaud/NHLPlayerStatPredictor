@@ -12,7 +12,11 @@ class _Handler( JsonHandlerMixin ):
 
 
 def Test_Serve_TestUnknownPath_ExpectFalse() -> None:
-   assert PostRouteRegistry.serve( _Handler(), '/missing' ) is False
+   path = '/missing'
+
+   served = PostRouteRegistry.serve( _Handler(), path )
+
+   assert served is False
 
 
 def Test_Serve_TestRegisteredPath_ExpectHandlerCalled(
@@ -24,5 +28,8 @@ def Test_Serve_TestRegisteredPath_ExpectHandlerCalled(
       received.called = True
 
    monkeypatch.setattr( PostRouteRegistry, 'ROUTES', { path: fake_route } )
-   assert PostRouteRegistry.serve( handler, path ) is True
+
+   served = PostRouteRegistry.serve( handler, path )
+
+   assert served is True
    assert handler.called is True

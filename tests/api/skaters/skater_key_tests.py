@@ -10,7 +10,7 @@ from api.skaters.team import Team
 
 
 def Test_FromRow_TestPlayerAndName_ExpectFields() -> None:
-   key = SkaterKey.from_row( NhlSkaterSeason(
+   season = NhlSkaterSeason(
       player_id=8478402,
       season_id=20252026,
       player_name='Connor McDavid',
@@ -27,12 +27,20 @@ def Test_FromRow_TestPlayerAndName_ExpectFields() -> None:
       g_pace=48.0,
       a_pace=90.0,
       p_pace=138.0,
-      gp_share=1.0 ) )
-   assert key.player_id == 8478402
-   assert key.player_name == 'Connor McDavid'
+      gp_share=1.0 )
+
+   key = SkaterKey.from_row( season )
+
+   assert key == SkaterKey( season.player_id, season.player_name )
 
 
 def Test_Equality_TestSamePlayerAndName_ExpectEqual() -> None:
-   key = SkaterKey( 8478402, 'Connor McDavid' )
-   assert key == SkaterKey( 8478402, 'Connor McDavid' )
-   assert key in { SkaterKey( 8478402, 'Connor McDavid' ) }
+   player_id = 8478402
+   player_name = 'Connor McDavid'
+   key = SkaterKey( player_id, player_name )
+   duplicate = SkaterKey( player_id, player_name )
+
+   equal = key == duplicate
+
+   assert equal
+   assert key in { duplicate }

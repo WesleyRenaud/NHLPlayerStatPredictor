@@ -4,11 +4,18 @@ from api.time import Time
 
 
 def Test_Minutes_TestSeconds_ExpectMinutes() -> None:
-   assert Time.minutes( 1480.8 ) == 24.68
+   seconds = 1480.8
+
+   minutes = Time.minutes( seconds )
+
+   assert minutes == seconds / Time.SECONDS_PER_MINUTE
 
 
 def Test_Clock_TestMinutesAndSeconds_ExpectMinutes() -> None:
    minutes = 14
    seconds = 19
-   assert Time.clock( '%d:%02d' % ( minutes, seconds ) ) == (
-      minutes + seconds / Time.SECONDS_PER_MINUTE )
+   clock = '%d:%02d' % ( minutes, seconds )
+
+   value = Time.clock( clock )
+
+   assert value == minutes + seconds / Time.SECONDS_PER_MINUTE

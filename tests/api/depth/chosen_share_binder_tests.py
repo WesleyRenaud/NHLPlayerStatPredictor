@@ -26,36 +26,57 @@ def _skater(
       availability )
 
 
-def _shares() -> list[ IceChosenShare ]:
-   group = SkaterGroup( 'D' )
-   return [
-      IceChosenShare( 16.0, group, 0.5, 0.5 ),
-      IceChosenShare( 24.0, group, GamesShare.FULL, GamesShare.FULL ),
+def Test_Bind_TestLastToi_ExpectAvailabilityTimesChosen() -> None:
+   injury = 0.8
+   chosen = 0.5
+   low_toi = 16.0
+   high_toi = 24.0
+   low = _skater( 2, low_toi, 24.0, injury )
+   high = _skater( 1, high_toi, 16.0, injury )
+   shares = [
+      IceChosenShare( low_toi, SkaterGroup( 'D' ), chosen, chosen ),
+      IceChosenShare( high_toi, SkaterGroup( 'D' ), GamesShare.FULL, GamesShare.FULL ),
    ]
 
+   bound = ChosenShareBinder.bind( [ low, high ], shares, DepthGroup.defense() )
 
-def Test_Bind_TestLastToi_ExpectAvailabilityTimesChosen() -> None:
-   bound = ChosenShareBinder.bind(
-      [ _skater( 2, 16.0, 24.0, 0.8 ), _skater( 1, 24.0, 16.0, 0.8 ) ],
-      _shares(),
-      DepthGroup.defense() )
    by_id = { skater.player_id: skater.availability for skater in bound }
-   assert by_id[ 1 ] == 0.8
-   assert by_id[ 2 ] == 0.4
-   assert [ skater.player_id for skater in bound ] == [ 2, 1 ]
+   assert by_id[ high.player_id ] == injury
+   assert by_id[ low.player_id ] == injury * chosen
+   assert [ skater.player_id for skater in bound ] == [ low.player_id, high.player_id ]
 
 
 def Test_Bind_TestMidToi_ExpectInterpolatedChosen() -> None:
+   injury = 0.8
+   low = 0.5
+   high = GamesShare.FULL
+   last_toi = 20.0
+   shares = [
+      IceChosenShare( 16.0, SkaterGroup( 'D' ), low, low ),
+      IceChosenShare( 24.0, SkaterGroup( 'D' ), high, high ),
+   ]
+
    bound = ChosenShareBinder.bind(
-      [ _skater( 1, 20.0, 20.0, 0.8 ) ],
-      _shares(),
+      [ _skater( 1, last_toi, last_toi, injury ) ],
+      shares,
       DepthGroup.defense() )
-   assert abs( bound[ Position.FIRST ].availability - 0.6 ) < 0.001
+
+   assert abs(
+      bound[ Position.FIRST ].availability
+      - injury * ( low + high ) / 2 ) < 0.001
 
 
 def Test_Bind_TestMissingLastToi_ExpectLowestChosen() -> None:
+   injury = 0.8
+   chosen = 0.5
+   shares = [
+      IceChosenShare( 16.0, SkaterGroup( 'D' ), chosen, chosen ),
+      IceChosenShare( 24.0, SkaterGroup( 'D' ), GamesShare.FULL, GamesShare.FULL ),
+   ]
+
    bound = ChosenShareBinder.bind(
-      [ _skater( 1, None, 0.0, 0.8 ) ],
-      _shares(),
+      [ _skater( 1, None, 0.0, injury ) ],
+      shares,
       DepthGroup.defense() )
-   assert bound[ Position.FIRST ].availability == 0.4
+
+   assert bound[ Position.FIRST ].availability == injury * chosen

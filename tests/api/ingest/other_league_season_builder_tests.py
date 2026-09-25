@@ -8,6 +8,7 @@ from api.season import Season
 from api.season_length import SeasonLength
 from api.shared.enums.position import Position
 from api.skaters.club_league import ClubLeague
+from api.skaters.other_league_skater_season import OtherLeagueSkaterSeason
 from api.skaters.skater_position import SkaterPosition
 
 
@@ -51,6 +52,7 @@ def _landing(
 
 
 def Test_Build_TestClubSeason_ExpectPacedRow() -> None:
+   player_id = 1
    league = _league()
    season_id = 20252026
    games_played = 46
@@ -58,99 +60,137 @@ def Test_Build_TestClubSeason_ExpectPacedRow() -> None:
    assists = 13
    pace_games = 84
    start_date = date( 2025, 10, 8 )
-   rows = OtherLeagueSeasonBuilder.build(
-      _landing( 1, league, season_id, games_played, goals, assists ),
-      [ SeasonLength( season_id, 82, start_date, date( 2026, 4, 17 ) ) ],
-      pace_games )
-   assert len( rows ) == 1
-   row = rows[ Position.FIRST ]
-   assert row.player_id == 1
-   assert row.season_id == season_id
-   assert row.league == league
-   assert row.position == SkaterPosition( 'C' )
-   assert row.games_played == games_played
-   assert row.goals == goals
-   assert row.assists == assists
-   assert row.g_pace == Season.pace( float( goals ), float( games_played ), pace_games )
-   assert row.a_pace == Season.pace( float( assists ), float( games_played ), pace_games )
-   assert row.age == Season.age_on( date( 2005, 1, 9 ), start_date )
+   birth_date = date( 2005, 1, 9 )
+   position = SkaterPosition( 'C' )
+   landing = _landing( player_id, league, season_id, games_played, goals, assists )
+   seasons = [ SeasonLength( season_id, 82, start_date, date( 2026, 4, 17 ) ) ]
+
+   rows = OtherLeagueSeasonBuilder.build( landing, seasons, pace_games )
+
+   assert rows == [
+      OtherLeagueSkaterSeason(
+         player_id=player_id,
+         season_id=season_id,
+         league=league,
+         position=position,
+         age=Season.age_on( birth_date, start_date ),
+         games_played=games_played,
+         goals=goals,
+         assists=assists,
+         points=goals + assists,
+         g_pace=Season.pace( float( goals ), float( games_played ), pace_games ),
+         a_pace=Season.pace( float( assists ), float( games_played ), pace_games ) )
+   ]
 
 
 def Test_Build_TestUnknownLeague_ExpectEmpty() -> None:
-   rows = OtherLeagueSeasonBuilder.build(
-      _landing( 1, _league() + '_', 20252026, 46, 6, 13 ),
-      [],
-      84 )
+   player_id = 1
+   league = f'{ _league() }_'
+   season_id = 20252026
+   pace_games = 84
+   landing = _landing( player_id, league, season_id, 46, 6, 13 )
+
+   rows = OtherLeagueSeasonBuilder.build( landing, [], pace_games )
+
    assert rows == []
 
 
 def Test_Build_TestPlayoffs_ExpectEmpty() -> None:
-   rows = OtherLeagueSeasonBuilder.build(
-      _landing(
-         1,
-         _league(),
-         20252026,
-         46,
-         6,
-         13,
-         game_type_id=NhlClient.REGULAR_SEASON_GAME_TYPE_ID + 1 ),
-      [],
-      84 )
+   player_id = 1
+   league = _league()
+   season_id = 20252026
+   pace_games = 84
+   playoff_type = NhlClient.REGULAR_SEASON_GAME_TYPE_ID + 1
+   landing = _landing(
+      player_id,
+      league,
+      season_id,
+      46,
+      6,
+      13,
+      game_type_id=playoff_type )
+
+   rows = OtherLeagueSeasonBuilder.build( landing, [], pace_games )
+
    assert rows == []
 
 
 def Test_Build_TestMissingGamesPlayed_ExpectEmpty() -> None:
-   landing = _landing( 1, _league(), 20252026, 46, 6, 13 )
+   player_id = 1
+   league = _league()
+   season_id = 20252026
+   pace_games = 84
+   landing = _landing( player_id, league, season_id, 46, 6, 13 )
    del landing[ 'seasonTotals' ][ Position.FIRST ][ 'gamesPlayed' ]
-   rows = OtherLeagueSeasonBuilder.build(
-      landing,
-      [ SeasonLength( 20252026, 82, date( 2025, 10, 8 ), date( 2026, 4, 17 ) ) ],
-      84 )
+   seasons = [ SeasonLength( season_id, 82, date( 2025, 10, 8 ), date( 2026, 4, 17 ) ) ]
+
+   rows = OtherLeagueSeasonBuilder.build( landing, seasons, pace_games )
+
    assert rows == []
 
 
 def Test_Build_TestUnknownSeason_ExpectEmpty() -> None:
-   rows = OtherLeagueSeasonBuilder.build(
-      _landing( 1, _league(), 20242025, 46, 6, 13 ),
-      [ SeasonLength( 20252026, 82, date( 2025, 10, 8 ), date( 2026, 4, 17 ) ) ],
-      84 )
+   player_id = 1
+   league = _league()
+   season_id = 20252026
+   other_season_id = 20242025
+   pace_games = 84
+   landing = _landing( player_id, league, other_season_id, 46, 6, 13 )
+   seasons = [ SeasonLength( season_id, 82, date( 2025, 10, 8 ), date( 2026, 4, 17 ) ) ]
+
+   rows = OtherLeagueSeasonBuilder.build( landing, seasons, pace_games )
+
    assert rows == []
 
 
 def Test_Build_TestZeroGames_ExpectEmpty() -> None:
-   rows = OtherLeagueSeasonBuilder.build(
-      _landing( 1, _league(), 20252026, 0, 6, 13 ),
-      [],
-      84 )
+   player_id = 1
+   league = _league()
+   season_id = 20252026
+   pace_games = 84
+   landing = _landing( player_id, league, season_id, 0, 6, 13 )
+
+   rows = OtherLeagueSeasonBuilder.build( landing, [], pace_games )
+
    assert rows == []
 
 
 def Test_Build_TestSplitSeason_ExpectSummed() -> None:
+   player_id = 1
    league = _league()
    season_id = 20252026
    start_date = date( 2025, 10, 8 )
-   rows = OtherLeagueSeasonBuilder.build(
-      _landing(
-         1,
-         league,
-         season_id,
-         20,
-         2,
-         4,
-         extra_totals=[
-            {
-               'leagueAbbrev': league,
-               'season': season_id,
-               'gameTypeId': NhlClient.REGULAR_SEASON_GAME_TYPE_ID,
-               'gamesPlayed': 26,
-               'goals': 4,
-               'assists': 9,
-               'points': 13,
-            }
-         ] ),
-      [ SeasonLength( season_id, 82, start_date, date( 2026, 4, 17 ) ) ],
-      84 )
+   first_games = 20
+   first_goals = 2
+   first_assists = 4
+   second_games = 26
+   second_goals = 4
+   second_assists = 9
+   pace_games = 84
+   landing = _landing(
+      player_id,
+      league,
+      season_id,
+      first_games,
+      first_goals,
+      first_assists,
+      extra_totals=[
+         {
+            'leagueAbbrev': league,
+            'season': season_id,
+            'gameTypeId': NhlClient.REGULAR_SEASON_GAME_TYPE_ID,
+            'gamesPlayed': second_games,
+            'goals': second_goals,
+            'assists': second_assists,
+            'points': second_goals + second_assists,
+         }
+      ] )
+   seasons = [ SeasonLength( season_id, 82, start_date, date( 2026, 4, 17 ) ) ]
+
+   rows = OtherLeagueSeasonBuilder.build( landing, seasons, pace_games )
+   row = rows[ Position.FIRST ]
+
    assert len( rows ) == 1
-   assert rows[ Position.FIRST ].games_played == 46
-   assert rows[ Position.FIRST ].goals == 6
-   assert rows[ Position.FIRST ].assists == 13
+   assert row.games_played == first_games + second_games
+   assert row.goals == first_goals + second_goals
+   assert row.assists == first_assists + second_assists

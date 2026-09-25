@@ -54,22 +54,26 @@ class _FakeHttpxClient:
 
 def Test_GetJson_TestObjectPayload_ExpectDict(
       monkeypatch: pytest.MonkeyPatch ) -> None:
+   url = 'https://example.test/season'
+   payload_row = { 'id': 1 }
    fake_client = _FakeHttpxClient()
-   fake_client.queue( { 'id': 1 } )
+   fake_client.queue( payload_row )
    monkeypatch.setattr( json_http_client.httpx, 'Client', lambda **kwargs: fake_client )
 
-   payload = JsonHttpClient.get_json( 'https://example.test/season' )
+   payload = JsonHttpClient.get_json( url )
 
-   assert payload == { 'id': 1 }
-   assert fake_client.requests == [ ( 'https://example.test/season', None ) ]
+   assert payload == payload_row
+   assert fake_client.requests == [ ( url, None ) ]
 
 
 def Test_GetJson_TestListPayload_ExpectDictRows(
       monkeypatch: pytest.MonkeyPatch ) -> None:
+   url = 'https://example.test/skaters'
+   payload_rows = [ { 'id': 1 }, { 'id': 2 } ]
    fake_client = _FakeHttpxClient()
-   fake_client.queue( [ { 'id': 1 }, { 'id': 2 } ] )
+   fake_client.queue( payload_rows )
    monkeypatch.setattr( json_http_client.httpx, 'Client', lambda **kwargs: fake_client )
 
-   payload = JsonHttpClient.get_json( 'https://example.test/skaters' )
+   payload = JsonHttpClient.get_json( url )
 
-   assert payload == [ { 'id': 1 }, { 'id': 2 } ]
+   assert payload == payload_rows

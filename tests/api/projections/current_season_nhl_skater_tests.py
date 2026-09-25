@@ -14,4 +14,7 @@ def Test_Contribution_TestPace_ExpectGoalsPlusAssists() -> None:
       pace,
       list( Team )[ Position.FIRST ],
       SkaterPosition( 'C' ) )
-   assert skater.contribution == pace.goals + pace.assists
+
+   contribution = skater.contribution
+
+   assert contribution == pace.goals + pace.assists

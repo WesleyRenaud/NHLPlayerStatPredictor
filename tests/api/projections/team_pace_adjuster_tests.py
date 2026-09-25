@@ -9,11 +9,18 @@ def Test_Adjust_TestCurrentMinusPrevious_ExpectOnePlusDelta() -> None:
    current = 0.87
    previous = 1.12
    delta = current - previous
-   assert TeamPaceAdjuster.adjust( pace, current, previous ) == SeasonPace(
+
+   adjusted = TeamPaceAdjuster.adjust( pace, current, previous )
+
+   assert adjusted == SeasonPace(
       pace.goals * ( 1.0 + delta ),
       pace.assists * ( 1.0 + delta ) )
 
 
 def Test_Adjust_TestEqualRates_ExpectUnchanged() -> None:
    pace = SeasonPace( 30.0, 40.0 )
-   assert TeamPaceAdjuster.adjust( pace, 0.87, 0.87 ) == pace
+   rate = 0.87
+
+   adjusted = TeamPaceAdjuster.adjust( pace, rate, rate )
+
+   assert adjusted == pace

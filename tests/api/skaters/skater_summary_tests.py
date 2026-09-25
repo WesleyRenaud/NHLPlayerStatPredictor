@@ -9,37 +9,54 @@ from api.skaters.team import Team
 def Test_FromRow_TestSummaryJson_ExpectFields() -> None:
    position = list( SkaterPosition )[ Position.FIRST ]
    team = list( Team )[ Position.FIRST ]
-   summary = SkaterSummary.from_row(
-      {
-         'playerId': 8478402,
-         'skaterFullName': 'Connor McDavid',
-         'positionCode': position.value,
-         'teamAbbrevs': team.value,
-         'gamesPlayed': 82,
-         'goals': 44,
-         'assists': 79,
-         'points': 123,
-      } )
-   assert summary.player_id == 8478402
-   assert summary.player_name == 'Connor McDavid'
-   assert summary.position == position
-   assert summary.team_abbrevs == [ team ]
-   assert summary.points == 123
+   summary = SkaterSummary(
+      8478402,
+      'Connor McDavid',
+      position,
+      [ team ],
+      82,
+      44,
+      79,
+      123 )
+
+   loaded = SkaterSummary.from_row( {
+      'playerId': summary.player_id,
+      'skaterFullName': summary.player_name,
+      'positionCode': summary.position.value,
+      'teamAbbrevs': team.value,
+      'gamesPlayed': summary.games_played,
+      'goals': summary.goals,
+      'assists': summary.assists,
+      'points': summary.points,
+   } )
+
+   assert loaded == summary
 
 
 def Test_FromRow_TestTradedPlayer_ExpectTeams() -> None:
    teams = list( Team )
    first = teams[ Position.FIRST ]
    second = teams[ Position.SECOND ]
-   summary = SkaterSummary.from_row(
-      {
-         'playerId': 1,
-         'skaterFullName': 'Sample Player',
-         'positionCode': list( SkaterPosition )[ Position.FIRST ].value,
-         'teamAbbrevs': f'{ first.value },{ second.value }',
-         'gamesPlayed': 82,
-         'goals': 10,
-         'assists': 20,
-         'points': 30,
-      } )
-   assert summary.team_abbrevs == [ first, second ]
+   position = list( SkaterPosition )[ Position.FIRST ]
+   summary = SkaterSummary(
+      1,
+      'Sample Player',
+      position,
+      [ first, second ],
+      82,
+      10,
+      20,
+      30 )
+
+   loaded = SkaterSummary.from_row( {
+      'playerId': summary.player_id,
+      'skaterFullName': summary.player_name,
+      'positionCode': summary.position.value,
+      'teamAbbrevs': f'{ first.value },{ second.value }',
+      'gamesPlayed': summary.games_played,
+      'goals': summary.goals,
+      'assists': summary.assists,
+      'points': summary.points,
+   } )
+
+   assert loaded == summary

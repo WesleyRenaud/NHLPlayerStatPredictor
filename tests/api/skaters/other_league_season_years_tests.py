@@ -35,7 +35,10 @@ def Test_ByPlayerLeague_TestSeasons_ExpectYearsByPlayerAndLeague() -> None:
    first = _season( 1, 20222023, league )
    second = _season( 1, 20232024, league )
    other = _season( 2, 20232024, league )
-   by_player = OtherLeagueSeasonYears.by_player_league( [ first, second, other ] )
+   seasons = [ first, second, other ]
+
+   by_player = OtherLeagueSeasonYears.by_player_league( seasons )
+
    assert by_player == {
       first.player_id: {
          league: {
@@ -55,19 +58,26 @@ def Test_Consecutive_TestAdjacentYears_ExpectPair() -> None:
    league = _league( Position.FIRST )
    current = _season( 1, 20222023, league )
    following = _season( 1, 20232024, league )
-   assert OtherLeagueSeasonYears.consecutive( [ following, current ] ) == [
-      ( current, following )
-   ]
+
+   pairs = OtherLeagueSeasonYears.consecutive( [ following, current ] )
+
+   assert pairs == [ ( current, following ) ]
 
 
 def Test_Consecutive_TestGapYear_ExpectSkipped() -> None:
    league = _league( Position.FIRST )
    current = _season( 1, 20212022, league )
    later = _season( 1, 20232024, league )
-   assert OtherLeagueSeasonYears.consecutive( [ current, later ] ) == []
+
+   pairs = OtherLeagueSeasonYears.consecutive( [ current, later ] )
+
+   assert pairs == []
 
 
 def Test_Consecutive_TestCrossLeague_ExpectSkipped() -> None:
    current = _season( 1, 20222023, _league( Position.FIRST ) )
    following = _season( 1, 20232024, _league( Position.SECOND ) )
-   assert OtherLeagueSeasonYears.consecutive( [ current, following ] ) == []
+
+   pairs = OtherLeagueSeasonYears.consecutive( [ current, following ] )
+
+   assert pairs == []

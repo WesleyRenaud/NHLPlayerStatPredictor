@@ -8,6 +8,7 @@ import { ProjectionSummary } from '../../../scripts/api/projectionSummary.js';
 
 
 test('Test_Get_TestPayload_ExpectNormalizedProjection', async () => {
+   const playerId = 7;
    const payload = {
       goals: 12,
       assists: 34,
@@ -22,12 +23,11 @@ test('Test_Get_TestPayload_ExpectNormalizedProjection', async () => {
    };
 
    try {
-      assert.deepEqual(
-         await ProjectionClient.get(7),
-         ProjectionSummary.normalize(payload)
-      );
+      const projection = await ProjectionClient.get(playerId);
+
+      assert.deepEqual(projection, ProjectionSummary.normalize(payload));
       assert.equal(captured.url, ApiRoutes.GET_PROJECTION);
-      assert.deepEqual(captured.data, { playerId: 7 });
+      assert.deepEqual(captured.data, { playerId });
    } finally {
       ApiClient.postJson = originalPostJson;
    }

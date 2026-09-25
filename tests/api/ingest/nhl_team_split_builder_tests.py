@@ -57,19 +57,22 @@ def _landing(
 
 
 def Test_Build_TestNhlClubSeason_ExpectPacedRow() -> None:
+   player_id = 8482259
    team = _team()
    season_id = 20252026
    games_played = 60
    goals = 19
    assists = 13
    pace_games = 84
-   rows = NhlTeamSplitBuilder.build(
-      { 8482259: _landing( 8482259, season_id, games_played, goals, assists, team ) },
-      season_id,
-      pace_games )
+   landings = {
+      player_id: _landing( player_id, season_id, games_played, goals, assists, team )
+   }
+
+   rows = NhlTeamSplitBuilder.build( landings, season_id, pace_games )
+
    assert rows == [
       PreviousSeasonNhlSkater(
-         8482259,
+         player_id,
          games_played,
          SeasonPace(
             Season.pace( float( goals ), float( games_played ), pace_games ),
@@ -80,135 +83,173 @@ def Test_Build_TestNhlClubSeason_ExpectPacedRow() -> None:
 
 
 def Test_Build_TestSplitSeason_ExpectOneRowPerClub() -> None:
+   player_id = 1
    first = list( Team )[ Position.FIRST ]
    second = list( Team )[ Position.SECOND ]
    season_id = 20252026
    pace_games = 84
-   rows = NhlTeamSplitBuilder.build(
-      {
-         1: _landing(
-            1,
-            season_id,
-            60,
-            19,
-            13,
-            first,
-            extra_totals=[
-               {
-                  'leagueAbbrev': 'NHL',
-                  'season': season_id,
-                  'gameTypeId': NhlClient.REGULAR_SEASON_GAME_TYPE_ID,
-                  'gamesPlayed': 18,
-                  'goals': 10,
-                  'assists': 4,
-                  'points': 14,
-                  'teamName': { 'default': _full_name( second ) },
-               }
-            ] )
-      },
-      season_id,
-      pace_games )
+   first_games = 60
+   first_goals = 19
+   first_assists = 13
+   second_games = 18
+   second_goals = 10
+   second_assists = 4
+   landings = {
+      player_id: _landing(
+         player_id,
+         season_id,
+         first_games,
+         first_goals,
+         first_assists,
+         first,
+         extra_totals=[
+            {
+               'leagueAbbrev': 'NHL',
+               'season': season_id,
+               'gameTypeId': NhlClient.REGULAR_SEASON_GAME_TYPE_ID,
+               'gamesPlayed': second_games,
+               'goals': second_goals,
+               'assists': second_assists,
+               'points': second_goals + second_assists,
+               'teamName': { 'default': _full_name( second ) },
+            }
+         ] )
+   }
+
+   rows = NhlTeamSplitBuilder.build( landings, season_id, pace_games )
+
    assert [ ( row.team, row.games, row.pace.goals, row.pace.assists ) for row in rows ] == [
       (
          first,
-         60,
-         Season.pace( 19.0, 60.0, pace_games ),
-         Season.pace( 13.0, 60.0, pace_games ) ),
+         first_games,
+         Season.pace( float( first_goals ), float( first_games ), pace_games ),
+         Season.pace( float( first_assists ), float( first_games ), pace_games ) ),
       (
          second,
-         18,
-         Season.pace( 10.0, 18.0, pace_games ),
-         Season.pace( 4.0, 18.0, pace_games ) ),
+         second_games,
+         Season.pace( float( second_goals ), float( second_games ), pace_games ),
+         Season.pace( float( second_assists ), float( second_games ), pace_games ) ),
    ]
 
 
 def Test_Build_TestAccentedClubName_ExpectTeam() -> None:
+   player_id = 1
    season_id = 20252026
-   rows = NhlTeamSplitBuilder.build(
-      {
-         1: {
-            'playerId': 1,
-            'position': SkaterPosition( 'C' ).value,
-            'seasonTotals': [
-               {
-                  'leagueAbbrev': 'NHL',
-                  'season': season_id,
-                  'gameTypeId': NhlClient.REGULAR_SEASON_GAME_TYPE_ID,
-                  'gamesPlayed': 82,
-                  'goals': 1,
-                  'assists': 1,
-                  'points': 2,
-                  'teamName': { 'default': 'Montréal Canadiens' },
-               }
-            ],
-         }
-      },
-      season_id,
-      84 )
-   assert [ row.team for row in rows ] == [ Team( 'MTL' ) ]
+   pace_games = 84
+   club_name = 'Montréal Canadiens'
+   team = Team( 'MTL' )
+   landings = {
+      player_id: {
+         'playerId': player_id,
+         'position': SkaterPosition( 'C' ).value,
+         'seasonTotals': [
+            {
+               'leagueAbbrev': 'NHL',
+               'season': season_id,
+               'gameTypeId': NhlClient.REGULAR_SEASON_GAME_TYPE_ID,
+               'gamesPlayed': 82,
+               'goals': 1,
+               'assists': 1,
+               'points': 2,
+               'teamName': { 'default': club_name },
+            }
+         ],
+      }
+   }
+
+   rows = NhlTeamSplitBuilder.build( landings, season_id, pace_games )
+
+   assert [ row.team for row in rows ] == [ team ]
 
 
 def Test_Build_TestDottedClubName_ExpectTeam() -> None:
+   player_id = 1
    season_id = 20252026
-   rows = NhlTeamSplitBuilder.build(
-      {
-         1: {
-            'playerId': 1,
-            'position': SkaterPosition( 'C' ).value,
-            'seasonTotals': [
-               {
-                  'leagueAbbrev': 'NHL',
-                  'season': season_id,
-                  'gameTypeId': NhlClient.REGULAR_SEASON_GAME_TYPE_ID,
-                  'gamesPlayed': 82,
-                  'goals': 1,
-                  'assists': 1,
-                  'points': 2,
-                  'teamName': { 'default': 'St. Louis Blues' },
-               }
-            ],
-         }
-      },
-      season_id,
-      84 )
-   assert [ row.team for row in rows ] == [ Team( 'STL' ) ]
+   pace_games = 84
+   club_name = 'St. Louis Blues'
+   team = Team( 'STL' )
+   landings = {
+      player_id: {
+         'playerId': player_id,
+         'position': SkaterPosition( 'C' ).value,
+         'seasonTotals': [
+            {
+               'leagueAbbrev': 'NHL',
+               'season': season_id,
+               'gameTypeId': NhlClient.REGULAR_SEASON_GAME_TYPE_ID,
+               'gamesPlayed': 82,
+               'goals': 1,
+               'assists': 1,
+               'points': 2,
+               'teamName': { 'default': club_name },
+            }
+         ],
+      }
+   }
+
+   rows = NhlTeamSplitBuilder.build( landings, season_id, pace_games )
+
+   assert [ row.team for row in rows ] == [ team ]
 
 
 def Test_Build_TestPlayoffRow_ExpectEmpty() -> None:
-   rows = NhlTeamSplitBuilder.build(
-      { 1: _landing( 1, 20252026, 6, 2, 2, game_type_id=3 ) },
-      20252026,
-      84 )
+   player_id = 1
+   season_id = 20252026
+   pace_games = 84
+   playoff_type = NhlClient.REGULAR_SEASON_GAME_TYPE_ID + 1
+   landings = {
+      player_id: _landing(
+         player_id,
+         season_id,
+         6,
+         2,
+         2,
+         game_type_id=playoff_type )
+   }
+
+   rows = NhlTeamSplitBuilder.build( landings, season_id, pace_games )
+
    assert rows == []
 
 
 def Test_Build_TestOtherLeague_ExpectEmpty() -> None:
-   rows = NhlTeamSplitBuilder.build(
-      {
-         1: _landing(
-            1,
-            20252026,
-            46,
-            6,
-            13,
-            league=list( ClubLeague )[ Position.FIRST ].value )
-      },
-      20252026,
-      84 )
+   player_id = 1
+   season_id = 20252026
+   pace_games = 84
+   league = list( ClubLeague )[ Position.FIRST ].value
+   landings = {
+      player_id: _landing(
+         player_id,
+         season_id,
+         46,
+         6,
+         13,
+         league=league )
+   }
+
+   rows = NhlTeamSplitBuilder.build( landings, season_id, pace_games )
+
    assert rows == []
 
 
 def Test_Build_TestOtherSeason_ExpectEmpty() -> None:
-   rows = NhlTeamSplitBuilder.build(
-      { 1: _landing( 1, 20242025, 82, 20, 20 ) },
-      20252026,
-      84 )
+   player_id = 1
+   season_id = 20252026
+   other_season_id = 20242025
+   pace_games = 84
+   landings = { player_id: _landing( player_id, other_season_id, 82, 20, 20 ) }
+
+   rows = NhlTeamSplitBuilder.build( landings, season_id, pace_games )
+
    assert rows == []
 
 
 def Test_Build_TestZeroGames_ExpectEmpty() -> None:
-   rows = NhlTeamSplitBuilder.build(
-      { 1: _landing( 1, 20252026, 0, 0, 0 ) },
-      20252026,
-      84 )
+   player_id = 1
+   season_id = 20252026
+   pace_games = 84
+   landings = { player_id: _landing( player_id, season_id, 0, 0, 0 ) }
+
+   rows = NhlTeamSplitBuilder.build( landings, season_id, pace_games )
+
    assert rows == []

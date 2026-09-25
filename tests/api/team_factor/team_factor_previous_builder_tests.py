@@ -41,6 +41,8 @@ def Test_Build_TestCallUpByToi_ExpectGamesShare() -> None:
    team = list( Team )[ Position.FIRST ]
    season_length = 82
    callup_pace = 168.0
+   veteran_pace = 20.0
+   extra_pace = 10.0
    usages = {
       1: IceUsage( 16.5, 1, team, SkaterPosition( 'D' ) ),
       **{
@@ -48,38 +50,43 @@ def Test_Build_TestCallUpByToi_ExpectGamesShare() -> None:
          for player_id in range( 2, NhlLineupSelector.DRESSED_DEFENSE + 1 )
       },
       NhlLineupSelector.DEFENSE: IceUsage(
-         10.0,
+         extra_pace,
          season_length,
          team,
          SkaterPosition( 'D' ) ),
    }
+
    rows = TeamFactorPreviousBuilder.build(
       TeamLineup( team, _defense( team, 1, callup_pace ) ),
       [],
       usages,
       season_length )
+
    callup = next( row for row in rows if row.player_id == 1 )
-   assert callup.availability == 1 / season_length
-   assert callup.contribution == callup_pace
-   assert callup.extra is False
-   present = callup_pace + 20.0 * ( NhlLineupSelector.DRESSED_DEFENSE - 1 )
-   replacement = 20.0 * ( NhlLineupSelector.DRESSED_DEFENSE - 1 ) + 10.0
+   present = callup_pace + veteran_pace * ( NhlLineupSelector.DRESSED_DEFENSE - 1 )
+   replacement = (
+      veteran_pace * ( NhlLineupSelector.DRESSED_DEFENSE - 1 ) + extra_pace )
    expected = (
       present / season_length
       + replacement * ( season_length - 1 ) / season_length )
-   assert abs(
-      TeamFactor( 20252026, team, 1.0, rows ).dressed_total() - expected ) < 0.001
+   total = TeamFactor( 20252026, team, 1.0, rows ).dressed_total()
+   assert callup.availability == 1 / season_length
+   assert callup.contribution == callup_pace
+   assert callup.extra is False
+   assert abs( total - expected ) < 0.001
 
 
 def Test_Build_TestCallUpWithoutUsage_ExpectGamesShare() -> None:
    team = list( Team )[ Position.FIRST ]
    season_length = 82
    callup_pace = 168.0
+
    rows = TeamFactorPreviousBuilder.build(
       TeamLineup( team, _defense( team, 1, callup_pace ) ),
       [],
       {},
       season_length )
+
    callup = next( row for row in rows if row.player_id == 1 )
    assert callup.availability == 1 / season_length
    assert callup.contribution == callup_pace

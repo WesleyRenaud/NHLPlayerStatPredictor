@@ -7,9 +7,13 @@ from api.skaters.team import Team
 
 
 def Test_Fields_TestUsage_ExpectValues() -> None:
+   toi = 24.68
+   games = 80
    team = list( Team )[ Position.FIRST ]
-   usage = IceUsage( 24.68, 80, team, SkaterPosition( 'D' ) )
-   assert usage.toi == 24.68
-   assert usage.games == 80
+   position = SkaterPosition( 'D' )
+   usage = IceUsage( toi, games, team, position )
+
+   assert usage.toi == toi
+   assert usage.games == games
    assert usage.team == team
-   assert usage.position == SkaterPosition( 'D' )
+   assert usage.position == position

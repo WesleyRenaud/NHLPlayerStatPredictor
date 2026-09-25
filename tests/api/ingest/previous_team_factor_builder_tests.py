@@ -17,8 +17,19 @@ def Test_Build_TestSeasonIds_ExpectPreviousPerSeason(
    first = 20242025
    second = 20252026
    team = list( Team )[ Position.FIRST ]
+   first_games = 82
+   second_games = 84
+   pace_games = 84
+   rate = 1.0
    splits: list[ int ] = []
    lengths: list[ int ] = []
+   landings = {}
+   slots = []
+   usages = { first: {}, second: {} }
+   seasons = [
+      SeasonLength( first, first_games, date( 2024, 10, 4 ), date( 2025, 4, 17 ) ),
+      SeasonLength( second, second_games, date( 2025, 10, 8 ), date( 2026, 4, 17 ) ),
+   ]
    monkeypatch.setattr(
       previous_team_factor_builder.NhlTeamSplitBuilder,
       'build',
@@ -28,19 +39,19 @@ def Test_Build_TestSeasonIds_ExpectPreviousPerSeason(
       'previous',
       lambda season, nhl_splits, slots, usages, season_length: (
          lengths.append( season_length )
-         or [ TeamFactor( season, team, 1.0, [] ) ] ) )
-   assert PreviousTeamFactorBuilder.build(
+         or [ TeamFactor( season, team, rate, [] ) ] ) )
+
+   factors = PreviousTeamFactorBuilder.build(
       [ first, second ],
-      {},
-      [],
-      { first: {}, second: {} },
-      [
-         SeasonLength( first, 82, date( 2024, 10, 4 ), date( 2025, 4, 17 ) ),
-         SeasonLength( second, 84, date( 2025, 10, 8 ), date( 2026, 4, 17 ) ),
-      ],
-      84 ) == [
-      TeamFactor( first, team, 1.0, [] ),
-      TeamFactor( second, team, 1.0, [] ),
+      landings,
+      slots,
+      usages,
+      seasons,
+      pace_games )
+
+   assert factors == [
+      TeamFactor( first, team, rate, [] ),
+      TeamFactor( second, team, rate, [] ),
    ]
    assert splits == [ first, second ]
-   assert lengths == [ 82, 84 ]
+   assert lengths == [ first_games, second_games ]

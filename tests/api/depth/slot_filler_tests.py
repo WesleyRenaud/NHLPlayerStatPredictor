@@ -9,22 +9,31 @@ from api.skaters.team import Team
 
 
 def Test_Implied_TestKnownSlot_ExpectLastToi() -> None:
-   slots = [ SlotAverage( 7, 15.0, 2.0, 12.0 ) ]
-   assert SlotFiller.implied( slots, 7 ) == 15.0
+   slot = SlotAverage( 7, 15.0, 2.0, 12.0 )
+
+   implied = SlotFiller.implied( [ slot ], slot.slot )
+
+   assert implied == slot.toi
 
 
 def Test_Contribution_TestKnownSlot_ExpectContribution() -> None:
-   slots = [ SlotAverage( 7, 15.0, 2.0, 12.0 ) ]
-   assert SlotFiller.contribution( slots, 7 ) == 14.0
+   slot = SlotAverage( 7, 15.0, 2.0, 12.0 )
+
+   contribution = SlotFiller.contribution( [ slot ], slot.slot )
+
+   assert contribution == slot.contribution
 
 
 def Test_PadExtras_TestEmpty_ExpectLeagueSeventh() -> None:
-   slots = [ SlotAverage( 7, 15.0, 2.0, 12.0 ) ]
+   slot = SlotAverage( 7, 15.0, 2.0, 12.0 )
+   slots = [ slot ]
+
    extras = SlotFiller.pad_extras(
       [],
       slots,
       DepthGroup.defense(),
       list( Team )[ Position.FIRST ] )
+
    assert len( extras ) == LastCore.EXTRA
-   assert extras[ Position.FIRST ].implied == SlotFiller.implied( slots, 7 )
-   assert extras[ Position.FIRST ].last_toi == 15.0
+   assert extras[ Position.FIRST ].implied == slot.toi
+   assert extras[ Position.FIRST ].last_toi == slot.toi

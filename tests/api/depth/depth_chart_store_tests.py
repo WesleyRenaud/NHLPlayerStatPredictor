@@ -40,7 +40,11 @@ def Test_Write_TestCharts_ExpectReadable(
          SkaterGroup( 'D' ) ),
    ]
    DepthChartStore.write( charts )
-   assert DepthChartStore.read() == [ charts[ Position.FIRST ].to_dict() ]
-   assert DepthChartStore.path().read_text() == json.dumps(
+
+   loaded = DepthChartStore.read()
+   written = DepthChartStore.path().read_text()
+
+   assert loaded == [ charts[ Position.FIRST ].to_dict() ]
+   assert written == json.dumps(
       [ charts[ Position.FIRST ].to_dict() ],
       indent=2 )

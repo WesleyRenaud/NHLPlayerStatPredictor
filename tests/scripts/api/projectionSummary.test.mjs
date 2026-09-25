@@ -5,14 +5,16 @@ import { ProjectionSummary } from '../../../scripts/api/projectionSummary.js';
 
 
 test('Test_Normalize_TestRow_ExpectFields', () => {
-   const projection = ProjectionSummary.normalize({
-      goals: 12,
-      assists: 34,
-      points: 46,
-      gamesPlayed: 70,
-   });
-   assert.equal(projection.goals, 12);
-   assert.equal(projection.assists, 34);
-   assert.equal(projection.points, 46);
-   assert.equal(projection.gamesPlayed, 70);
+   const goals = 12;
+   const assists = 34;
+   const points = 46;
+   const gamesPlayed = 70;
+   const row = { goals, assists, points, gamesPlayed };
+
+   const projection = ProjectionSummary.normalize(row);
+
+   assert.equal(projection.goals, goals);
+   assert.equal(projection.assists, assists);
+   assert.equal(projection.points, points);
+   assert.equal(projection.gamesPlayed, gamesPlayed);
 });

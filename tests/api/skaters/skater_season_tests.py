@@ -5,10 +5,11 @@ from api.skaters.skater_season import SkaterSeason
 
 
 def Test_CompletedAge_TestFractionalAge_ExpectTruncatedYears() -> None:
+   age = 28.7
    season = SkaterSeason(
       player_id=1,
       season_id=20252026,
-      age=28.7,
+      age=age,
       games_played=82,
       goals=20,
       assists=30,
@@ -16,4 +17,7 @@ def Test_CompletedAge_TestFractionalAge_ExpectTruncatedYears() -> None:
       g_pace=20.0,
       a_pace=30.0,
       position=SkaterPosition( 'C' ) )
-   assert season.completed_age() == 28
+
+   completed = season.completed_age()
+
+   assert completed == int( age )

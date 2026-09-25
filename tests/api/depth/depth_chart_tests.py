@@ -21,14 +21,19 @@ def _skater( player_id: int ) -> IceSkater:
 
 def Test_ToDict_TestChart_ExpectTeamAndRegulars() -> None:
    team = list( Team )[ Position.FIRST ]
+   regulars = [ ( _skater( 1 ), 25.0 ), ( _skater( 2 ), 23.0 ) ]
+   extras = [ _skater( 3 ) ]
+   games_out = [ 42.0, 42.0 ]
    chart = DepthChart(
       team,
-      [ ( _skater( 1 ), 25.0 ), ( _skater( 2 ), 23.0 ) ],
-      [ _skater( 3 ) ],
-      [ 42.0, 42.0 ],
+      regulars,
+      extras,
+      games_out,
       SkaterGroup( 'D' ) )
+
    payload = chart.to_dict()
+
    assert payload[ 'team' ] == team.value
-   assert len( payload[ 'regulars' ] ) == 2
-   assert len( payload[ 'extras' ] ) == 1
-   assert payload[ 'games_out' ] == [ 42.0, 42.0 ]
+   assert len( payload[ 'regulars' ] ) == len( regulars )
+   assert len( payload[ 'extras' ] ) == len( extras )
+   assert payload[ 'games_out' ] == games_out

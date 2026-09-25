@@ -8,7 +8,6 @@ from api.paths import Paths
 import api.player_names.coordinators.player_names_coordinator as player_names_coordinator
 from api.player_names.coordinators.player_names_coordinator import PlayerNamesCoordinator
 from api.player_names.player_name_summary import PlayerNameSummary
-from api.shared.enums.position import Position
 from api.skaters.skater_position import SkaterPosition
 from api.skaters.team import Team
 
@@ -20,8 +19,8 @@ def Test_GetPlayerSummaries_TestProvider_ExpectSummaries(
       PlayerNameSummary(
          1,
          'Stub Alpha',
-         list( SkaterPosition )[ Position.FIRST ],
-         list( Team )[ Position.FIRST ],
+         SkaterPosition( 'C' ),
+         Team( 'MTL' ),
          20202021 ),
    ]
    db_path = tmp_path / 'skaters.sqlite'
@@ -41,5 +40,8 @@ def Test_GetPlayerSummaries_TestProvider_ExpectSummaries(
       player_names_coordinator.PlayerNameProvider,
       'summaries',
       fake_summaries )
-   assert PlayerNamesCoordinator.get_player_summaries() == stub_summaries
+
+   summaries = PlayerNamesCoordinator.get_player_summaries()
+
+   assert summaries == stub_summaries
    assert captured == [ ( str( db_path ), target_season_id ) ]

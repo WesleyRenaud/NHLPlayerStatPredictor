@@ -36,7 +36,7 @@ def _nhl( player_id: int, team: Team ) -> NhlSkaterSeason:
       player_id=player_id,
       season_id=20252026,
       player_name='Stub Skater',
-      position=list( SkaterPosition )[ Position.FIRST ],
+      position=SkaterPosition( 'C' ),
       birth_date=date( 1997, 1, 13 ),
       age=28.7,
       team=team,
@@ -81,6 +81,8 @@ def Test_Build_TestRoster_ExpectEqualWeightPaces(
    aging_factors = [ AgingFactor( 18, 0.12, 0.09 ) ]
    nhl_seasons = [ _nhl( veteran_id, previous ) ]
    other_seasons = [ _other( rookie_id ) ]
+   roster = [ _roster( veteran_id, now ), _roster( rookie_id, now ) ]
+   seasons = nhl_seasons + other_seasons
    resolved: list[ tuple[
       Skater,
       list[ RecencyWeight ],
@@ -107,24 +109,26 @@ def Test_Build_TestRoster_ExpectEqualWeightPaces(
       'resolve',
       resolve )
 
-   assert BaselineRosterPaceBuilder.build(
-      [ _roster( veteran_id, now ), _roster( rookie_id, now ) ],
-      nhl_seasons + other_seasons,
+   built = BaselineRosterPaceBuilder.build(
+      roster,
+      seasons,
       weights,
       target_season_id,
       league_factors,
-      aging_factors ) == [
-         CurrentSeasonNhlSkater(
-            veteran_id,
-            veteran_pace,
-            now,
-            SkaterPosition( 'C' ) ),
-         CurrentSeasonNhlSkater(
-            rookie_id,
-            rookie_pace,
-            now,
-            SkaterPosition( 'C' ) ),
-      ]
+      aging_factors )
+
+   assert built == [
+      CurrentSeasonNhlSkater(
+         veteran_id,
+         veteran_pace,
+         now,
+         SkaterPosition( 'C' ) ),
+      CurrentSeasonNhlSkater(
+         rookie_id,
+         rookie_pace,
+         now,
+         SkaterPosition( 'C' ) ),
+   ]
    assert resolved == [
       ( Skater( nhl_seasons ), weights, target_season_id, league_factors, aging_factors ),
       ( Skater( other_seasons ), weights, target_season_id, league_factors, aging_factors ),
@@ -134,48 +138,58 @@ def Test_Build_TestRoster_ExpectEqualWeightPaces(
 def Test_Build_TestMissingPace_ExpectSkipped(
       monkeypatch: pytest.MonkeyPatch ) -> None:
    team = list( Team )[ Position.FIRST ]
+   first_id = 1
+   second_id = 2
    pace = SeasonPace( 12.0, 18.0 )
+   roster = [ _roster( first_id, team ), _roster( second_id, team ) ]
+   target_season_id = 20262027
    returns: list[ SeasonPace | None ] = [ pace, None ]
    monkeypatch.setattr(
       baseline_roster_pace_builder.BaselinePaceResolver,
       'resolve',
       lambda seasons, weights, target, leagues, aging: returns.pop( 0 ) )
 
-   assert BaselineRosterPaceBuilder.build(
-      [ _roster( 1, team ), _roster( 2, team ) ],
+   built = BaselineRosterPaceBuilder.build(
+      roster,
       [],
       [],
-      20262027,
+      target_season_id,
       [],
-      [] ) == [
-         CurrentSeasonNhlSkater( 1, pace, team, SkaterPosition( 'C' ) ),
-      ]
+      [] )
+
+   assert built == [
+      CurrentSeasonNhlSkater( first_id, pace, team, SkaterPosition( 'C' ) ),
+   ]
 
 
 def Test_Build_TestExcessForwards_ExpectAllPaces(
       monkeypatch: pytest.MonkeyPatch ) -> None:
    team = list( Team )[ Position.FIRST ]
    roster = [ _roster( player_id, team ) for player_id in range( 1, 15 ) ]
-   paces = (
+   paces = [
       SeasonPace( 50.0 - player_id, 0.0 )
       for player_id in range( 1, 15 )
-   )
+   ]
+   remaining = iter( paces )
+   target_season_id = 20262027
    monkeypatch.setattr(
       baseline_roster_pace_builder.BaselinePaceResolver,
       'resolve',
-      lambda seasons, weights, target, leagues, aging: next( paces ) )
+      lambda seasons, weights, target, leagues, aging: next( remaining ) )
 
-   assert BaselineRosterPaceBuilder.build(
+   built = BaselineRosterPaceBuilder.build(
       roster,
       [],
       [],
-      20262027,
+      target_season_id,
       [],
-      [] ) == [
-         CurrentSeasonNhlSkater(
-            player_id,
-            SeasonPace( 50.0 - player_id, 0.0 ),
-            team,
-            SkaterPosition( 'C' ) )
-         for player_id in range( 1, 15 )
-      ]
+      [] )
+
+   assert built == [
+      CurrentSeasonNhlSkater(
+         skater.player_id,
+         pace,
+         team,
+         skater.position )
+      for skater, pace in zip( roster, paces )
+   ]

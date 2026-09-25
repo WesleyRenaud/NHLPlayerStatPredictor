@@ -13,35 +13,51 @@ from api.skaters.team import Team
 def Test_FromRow_TestStoredFields_ExpectValues() -> None:
    position = list( SkaterPosition )[ Position.FIRST ]
    team = list( Team )[ Position.FIRST ]
-   row = NhlSkaterSeason.from_row( {
-      'PLAYER_ID': 8478402,
-      'SEASON_ID': 20252026,
-      'PLAYER_NAME': 'Connor McDavid',
-      'POSITION': position.value,
-      'BIRTH_DATE': '1997-01-13',
-      'AGE': 28.7,
-      'TEAM': team.value,
-      'GAMES_PLAYED': 82,
-      'GOALS': 48,
-      'ASSISTS': 90,
-      'POINTS': 138,
-      'SCHEDULE_GAMES': 82,
-      'PACE_GAMES': 84,
-      'G_PACE': 48.0,
-      'A_PACE': 90.0,
-      'P_PACE': 138.0,
-      'GP_SHARE': 1.0,
+   season = NhlSkaterSeason(
+      player_id=8478402,
+      season_id=20252026,
+      player_name='Connor McDavid',
+      position=position,
+      birth_date=date( 1997, 1, 13 ),
+      age=28.7,
+      team=team,
+      games_played=82,
+      goals=48,
+      assists=90,
+      points=138,
+      schedule_games=82,
+      pace_games=84,
+      g_pace=48.0,
+      a_pace=90.0,
+      p_pace=138.0,
+      gp_share=1.0 )
+
+   loaded = NhlSkaterSeason.from_row( {
+      'PLAYER_ID': season.player_id,
+      'SEASON_ID': season.season_id,
+      'PLAYER_NAME': season.player_name,
+      'POSITION': season.position.value,
+      'BIRTH_DATE': season.birth_date.isoformat(),
+      'AGE': season.age,
+      'TEAM': season.team.value,
+      'GAMES_PLAYED': season.games_played,
+      'GOALS': season.goals,
+      'ASSISTS': season.assists,
+      'POINTS': season.points,
+      'SCHEDULE_GAMES': season.schedule_games,
+      'PACE_GAMES': season.pace_games,
+      'G_PACE': season.g_pace,
+      'A_PACE': season.a_pace,
+      'P_PACE': season.p_pace,
+      'GP_SHARE': season.gp_share,
    } )
-   assert row.player_id == 8478402
-   assert row.player_name == 'Connor McDavid'
-   assert row.position == position
-   assert row.team == team
-   assert row.p_pace == 138.0
-   assert isinstance( row, SkaterSeason )
+
+   assert loaded == season
+   assert isinstance( loaded, SkaterSeason )
 
 
 def Test_Key_TestPlayerAndSeason_ExpectKey() -> None:
-   row = NhlSkaterSeason(
+   season = NhlSkaterSeason(
       player_id=8478402,
       season_id=20252026,
       player_name='Connor McDavid',
@@ -59,4 +75,7 @@ def Test_Key_TestPlayerAndSeason_ExpectKey() -> None:
       a_pace=90.0,
       p_pace=138.0,
       gp_share=1.0 )
-   assert row.key() == SkaterSeasonKey( 8478402, 20252026 )
+
+   key = season.key()
+
+   assert key == SkaterSeasonKey( season.player_id, season.season_id )

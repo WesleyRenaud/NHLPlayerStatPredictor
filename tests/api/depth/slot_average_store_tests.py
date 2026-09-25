@@ -17,10 +17,12 @@ def Test_Write_TestSlots_ExpectReadable(
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
    slots = [ SlotAverage( 7, 14.9, 2.6, 12.4 ) ]
    SlotAverageStore.write( slots )
-   assert SlotAverageStore.read() == [
-      SlotAverage.from_row( slots[ Position.FIRST ].to_dict() )
-   ]
-   assert SlotAverageStore.path().read_text() == json.dumps(
+
+   loaded = SlotAverageStore.read()
+   written = SlotAverageStore.path().read_text()
+
+   assert loaded == slots
+   assert written == json.dumps(
       [ slots[ Position.FIRST ].to_dict() ],
       indent=2 )
 
@@ -29,4 +31,7 @@ def Test_Read_TestMissing_ExpectEmpty(
       monkeypatch: pytest.MonkeyPatch,
       tmp_path: Path ) -> None:
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
-   assert SlotAverageStore.read() == []
+
+   slots = SlotAverageStore.read()
+
+   assert slots == []

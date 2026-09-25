@@ -23,15 +23,18 @@ def Test_Resolve_TestOneClub_ExpectTeammateRate() -> None:
    season = 20252026
    player_id = 7
    factor = _factor( season, team, 1.12 )
-   assert TeamQualityMixer.resolve(
+
+   resolved = TeamQualityMixer.resolve(
       [ factor ],
       season,
       player_id,
-      [ ClubGames( team, 50 ) ] ) == TeamFactor.teammate_rate(
-         [ factor ],
-         season,
-         team,
-         player_id )
+      [ ClubGames( team, 50 ) ] )
+
+   assert resolved == TeamFactor.teammate_rate(
+      [ factor ],
+      season,
+      team,
+      player_id )
 
 
 def Test_Resolve_TestSplitClubs_ExpectGamesWeightedRate() -> None:
@@ -47,10 +50,13 @@ def Test_Resolve_TestSplitClubs_ExpectGamesWeightedRate() -> None:
    ]
    first_rate = TeamFactor.teammate_rate( factors, season, first, player_id )
    second_rate = TeamFactor.teammate_rate( factors, season, second, player_id )
-   assert TeamQualityMixer.resolve(
+
+   resolved = TeamQualityMixer.resolve(
       factors,
       season,
       player_id,
-      [ ClubGames( first, first_games ), ClubGames( second, second_games ) ] ) == (
-         first_rate * first_games + second_rate * second_games
-      ) / ( first_games + second_games )
+      [ ClubGames( first, first_games ), ClubGames( second, second_games ) ] )
+
+   assert resolved == (
+      first_rate * first_games + second_rate * second_games
+   ) / ( first_games + second_games )

@@ -47,7 +47,7 @@ def _run( player_id: int, values: list[ float ] ) -> list[ NhlSkaterSeason ]:
    ]
 
 
-def Test_Fit_TestLastYearMatches_ExpectFirstWeightOne() -> None:
+def _last_year_seasons() -> list[ NhlSkaterSeason ]:
    seasons: list[ NhlSkaterSeason ] = []
 
    for lag in range( RecencyDecayFitter.WINDOW ):
@@ -61,24 +61,40 @@ def Test_Fit_TestLastYearMatches_ExpectFirstWeightOne() -> None:
 
       seasons.extend( _run( lag + 1, values ) )
 
-   assert RecencyDecayFitter.fit( seasons ) == [
+   return seasons
+
+
+def _first_weight_one() -> list[ RecencyWeight ]:
+   return [
       RecencyWeight( lag, 1.0 if lag == Position.FIRST else 0.0 )
       for lag in range( RecencyDecayFitter.WINDOW )
    ]
 
 
+def Test_Fit_TestLastYearMatches_ExpectFirstWeightOne() -> None:
+   seasons = _last_year_seasons()
+
+   weights = RecencyDecayFitter.fit( seasons )
+
+   assert weights == _first_weight_one()
+
+
 def Test_Fit_TestMeanOfWindow_ExpectEqualWeights() -> None:
+   current_pace = 1.0
+   prior_pace = float( RecencyDecayFitter.WINDOW )
    seasons: list[ NhlSkaterSeason ] = []
 
    for lag in range( RecencyDecayFitter.WINDOW ):
       values = [ 0.0 ] * ( RecencyDecayFitter.WINDOW + 1 )
-      values[ RecencyDecayFitter.WINDOW ] = 1.0
-      values[ RecencyDecayFitter.WINDOW - 1 - lag ] = float(
-         RecencyDecayFitter.WINDOW )
+      values[ RecencyDecayFitter.WINDOW ] = current_pace
+      values[ RecencyDecayFitter.WINDOW - 1 - lag ] = prior_pace
       seasons.extend( _run( lag + 1, values ) )
 
    weight = 1.0 / RecencyDecayFitter.WINDOW
-   assert RecencyDecayFitter.fit( seasons ) == [
+
+   weights = RecencyDecayFitter.fit( seasons )
+
+   assert weights == [
       RecencyWeight( lag, weight )
       for lag in range( RecencyDecayFitter.WINDOW )
    ]

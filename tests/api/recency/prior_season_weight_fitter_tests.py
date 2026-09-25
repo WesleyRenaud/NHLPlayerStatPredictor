@@ -16,6 +16,13 @@ def _identity_samples( window: int ) -> list[ list[ float ] ]:
    return samples
 
 
+def _first_weight_one( window: int ) -> list[ RecencyWeight ]:
+   return [
+      RecencyWeight( years_ago, 1.0 if years_ago == Position.FIRST else 0.0 )
+      for years_ago in range( window )
+   ]
+
+
 def Test_Fit_TestLastYearIsTarget_ExpectFirstWeightOne() -> None:
    window = 4
    samples: list[ list[ float ] ] = []
@@ -29,16 +36,19 @@ def Test_Fit_TestLastYearIsTarget_ExpectFirstWeightOne() -> None:
 
       samples.append( [ row[ Position.FIRST ], *row ] )
 
-   assert PriorSeasonWeightFitter.fit( samples ) == [
-      RecencyWeight( years_ago, 1.0 if years_ago == Position.FIRST else 0.0 )
-      for years_ago in range( window )
-   ]
+   weights = PriorSeasonWeightFitter.fit( samples )
+
+   assert weights == _first_weight_one( window )
 
 
 def Test_Fit_TestMeanOfPriors_ExpectEqualWeights() -> None:
    window = 4
+   samples = _identity_samples( window )
    weight = 1.0 / window
-   assert PriorSeasonWeightFitter.fit( _identity_samples( window ) ) == [
+
+   weights = PriorSeasonWeightFitter.fit( samples )
+
+   assert weights == [
       RecencyWeight( years_ago, weight )
       for years_ago in range( window )
    ]
@@ -46,8 +56,12 @@ def Test_Fit_TestMeanOfPriors_ExpectEqualWeights() -> None:
 
 def Test_Fit_TestEightPriors_ExpectEqualWeights() -> None:
    window = 8
+   samples = _identity_samples( window )
    weight = 1.0 / window
-   assert PriorSeasonWeightFitter.fit( _identity_samples( window ) ) == [
+
+   weights = PriorSeasonWeightFitter.fit( samples )
+
+   assert weights == [
       RecencyWeight( years_ago, weight )
       for years_ago in range( window )
    ]
@@ -70,7 +84,6 @@ def Test_Fit_TestNegativeCoefficient_ExpectClipped() -> None:
 
       samples.append( [ target, *row ] )
 
-   assert PriorSeasonWeightFitter.fit( samples ) == [
-      RecencyWeight( years_ago, 1.0 if years_ago == Position.FIRST else 0.0 )
-      for years_ago in range( window )
-   ]
+   weights = PriorSeasonWeightFitter.fit( samples )
+
+   assert weights == _first_weight_one( window )

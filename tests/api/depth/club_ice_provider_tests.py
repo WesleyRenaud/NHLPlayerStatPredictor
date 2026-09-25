@@ -26,7 +26,10 @@ def Test_Resolve_TestMissingLanding_ExpectNone(
       club_ice_provider,
       'JsonFileCache',
       lambda: JsonFileCache( tmp_path ) )
-   assert ClubIceProvider.resolve( 1 ) is None
+
+   ice = ClubIceProvider.resolve( 1 )
+
+   assert ice is None
 
 
 def Test_Resolve_TestLanding_ExpectIce(
@@ -54,7 +57,10 @@ def Test_Resolve_TestLanding_ExpectIce(
             },
          ]
       } )
-   assert ClubIceProvider.resolve( 1 ) == UsableNhlIce(
+
+   ice = ClubIceProvider.resolve( 1 )
+
+   assert ice == UsableNhlIce(
       season_id,
       Time.clock( toi ),
       [ ClubIce( team, games, Time.clock( toi ) ) ] )

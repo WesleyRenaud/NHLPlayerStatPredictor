@@ -5,6 +5,11 @@ from api.shared.enums.position import Position
 
 
 def Test_Equality_TestSameFields_ExpectEqual() -> None:
-   result = GithubCliResult( Position.FIRST, 'ok', '' )
-   assert result == GithubCliResult( Position.FIRST, 'ok', '' )
-   assert result in { GithubCliResult( Position.FIRST, 'ok', '' ) }
+   code = Position.FIRST
+   stdout = 'ok'
+   stderr = ''
+   result = GithubCliResult( code, stdout, stderr )
+   other = GithubCliResult( code, stdout, stderr )
+
+   assert result == other
+   assert result in { other }

@@ -14,7 +14,7 @@ def Test_BuildRows_TestStandingsAndRoster_ExpectBuilderRows(
       monkeypatch: pytest.MonkeyPatch ) -> None:
    first_team = list( Team )[ Position.FIRST ]
    second_team = list( Team )[ Position.SECOND ]
-   position = list( SkaterPosition )[ Position.FIRST ]
+   position = SkaterPosition( 'C' )
    expected = [
       RosterSkater( 1, 'First Skater', position, first_team ),
       RosterSkater( 2, 'Second Skater', position, second_team ),
@@ -44,7 +44,9 @@ def Test_BuildRows_TestStandingsAndRoster_ExpectBuilderRows(
       lambda team, payload: captured.append( ( team, payload ) ) or [
          expected[ Position.FIRST if team == first_team else Position.SECOND ]
       ] )
+
    rows = RosterSkaterIngester.build_rows()
+
    assert rows == expected
    assert [ team for team, payload in captured ] == [ first_team, second_team ]
    assert [ payload for team, payload in captured ] == [

@@ -122,7 +122,9 @@ test('Test_Render_TestPlayerAndProjection_ExpectNameMetaAndStats', () => {
       gamesPlayed: 70,
    };
    const result = resultElement();
+
    LookupFormController.render(result, player, projection);
+
    assert.equal(result.nodes['[data-player-name]'].textContent, player.playerName);
    assert.equal(
       result.nodes['[data-player-meta]'].textContent,
@@ -139,7 +141,9 @@ test('Test_Render_TestPlayerAndProjection_ExpectNameMetaAndStats', () => {
 test('Test_Bind_TestUnboundPlayer_ExpectError', async () => {
    const form = lookupForm();
    LookupFormController.bind(form, resultElement());
+
    await form.submit();
+
    assert.equal(form.error.hidden, false);
    assert.equal(form.input.classList.contains('is-invalid'), true);
    assert.equal(form.input.getAttribute('aria-invalid'), 'true');
@@ -171,7 +175,9 @@ test('Test_Bind_TestPlayer_ExpectErrorClearedAndRendered', async t => {
    PlayerNameBinder.bind(form.input, player);
    LookupFormController.bind(form, result);
    LookupFormController.showError(form);
+
    await form.submit();
+
    assert.equal(form.error.hidden, true);
    assert.equal(form.input.classList.contains('is-invalid'), false);
    assert.equal(form.button.classList.contains('is-invalid'), false);
@@ -188,7 +194,9 @@ test('Test_Bind_TestInput_ExpectErrorCleared', () => {
    const form = lookupForm();
    LookupFormController.bind(form, resultElement());
    LookupFormController.showError(form);
+
    form.input.listeners.input();
+
    assert.equal(form.error.hidden, true);
    assert.equal(form.input.classList.contains('is-invalid'), false);
    assert.equal(form.button.classList.contains('is-invalid'), false);
@@ -221,12 +229,16 @@ test('Test_Bind_TestPendingProjection_ExpectBusyButton', async t => {
    const result = resultElement();
    PlayerNameBinder.bind(form.input, player);
    LookupFormController.bind(form, result);
+
    const pending = form.submit();
+
    assert.equal(form.button.disabled, true);
    assert.equal(form.button.classList.contains('is-busy'), true);
    assert.equal(form.button.getAttribute('aria-busy'), 'true');
+
    resolveGet(projection);
    await pending;
+
    assert.equal(form.button.disabled, false);
    assert.equal(form.button.classList.contains('is-busy'), false);
    assert.equal(result.classList.contains('is-updated'), true);

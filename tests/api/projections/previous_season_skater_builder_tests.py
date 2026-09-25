@@ -8,7 +8,6 @@ from api.projections.previous_season_nhl_skater import PreviousSeasonNhlSkater
 from api.projections.previous_season_skater import PreviousSeasonSkater
 from api.projections.previous_season_skater_builder import PreviousSeasonSkaterBuilder
 from api.projections.season_pace import SeasonPace
-from api.projections.translated_pace_averager import TranslatedPaceAverager
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
 from api.skaters.other_league_skater_season import OtherLeagueSkaterSeason
@@ -26,7 +25,7 @@ def _nhl(
       player_id=player_id,
       season_id=20252026,
       player_name='Stub Skater',
-      position=list( SkaterPosition )[ Position.FIRST ],
+      position=SkaterPosition( 'C' ),
       birth_date=date( 1997, 1, 13 ),
       age=28.7,
       team=team,
@@ -65,7 +64,9 @@ def _other(
 def Test_Build_TestNhlOnDifferentTeam_ExpectPaceFromThatSeason() -> None:
    team = list( Team )[ Position.FIRST ]
    nhl = _nhl( 7, team, 40.0, 50.0 )
+
    group = PreviousSeasonSkaterBuilder.build( [ nhl ], [], [] )
+
    assert group == PreviousSeasonGroup(
       [
          PreviousSeasonNhlSkater(
@@ -82,11 +83,21 @@ def Test_Build_TestOtherLeagueOnly_ExpectTranslatedPaceWithoutNhlTeam() -> None:
    league = 'AAA'
    factor = LeagueFactor( league, 0.40 )
    other = _other( 7, 20.0, 30.0, league, 46 )
-   year = TranslatedPaceAverager.year( [ other ], [ factor ] )
+   translated = SeasonPace(
+      other.g_pace * factor.rate,
+      other.a_pace * factor.rate )
+
    group = PreviousSeasonSkaterBuilder.build( [], [ other ], [ factor ] )
+
    assert group == PreviousSeasonGroup(
       [],
-      [ PreviousSeasonSkater( other.player_id, year.games, year.pace, other.position ) ] )
+      [
+         PreviousSeasonSkater(
+            other.player_id,
+            other.games_played,
+            translated,
+            other.position )
+      ] )
 
 
 def Test_Build_TestNhlAndOther_ExpectBlendedPaceAndNhlTeam() -> None:
@@ -95,21 +106,35 @@ def Test_Build_TestNhlAndOther_ExpectBlendedPaceAndNhlTeam() -> None:
    team = list( Team )[ Position.SECOND ]
    nhl = _nhl( 7, team, 84.0, 84.0, 1 )
    other = _other( 7, 10.96, 23.74, league, 46 )
-   year = TranslatedPaceAverager.year( [ nhl, other ], [ factor ] )
+   total_games = nhl.games_played + other.games_played
+   blended = SeasonPace(
+      (
+         nhl.games_played * nhl.g_pace
+         + other.games_played * other.g_pace * factor.rate ) / total_games,
+      (
+         nhl.games_played * nhl.a_pace
+         + other.games_played * other.a_pace * factor.rate ) / total_games )
+
    group = PreviousSeasonSkaterBuilder.build( [ nhl ], [ other ], [ factor ] )
+
    assert group == PreviousSeasonGroup(
-      [ PreviousSeasonNhlSkater(
-         nhl.player_id,
-         year.games,
-         year.pace,
-         nhl.position,
-         nhl.team ) ],
+      [
+         PreviousSeasonNhlSkater(
+            nhl.player_id,
+            total_games,
+            blended,
+            nhl.position,
+            nhl.team )
+      ],
       [] )
 
 
 def Test_Build_TestUnknownLeague_ExpectOmitted() -> None:
    other = _other( 7, 20.0, 30.0, 'AAA', 46 )
-   assert PreviousSeasonSkaterBuilder.build( [], [ other ], [] ) == PreviousSeasonGroup( [], [] )
+
+   group = PreviousSeasonSkaterBuilder.build( [], [ other ], [] )
+
+   assert group == PreviousSeasonGroup( [], [] )
 
 
 def Test_Build_TestZeroGames_ExpectOmitted() -> None:
@@ -117,9 +142,10 @@ def Test_Build_TestZeroGames_ExpectOmitted() -> None:
    factor = LeagueFactor( league, 0.40 )
    nhl = _nhl( 1, list( Team )[ Position.FIRST ], 40.0, 50.0, 0 )
    other = _other( 2, 20.0, 30.0, league, 0 )
-   assert PreviousSeasonSkaterBuilder.build( [ nhl ], [ other ], [ factor ] ) == PreviousSeasonGroup(
-      [],
-      [] )
+
+   group = PreviousSeasonSkaterBuilder.build( [ nhl ], [ other ], [ factor ] )
+
+   assert group == PreviousSeasonGroup( [], [] )
 
 
 def Test_Build_TestNhlAndOtherOnlyPlayers_ExpectBothRows() -> None:
@@ -128,8 +154,12 @@ def Test_Build_TestNhlAndOtherOnlyPlayers_ExpectBothRows() -> None:
    team = list( Team )[ Position.FIRST ]
    nhl = _nhl( 1, team, 40.0, 50.0 )
    other = _other( 2, 20.0, 30.0, league, 46 )
-   year = TranslatedPaceAverager.year( [ other ], [ factor ] )
+   translated = SeasonPace(
+      other.g_pace * factor.rate,
+      other.a_pace * factor.rate )
+
    group = PreviousSeasonSkaterBuilder.build( [ nhl ], [ other ], [ factor ] )
+
    assert group == PreviousSeasonGroup(
       [
          PreviousSeasonNhlSkater(
@@ -139,4 +169,10 @@ def Test_Build_TestNhlAndOtherOnlyPlayers_ExpectBothRows() -> None:
             nhl.position,
             nhl.team )
       ],
-      [ PreviousSeasonSkater( other.player_id, year.games, year.pace, other.position ) ] )
+      [
+         PreviousSeasonSkater(
+            other.player_id,
+            other.games_played,
+            translated,
+            other.position )
+      ] )

@@ -26,19 +26,29 @@ def Test_Pad_TestFourSpares_ExpectAllFour() -> None:
 
 
 def Test_ExtraPace_TestNamed_ExpectRosterPace() -> None:
-   assert TeamFactorFiller.extra_pace( 7, { 7: 18.0 }, [] ) == 18.0
+   player_id = 7
+   pace = 18.0
+
+   extra_pace = TeamFactorFiller.extra_pace( player_id, { player_id: pace }, [] )
+
+   assert extra_pace == pace
 
 
 def Test_ExtraPace_TestMissingNamed_ExpectZero() -> None:
-   assert TeamFactorFiller.extra_pace( 7, {}, [] ) == 0.0
+   extra_pace = TeamFactorFiller.extra_pace( 7, {}, [] )
+
+   assert extra_pace == 0.0
 
 
 def Test_ExtraPace_TestFiller_ExpectSlotContribution() -> None:
    slots = [ SlotAverage( 7, 15.0, 2.0, 12.0 ) ]
-   assert TeamFactorFiller.extra_pace(
+
+   extra_pace = TeamFactorFiller.extra_pace(
       LeagueFiller.player_id( 7 ),
       {},
-      slots ) == slots[ Position.FIRST ].contribution
+      slots )
+
+   assert extra_pace == slots[ Position.FIRST ].contribution
 
 
 def Test_Pad_TestExistingExtra_ExpectLaterSlots() -> None:

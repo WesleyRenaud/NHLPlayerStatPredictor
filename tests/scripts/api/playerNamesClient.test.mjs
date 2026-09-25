@@ -22,8 +22,11 @@ test('Test_List_TestCachedFetch_ExpectSingleRequest', async () => {
    };
 
    try {
-      assert.deepEqual(await PlayerNamesClient.list(), stubPlayers);
-      assert.deepEqual(await PlayerNamesClient.list(), stubPlayers);
+      const first = await PlayerNamesClient.list();
+      const second = await PlayerNamesClient.list();
+
+      assert.deepEqual(first, stubPlayers);
+      assert.deepEqual(second, stubPlayers);
       assert.equal(calls, 1);
    } finally {
       ApiClient.postJson = originalPostJson;
@@ -33,12 +36,15 @@ test('Test_List_TestCachedFetch_ExpectSingleRequest', async () => {
 
 
 test('Test_FetchPlayers_TestInvalidPayload_ExpectEmpty', async () => {
+   const payload = { names: [] };
    const originalPostJson = ApiClient.postJson;
    PlayerNamesClient.playersPromise = null;
-   ApiClient.postJson = async () => ( { names: [] } );
+   ApiClient.postJson = async () => payload;
 
    try {
-      assert.deepEqual(await PlayerNamesClient.fetchPlayers(), []);
+      const players = await PlayerNamesClient.fetchPlayers();
+
+      assert.deepEqual(players, []);
    } finally {
       ApiClient.postJson = originalPostJson;
       PlayerNamesClient.playersPromise = null;
@@ -54,7 +60,9 @@ test('Test_FetchPlayers_TestFailedRequest_ExpectEmpty', async () => {
    };
 
    try {
-      assert.deepEqual(await PlayerNamesClient.fetchPlayers(), []);
+      const players = await PlayerNamesClient.fetchPlayers();
+
+      assert.deepEqual(players, []);
    } finally {
       ApiClient.postJson = originalPostJson;
       PlayerNamesClient.playersPromise = null;

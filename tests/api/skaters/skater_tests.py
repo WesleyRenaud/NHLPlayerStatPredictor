@@ -49,18 +49,39 @@ def _other() -> OtherLeagueSkaterSeason:
 
 def Test_NhlSeasons_TestMixed_ExpectNhlRows() -> None:
    nhl = _nhl()
-   assert Skater( [ nhl, _other() ] ).nhl_seasons() == [ nhl ]
+   other = _other()
+   skater = Skater( [ nhl, other ] )
+
+   seasons = skater.nhl_seasons()
+
+   assert seasons == [ nhl ]
 
 
 def Test_NhlSeasons_TestOtherLeagueOnly_ExpectEmpty() -> None:
-   assert Skater( [ _other() ] ).nhl_seasons() == []
+   other = _other()
+   skater = Skater( [ other ] )
+
+   seasons = skater.nhl_seasons()
+
+   assert seasons == []
 
 
 def Test_LastPlayedSeasonId_TestNhlSeasons_ExpectLatest() -> None:
    later = _nhl()
-   earlier = replace( later, season_id=20242025 )
-   assert Skater( [ later, earlier, _other() ] ).last_played_season_id() == later.season_id
+   earlier_season_id = 20242025
+   earlier = replace( later, season_id=earlier_season_id )
+   other = _other()
+   skater = Skater( [ later, earlier, other ] )
+
+   last_played = skater.last_played_season_id()
+
+   assert last_played == later.season_id
 
 
 def Test_LastPlayedSeasonId_TestOtherLeagueOnly_ExpectNone() -> None:
-   assert Skater( [ _other() ] ).last_played_season_id() is None
+   other = _other()
+   skater = Skater( [ other ] )
+
+   last_played = skater.last_played_season_id()
+
+   assert last_played is None

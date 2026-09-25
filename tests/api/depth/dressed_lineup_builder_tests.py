@@ -22,33 +22,47 @@ def _skater( player_id: int, implied: float ) -> IceSkater:
 
 
 def Test_Build_TestTwoMissing_ExpectExtraThenReplacement() -> None:
-   present = [ _skater( index, 20.0 ) for index in range( 1, 5 ) ]
+   implied = 20.0
+   extra_implied = 16.0
+   present = [ _skater( index, implied ) for index in range( 1, 5 ) ]
+   extra = _skater( 7, extra_implied )
+
    lineup = DressedLineupBuilder.build(
       present,
-      [ _skater( 7, 16.0 ) ],
+      [ extra ],
       [],
       DepthGroup.defense() )
+
    assert abs(
-      lineup.implied - ( 80.0 + 16.0 ) ) < 0.001
+      lineup.implied - ( implied * len( present ) + extra_implied ) ) < 0.001
 
 
 def Test_Build_TestFullSix_ExpectNoFill() -> None:
-   present = [ _skater( index, 20.0 ) for index in range( 1, 7 ) ]
+   implied = 20.0
+   present = [ _skater( index, implied ) for index in range( 1, 7 ) ]
+
    lineup = DressedLineupBuilder.build(
       present,
       [ _skater( 7, 16.0 ) ],
       [],
       DepthGroup.defense() )
-   assert abs( lineup.implied - 120.0 ) < 0.001
+
+   assert abs( lineup.implied - implied * len( present ) ) < 0.001
 
 
 def Test_Build_TestTwoMissing_ExpectExtraThenSlotEight() -> None:
-   present = [ _skater( index, 20.0 ) for index in range( 1, 5 ) ]
+   implied = 20.0
+   extra_implied = 16.0
+   present = [ _skater( index, implied ) for index in range( 1, 5 ) ]
    slots = [ SlotAverage( 8, 13.0, 1.0, 10.0 ) ]
+   extra = _skater( 7, extra_implied )
+
    lineup = DressedLineupBuilder.build(
       present,
-      [ _skater( 7, 16.0 ) ],
+      [ extra ],
       slots,
       DepthGroup.defense() )
-   eighth = SlotFiller.implied( slots, 8 )
-   assert abs( lineup.implied - ( 80.0 + 16.0 + eighth ) ) < 0.001
+
+   eighth = SlotFiller.implied( slots, slots[ Position.FIRST ].slot )
+   assert abs(
+      lineup.implied - ( implied * len( present ) + extra_implied + eighth ) ) < 0.001

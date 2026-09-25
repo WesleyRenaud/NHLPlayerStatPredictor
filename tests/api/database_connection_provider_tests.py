@@ -7,11 +7,12 @@ from api.shared.enums.position import Position
 
 
 def Test_Open_TestNewPath_ExpectQueryableConnection( tmp_path: Path ) -> None:
+   expected = 1
    conn = DatabaseConnectionProvider.open( str( tmp_path / 'skaters.sqlite' ) )
 
    try:
-      value = conn.execute( 'SELECT 1' ).fetchone()[ Position.FIRST ]
+      value = conn.execute( f'SELECT { expected }' ).fetchone()[ Position.FIRST ]
    finally:
       DatabaseConnectionProvider.close( conn )
 
-   assert value == 1
+   assert value == expected

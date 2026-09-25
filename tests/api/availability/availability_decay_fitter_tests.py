@@ -70,20 +70,26 @@ def _first_weight_one() -> list[ RecencyWeight ]:
 
 
 def Test_Fit_TestLastYearMatches_ExpectFirstWeightOne() -> None:
-   assert AvailabilityDecayFitter.fit( _last_year_seasons() ) == _first_weight_one()
+   seasons = _last_year_seasons()
+
+   weights = AvailabilityDecayFitter.fit( seasons )
+
+   assert weights == _first_weight_one()
 
 
 def Test_Fit_TestMeanOfWindow_ExpectEqualWeights() -> None:
+   current_share = 1.0
+   prior_share = float( AvailabilityDecayFitter.WINDOW )
    seasons: list[ NhlSkaterSeason ] = []
 
    for lag in range( AvailabilityDecayFitter.WINDOW ):
       values: list[ float | None ] = [ 0.0 ] * ( AvailabilityDecayFitter.WINDOW + 1 )
-      values[ AvailabilityDecayFitter.WINDOW ] = 1.0
-      values[ AvailabilityDecayFitter.WINDOW - 1 - lag ] = float(
-         AvailabilityDecayFitter.WINDOW )
+      values[ AvailabilityDecayFitter.WINDOW ] = current_share
+      values[ AvailabilityDecayFitter.WINDOW - 1 - lag ] = prior_share
       seasons.extend( _run( lag + 1, values ) )
 
    weights = AvailabilityDecayFitter.fit( seasons )
+
    first = weights[ Position.FIRST ].weight
    assert weights == [
       RecencyWeight( lag, first )
@@ -92,13 +98,24 @@ def Test_Fit_TestMeanOfWindow_ExpectEqualWeights() -> None:
 
 
 def Test_Fit_TestMissingShare_ExpectSkipped() -> None:
+   player_id = 99
+   missing_share = None
+   present_share = 0.9
    seasons = _last_year_seasons()
    seasons.extend(
-      _run( 99, [ None, *[ 0.9 ] * AvailabilityDecayFitter.WINDOW ] ) )
-   assert AvailabilityDecayFitter.fit( seasons ) == _first_weight_one()
+      _run( player_id, [ missing_share, *[ present_share ] * AvailabilityDecayFitter.WINDOW ] ) )
+
+   weights = AvailabilityDecayFitter.fit( seasons )
+
+   assert weights == _first_weight_one()
 
 
 def Test_Fit_TestFewPriors_ExpectSkipped() -> None:
+   player_id = 99
+   short_history = [ 0.9, 0.9, 0.9, 0.9, 0.1 ]
    seasons = _last_year_seasons()
-   seasons.extend( _run( 99, [ 0.9, 0.9, 0.9, 0.9, 0.1 ] ) )
-   assert AvailabilityDecayFitter.fit( seasons ) == _first_weight_one()
+   seasons.extend( _run( player_id, short_history ) )
+
+   weights = AvailabilityDecayFitter.fit( seasons )
+
+   assert weights == _first_weight_one()
