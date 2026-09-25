@@ -15,8 +15,10 @@ from ...skaters.other_league_season_provider import OtherLeagueSeasonProvider
 from ...skaters.roster_skater_provider import RosterSkaterProvider
 from ...skaters.skater import Skater
 from ...skaters.skater_season_provider import SkaterSeasonProvider
-from ...team_factor.team_factor import TeamFactor
+from ...team_factor.club_games import ClubGames
+from ...team_factor.club_games_provider import ClubGamesProvider
 from ...team_factor.team_factor_store import TeamFactorStore
+from ...team_factor.team_quality_mixer import TeamQualityMixer
 from ..team_pace_adjuster import TeamPaceAdjuster
 
 
@@ -48,16 +50,18 @@ class ProjectionCoordinator():
          factors = TeamFactorStore.read()
          scaled = TeamPaceAdjuster.adjust(
             aged,
-            TeamFactor.teammate_rate(
+            TeamQualityMixer.resolve(
                factors,
                target_season_id,
-               current_team,
-               player_id ),
-            TeamFactor.teammate_rate(
+               player_id,
+               ClubGamesProvider.resolve( player_id, target_season_id )
+                  or [ ClubGames( current_team, 1 ) ] ),
+            TeamQualityMixer.resolve(
                factors,
                previous.season_id,
-               previous.team,
-               player_id ) )
+               player_id,
+               ClubGamesProvider.resolve( player_id, previous.season_id )
+                  or [ ClubGames( previous.team, previous.games_played ) ] ) )
 
       ice = SkaterIceStore.by_player().get( player_id )
 
