@@ -14,7 +14,7 @@ from api.aging.league_factor_store import LeagueFactorStore
 from api.availability.availability_decay_fitter import AvailabilityDecayFitter
 from api.availability.availability_weight_store import AvailabilityWeightStore
 from api.availability.mixed_season_share_binder import MixedSeasonShareBinder
-from api.depth.slot_chosen_share_store import SlotChosenShareStore
+from api.depth.ice_chosen_share_store import IceChosenShareStore
 import api.ingest.skater_season_ingester as skater_season_ingester
 from api.ingest.skater_season_ingester import SkaterSeasonIngester
 from api.paths import Paths
@@ -271,4 +271,4 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    assert fitted == [ True ]
    assert recorded == [ False ]
    assert previous_rates == [ { team: 0.87 } ]
-   assert SlotChosenShareStore.read() == []
+   assert IceChosenShareStore.read() == []

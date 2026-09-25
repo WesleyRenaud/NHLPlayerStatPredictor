@@ -3,9 +3,9 @@ from __future__ import annotations
 from api.availability.games_share import GamesShare
 from api.depth.depth_chart_builder import DepthChartBuilder
 from api.depth.depth_group import DepthGroup
+from api.depth.ice_chosen_share import IceChosenShare
 from api.depth.ice_skater import IceSkater
 from api.depth.slot_average import SlotAverage
-from api.depth.slot_chosen_share import SlotChosenShare
 from api.depth.slot_filler import SlotFiller
 from api.projections.nhl_lineup_selector import NhlLineupSelector
 from api.shared.enums.position import Position
@@ -27,14 +27,13 @@ def _skater(
       1.0 )
 
 
-def _chosen( group: DepthGroup ) -> list[ SlotChosenShare ]:
+def _chosen( group: DepthGroup ) -> list[ IceChosenShare ]:
    return [
-      SlotChosenShare(
-         slot,
+      IceChosenShare(
+         0.0,
          group.skater_group,
          GamesShare.FULL,
          GamesShare.FULL )
-      for slot in range( 1, group.dressed_count + 1 )
    ]
 
 
@@ -175,12 +174,10 @@ def Test_Build_TestForwardHalfAvailable_ExpectMoreThanHealthyShare() -> None:
 
 def Test_Build_TestBottomChosen_ExpectRegularScaledAndExtraFull() -> None:
    group = DepthGroup.defense()
-   shares = _chosen( group )
-   shares[ Position.LAST ] = SlotChosenShare(
-      group.dressed_count,
-      group.skater_group,
-      0.5,
-      0.5 )
+   shares = [
+      IceChosenShare( 15.0, group.skater_group, 0.5, 0.5 ),
+      IceChosenShare( 16.0, group.skater_group, GamesShare.FULL, GamesShare.FULL ),
+   ]
    chart = DepthChartBuilder.build(
       list( Team )[ Position.FIRST ],
       [
@@ -224,12 +221,10 @@ def Test_Build_TestBottomChosen_ExpectTopGetsMore() -> None:
       _chosen( group ),
       group,
       Position.SECOND )
-   shares = _chosen( group )
-   shares[ Position.LAST ] = SlotChosenShare(
-      group.dressed_count,
-      group.skater_group,
-      0.5,
-      0.5 )
+   shares = [
+      IceChosenShare( 15.0, group.skater_group, 0.5, 0.5 ),
+      IceChosenShare( 16.0, group.skater_group, GamesShare.FULL, GamesShare.FULL ),
+   ]
    scratched = DepthChartBuilder.build(
       team,
       skaters,

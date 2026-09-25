@@ -9,9 +9,9 @@ from ..aging.aging_factor_store import AgingFactorStore
 from ..aging.league_factor_store import LeagueFactorStore
 from ..availability.availability_weight_store import AvailabilityWeightStore
 from ..depth.depth_chart_store import DepthChartStore
+from ..depth.ice_chosen_share_store import IceChosenShareStore
 from ..depth.skater_ice_store import SkaterIceStore
 from ..depth.slot_average_store import SlotAverageStore
-from ..depth.slot_chosen_share_store import SlotChosenShareStore
 from .github_cli import GithubCli
 from ..paths import Paths
 from ..recency.scoring_weight_store import ScoringWeightStore
@@ -57,7 +57,7 @@ class IngestArtifactPuller():
       shutil.copy2( cls._source_charts( artifact_root ), DepthChartStore.path() )
       shutil.copy2( cls._source_slots( artifact_root ), SlotAverageStore.path() )
       shutil.copy2( cls._source_ice( artifact_root ), SkaterIceStore.path() )
-      shutil.copy2( cls._source_chosen( artifact_root ), SlotChosenShareStore.path() )
+      shutil.copy2( cls._source_chosen( artifact_root ), IceChosenShareStore.path() )
 
       if Paths.RAW_DIR.exists():
          shutil.rmtree( Paths.RAW_DIR )
@@ -227,7 +227,7 @@ class IngestArtifactPuller():
 
    @classmethod
    def _source_chosen( cls, artifact_root: Path ) -> Path:
-      return artifact_root / SlotChosenShareStore.path().relative_to( Paths.ROOT )
+      return artifact_root / IceChosenShareStore.path().relative_to( Paths.ROOT )
 
 
    @classmethod

@@ -44,7 +44,7 @@ def Test_Resolve_TestStint_ExpectThatSeason() -> None:
          'seasonTotals': [
             _row(
                season_id,
-               UsableNhlIceResolver.MIN_GAMES,
+               UsableNhlIce.MIN_GAMES,
                team,
                toi ),
          ]
@@ -53,7 +53,7 @@ def Test_Resolve_TestStint_ExpectThatSeason() -> None:
       season_id,
       Time.clock( toi ),
       ClubIceParser.parse(
-         { 'seasonTotals': [ _row( season_id, UsableNhlIceResolver.MIN_GAMES, team, toi ) ] },
+         { 'seasonTotals': [ _row( season_id, UsableNhlIce.MIN_GAMES, team, toi ) ] },
          season_id ) )
 
 

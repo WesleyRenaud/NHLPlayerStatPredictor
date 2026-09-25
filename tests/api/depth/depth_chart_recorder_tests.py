@@ -11,10 +11,10 @@ from api.depth.club_ice import ClubIce
 from api.depth.depth_chart_recorder import DepthChartRecorder
 from api.depth.depth_chart_store import DepthChartStore
 from api.depth.depth_group import DepthGroup
+from api.depth.ice_chosen_share import IceChosenShare
+from api.depth.ice_chosen_share_store import IceChosenShareStore
 from api.depth.slot_average import SlotAverage
 from api.depth.slot_average_store import SlotAverageStore
-from api.depth.slot_chosen_share import SlotChosenShare
-from api.depth.slot_chosen_share_store import SlotChosenShareStore
 from api.depth.usable_nhl_ice import UsableNhlIce
 from api.ingest.roster_skater_ingester import RosterSkaterIngester
 from api.paths import Paths
@@ -61,15 +61,14 @@ def _write_slots() -> None:
    shares = []
 
    for group in ( DepthGroup.forwards(), DepthGroup.defense() ):
-      for slot in range( 1, group.dressed_count + 1 ):
-         shares.append(
-            SlotChosenShare(
-               slot,
-               group.skater_group,
-               GamesShare.FULL,
-               GamesShare.FULL ) )
+      shares.append(
+         IceChosenShare(
+            0.0,
+            group.skater_group,
+            GamesShare.FULL,
+            GamesShare.FULL ) )
 
-   SlotChosenShareStore.write( shares )
+   IceChosenShareStore.write( shares )
 
 
 def Test_Record_TestRosterAndUsage_ExpectStoredChart(
