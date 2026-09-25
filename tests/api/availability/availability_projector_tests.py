@@ -50,6 +50,17 @@ def Test_Resolve_TestMissingLag_ExpectRenormalized() -> None:
       20262027 ) == 0.5
 
 
+def Test_Resolve_TestSkippedYear_ExpectRenormalizedWeights() -> None:
+   assert AvailabilityProjector.resolve(
+      [ _season( 20242025, 1.0 ), _season( 20232024, 0.4 ) ],
+      [
+         RecencyWeight( 0, 0.5 ),
+         RecencyWeight( 1, 0.3 ),
+         RecencyWeight( 2, 0.2 ),
+      ],
+      20262027 ) == 0.76
+
+
 def Test_Resolve_TestEmpty_ExpectFull() -> None:
    assert AvailabilityProjector.resolve(
       [],

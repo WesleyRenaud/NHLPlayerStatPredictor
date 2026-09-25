@@ -28,9 +28,7 @@ from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
 from api.skaters.player_status import PlayerStatus
 from api.skaters.roster_skater import RosterSkater
-from api.skaters.skater_bio import SkaterBio
 from api.skaters.skater_position import SkaterPosition
-from api.skaters.skater_summary import SkaterSummary
 from api.skaters.team import Team
 from api.team_factor.team_factor import TeamFactor
 from api.team_factor.team_factor_store import TeamFactorStore
@@ -62,78 +60,6 @@ def _season(
       gp_share=gp_share )
 
 
-def Test_BuildRows_TestRegularSeason_ExpectPacedTotals() -> None:
-   team = list( Team )[ Position.FIRST ]
-   rows = SkaterSeasonIngester.build_rows(
-      [ SkaterSummary(
-         8478402,
-         'Connor McDavid',
-         list( SkaterPosition )[ Position.FIRST ],
-         [ team ],
-         82,
-         44,
-         79,
-         123 ) ],
-      [ SkaterBio( 8478402, date( 1997, 1, 13 ) ) ],
-      SeasonLength( 20242025, 82, date( 2024, 10, 4 ), date( 2025, 4, 17 ) ),
-      84 )
-
-   assert len( rows ) == 1
-   row = rows[ Position.FIRST ]
-   assert row.g_pace == 44 / 82 * 84
-   assert row.a_pace == 79 / 82 * 84
-   assert row.p_pace == 123 / 82 * 84
-   assert row.pace_games == 84
-   assert row.team == team
-
-
-def Test_BuildRows_TestShortSeason_ExpectPacedTotals() -> None:
-   rows = SkaterSeasonIngester.build_rows(
-      [ SkaterSummary(
-         1,
-         'Sample Player',
-         list( SkaterPosition )[ Position.SECOND ],
-         [ list( Team )[ Position.SECOND ] ],
-         4,
-         1,
-         1,
-         2 ) ],
-      [ SkaterBio( 1, date( 1999, 1, 1 ) ) ],
-      SeasonLength( 20242025, 82, date( 2024, 10, 4 ), date( 2025, 4, 17 ) ),
-      84 )
-
-   assert rows[ Position.FIRST ].p_pace == 2 / 4 * 84
-
-
-def Test_BuildRows_TestMissingBio_ExpectSkipped() -> None:
-   team = list( Team )[ Position.FIRST ]
-   position = list( SkaterPosition )[ Position.FIRST ]
-   rows = SkaterSeasonIngester.build_rows(
-      [
-         SkaterSummary( 1, 'Has Bio', position, [ team ], 82, 1, 1, 2 ),
-         SkaterSummary( 2, 'No Bio', position, [ team ], 82, 1, 1, 2 ),
-      ],
-      [ SkaterBio( 1, date( 1999, 1, 1 ) ) ],
-      SeasonLength( 20242025, 82, date( 2024, 10, 4 ), date( 2025, 4, 17 ) ),
-      84 )
-
-   assert len( rows ) == 1
-   assert rows[ Position.FIRST ].player_id == 1
-
-
-def Test_Seasons_TestBeforeFirstSeason_ExpectExcluded(
-      monkeypatch: pytest.MonkeyPatch ) -> None:
-   monkeypatch.setattr( skater_season_ingester.Config, 'FIRST_SEASON_ID', 20102011 )
-   meta = SkaterSeasonIngester._seasons(
-      [
-         SeasonLength( 20092010, 82, date( 2009, 10, 1 ), date( 2010, 4, 15 ) ),
-         SeasonLength( 20102011, 82, date( 2010, 10, 7 ), date( 2011, 4, 17 ) ),
-         SeasonLength( 20112012, 82, date( 2011, 10, 6 ), date( 2012, 4, 10 ) ),
-      ] )
-
-   assert [ item.season_id for item in meta ] == [ 20102011, 20112012 ]
-
-
 def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       monkeypatch: pytest.MonkeyPatch,
       tmp_path: Path ) -> None:
@@ -161,8 +87,8 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
    monkeypatch.setattr(
-      SkaterSeasonIngester,
-      'build_all_rows',
+      skater_season_ingester.SkaterSeasonBuilder,
+      'build_all',
       lambda force=False: rows )
    monkeypatch.setattr(
       skater_season_ingester.SkaterSeasonStore,
@@ -229,12 +155,21 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
          82,
          date( 2021, 10, 12 ),
          date( 2022, 4, 29 ) ) )
+   team = list( Team )[ Position.FIRST ]
+   roster_rows = RosterSkater.with_last_played( roster_rows, rows )
+   last_played_ids = sorted( {
+      previous_season_id,
+      *(
+         row.last_played_season_id
+         for row in roster_rows
+         if row.last_played_season_id is not None ) } )
    team_factors = [
       TeamFactor(
-         previous_season_id,
-         list( Team )[ Position.FIRST ],
-         0.87,
+         season_id,
+         team,
+         0.87 if season_id == previous_season_id else 1.0,
          [] )
+      for season_id in last_played_ids
    ]
    roster_paces = [
       CurrentSeasonNhlSkater(
@@ -252,6 +187,7 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       list[ AgingFactor ] ] ] = []
    fitted: list[ bool ] = []
    previous_rates: list[ dict ] = []
+   previous_seasons: list[ int ] = []
    monkeypatch.setattr(
       skater_season_ingester.RecencyTargetResolver,
       'prior',
@@ -271,9 +207,10 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       'skater_timeonice',
       lambda season_id, force=False: [] )
    monkeypatch.setattr(
-      skater_season_ingester.TeamFactorFitter,
-      'previous',
-      lambda season, splits, slots, usages, season_length: team_factors )
+      skater_season_ingester.PreviousTeamFactorBuilder,
+      'build',
+      lambda season_ids, landings, slots, usages_by_season, seasons, pace_games: (
+         previous_seasons.extend( season_ids ) or team_factors ) )
    monkeypatch.setattr(
       skater_season_ingester.TeamFactorFitter,
       'current',
@@ -318,7 +255,10 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       other_rows,
       aging_factors )
    assert LeagueFactorStore.read() == league_factors
-   assert TeamFactorStore.read() == team_factors
+   assert TeamFactorStore.read() == sorted(
+      team_factors,
+      key=lambda factor: ( factor.season, factor.team.value ) )
+   assert previous_seasons == last_played_ids
    assert built == [
       (
          roster_rows,
@@ -330,7 +270,5 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    ]
    assert fitted == [ True ]
    assert recorded == [ False ]
-   assert previous_rates == [
-      { list( Team )[ Position.FIRST ]: team_factors[ Position.FIRST ].rate }
-   ]
+   assert previous_rates == [ { team: 0.87 } ]
    assert SlotChosenShareStore.read() == []

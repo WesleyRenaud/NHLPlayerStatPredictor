@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date
 
 from api.shared.enums.position import Position
@@ -53,3 +54,13 @@ def Test_NhlSeasons_TestMixed_ExpectNhlRows() -> None:
 
 def Test_NhlSeasons_TestOtherLeagueOnly_ExpectEmpty() -> None:
    assert Skater( [ _other() ] ).nhl_seasons() == []
+
+
+def Test_LastPlayedSeasonId_TestNhlSeasons_ExpectLatest() -> None:
+   later = _nhl()
+   earlier = replace( later, season_id=20242025 )
+   assert Skater( [ later, earlier, _other() ] ).last_played_season_id() == later.season_id
+
+
+def Test_LastPlayedSeasonId_TestOtherLeagueOnly_ExpectNone() -> None:
+   assert Skater( [ _other() ] ).last_played_season_id() is None

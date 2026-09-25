@@ -17,3 +17,9 @@ class Skater():
          for season in self.seasons
          if isinstance( season, NhlSkaterSeason )
       ]
+
+
+   def last_played_season_id( self ) -> int | None:
+      return max(
+         ( season.season_id for season in self.nhl_seasons() ),
+         default=None )
