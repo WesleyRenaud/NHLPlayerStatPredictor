@@ -4,15 +4,12 @@ from ..availability.availability_projector import AvailabilityProjector
 from ..availability.availability_weight_store import AvailabilityWeightStore
 from ..availability.mixed_season_share_binder import MixedSeasonShareBinder
 from ..availability.retired_availability_binder import RetiredAvailabilityBinder
-from .club_ice import ClubIce
 from .club_ice_provider import ClubIceProvider
 from .depth_chart import DepthChart
 from .depth_chart_builder import DepthChartBuilder
 from .depth_chart_store import DepthChartStore
 from .depth_group import DepthGroup
 from .ice_skater_assembler import IceSkaterAssembler
-from .ice_usage import IceUsage
-from .ice_usage_parser import IceUsageParser
 from ..ingest.nhl_client import NhlClient
 from ..ingest.roster_skater_ingester import RosterSkaterIngester
 from ..paths import Paths
@@ -29,6 +26,7 @@ from .slot_average_store import SlotAverageStore
 from .slot_chosen_share import SlotChosenShare
 from .slot_chosen_share_store import SlotChosenShareStore
 from ..team_factor.team_factor_store import TeamFactorStore
+from .usable_nhl_ice import UsableNhlIce
 
 
 class DepthChartRecorder():
@@ -48,13 +46,6 @@ class DepthChartRecorder():
          pace_games: int,
          team_rates: dict[ Team, float ],
          force: bool = False ) -> list[ DepthChart ]:
-      prior = RecencyTargetResolver.prior()
-      ice_usages = IceUsageParser.parse(
-         NhlClient.skater_timeonice( prior, force ) )
-      ices_by_player = {
-         player_id: ClubIceProvider.resolve( player_id, prior )
-         for player_id in ice_usages
-      }
       roster = RosterSkaterIngester.build_rows( force=force )
       statuses = PlayerStatusStore.read( str( Paths.DB_PATH ) )
       availabilities = RetiredAvailabilityBinder.bind(
@@ -62,6 +53,7 @@ class DepthChartRecorder():
          statuses )
       slot_averages = SlotAverageStore.read()
       chosen_shares = SlotChosenShareStore.read()
+      ices_by_player = cls._ices_by_player( roster )
       charts = []
 
       for team in cls._teams( roster ):
@@ -69,13 +61,12 @@ class DepthChartRecorder():
             cls._team_charts(
                team,
                roster,
-               ice_usages,
+               ices_by_player,
                availabilities,
                slot_averages,
                chosen_shares,
                pace_games,
-               team_rates,
-               ices_by_player ) )
+               team_rates ) )
 
       return charts
 
@@ -85,13 +76,12 @@ class DepthChartRecorder():
          cls,
          team: Team,
          roster: list[ RosterSkater ],
-         ice_usages: dict[ int, IceUsage ],
+         ices_by_player: dict[ int, UsableNhlIce | None ],
          availabilities: dict[ int, float ],
          slot_averages: list[ SlotAverage ],
          chosen_shares: list[ SlotChosenShare ],
          pace_games: int,
-         team_rates: dict[ Team, float ],
-         ices_by_player: dict[ int, list[ ClubIce ] ] ) -> list[ DepthChart ]:
+         team_rates: dict[ Team, float ] ) -> list[ DepthChart ]:
       charts = []
 
       for group in ( DepthGroup.forwards(), DepthGroup.defense() ):
@@ -103,16 +93,25 @@ class DepthChartRecorder():
                team,
                IceSkaterAssembler.build(
                   group.skaters( roster, team ),
-                  ice_usages,
+                  ices_by_player,
                   availabilities,
-                  team_rates,
-                  ices_by_player ),
+                  team_rates ),
                slot_averages,
                chosen_shares,
                group,
                pace_games ) )
 
       return charts
+
+
+   @classmethod
+   def _ices_by_player(
+         cls,
+         roster: list[ RosterSkater ] ) -> dict[ int, UsableNhlIce | None ]:
+      return {
+         row.player_id: ClubIceProvider.resolve( row.player_id )
+         for row in roster
+      }
 
 
    @classmethod

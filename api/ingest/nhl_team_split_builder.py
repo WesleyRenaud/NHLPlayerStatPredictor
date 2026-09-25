@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from .nhl_client import NhlClient
 from ..projections.previous_season_nhl_skater import PreviousSeasonNhlSkater
 from ..projections.season_pace import SeasonPace
@@ -72,7 +74,7 @@ class NhlTeamSplitBuilder():
    def _totals(
          cls,
          landing: Types.JsonObject,
-         season_id: int ) -> Types.JsonObjectList:
+         season_id: int | None = None ) -> Types.JsonObjectList:
       raw_rows = landing.get( 'seasonTotals' ) or []
 
       if not isinstance( raw_rows, list ):
@@ -83,6 +85,6 @@ class NhlTeamSplitBuilder():
          if isinstance( row, dict )
          and row[ 'gameTypeId' ] == NhlClient.REGULAR_SEASON_GAME_TYPE_ID
          and str( row[ 'leagueAbbrev' ] ) == 'NHL'
-         and int( row[ 'season' ] ) == season_id
          and row.get( 'gamesPlayed' )
+         and ( season_id is None or int( row[ 'season' ] ) == season_id )
       ]

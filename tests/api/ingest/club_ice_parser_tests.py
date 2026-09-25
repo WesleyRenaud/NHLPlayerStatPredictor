@@ -92,3 +92,22 @@ def Test_Parse_TestOtherSeason_ExpectEmpty() -> None:
          ]
       },
       20252026 ) == []
+
+
+def Test_SeasonIds_TestTwoSeasons_ExpectNewestFirst() -> None:
+   team = list( Team )[ Position.FIRST ]
+   recent = 20252026
+   older = 20242025
+   assert ClubIceParser.season_ids(
+      {
+         'seasonTotals': [
+            _row( older, 50, team, '16:00' ),
+            _row( recent, 2, team, '21:17' ),
+            _row(
+               recent,
+               46,
+               team,
+               '18:00',
+               league=list( ClubLeague )[ Position.FIRST ].value ),
+         ]
+      } ) == [ recent, older ]
