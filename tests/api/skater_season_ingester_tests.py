@@ -13,7 +13,7 @@ from api.availability_weight_store import AvailabilityWeightStore
 from api.league_factor import LeagueFactor
 from api.league_factor_fitter import LeagueFactorFitter
 from api.league_factor_store import LeagueFactorStore
-from api.nhl_only_season_filter import NhlOnlySeasonFilter
+from api.mixed_season_share_binder import MixedSeasonShareBinder
 from api.nhl_skater_season import NhlSkaterSeason
 from api.paths import Paths
 from api.player_status import PlayerStatus
@@ -318,7 +318,7 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    weights = RecencyDecayFitter.fit( rows )
    assert ScoringWeightStore.read() == weights
    availability_weights = AvailabilityDecayFitter.fit(
-      NhlOnlySeasonFilter.keep( rows, other_rows ) )
+      MixedSeasonShareBinder.bind( rows, other_rows ) )
    assert AvailabilityWeightStore.read() == availability_weights
    aging_factors = AgingCurveFitter.fit( rows, other_rows )
    assert AgingFactorStore.read() == aging_factors

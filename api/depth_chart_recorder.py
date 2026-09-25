@@ -9,8 +9,8 @@ from .depth_group import DepthGroup
 from .ice_skater_assembler import IceSkaterAssembler
 from .ice_usage import IceUsage
 from .ice_usage_parser import IceUsageParser
+from .mixed_season_share_binder import MixedSeasonShareBinder
 from .nhl_client import NhlClient
-from .nhl_only_season_filter import NhlOnlySeasonFilter
 from .other_league_season_provider import OtherLeagueSeasonProvider
 from .paths import Paths
 from .recency_target_resolver import RecencyTargetResolver
@@ -98,7 +98,7 @@ class DepthChartRecorder():
    def _availabilities( cls, roster: list[ RosterSkater ] ) -> dict[ int, float ]:
       player_ids = [ row.player_id for row in roster ]
       by_player = SkaterSeasonYears.by_player(
-         NhlOnlySeasonFilter.keep(
+         MixedSeasonShareBinder.bind(
             SkaterSeasonProvider.seasons_for_player_ids(
                player_ids,
                Paths.DB_PATH ),

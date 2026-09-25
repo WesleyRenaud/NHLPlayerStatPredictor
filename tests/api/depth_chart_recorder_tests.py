@@ -5,12 +5,17 @@ from pathlib import Path
 
 import pytest
 
+from api.availability_weight_store import AvailabilityWeightStore
+from api.club_league import ClubLeague
 from api.depth_chart_recorder import DepthChartRecorder
 from api.depth_chart_store import DepthChartStore
 from api.depth_group import DepthGroup
 from api.games_share import GamesShare
+from api.nhl_skater_season import NhlSkaterSeason
+from api.other_league_skater_season import OtherLeagueSkaterSeason
 from api.paths import Paths
 from api.recency_target_resolver import RecencyTargetResolver
+from api.recency_weight import RecencyWeight
 from api.roster_skater import RosterSkater
 from api.roster_skater_ingester import RosterSkaterIngester
 from api.season_length import SeasonLength
@@ -155,3 +160,91 @@ def Test_Record_TestForwardAndDefense_ExpectBothCharts(
    assert len( charts ) == 2
    assert charts[ Position.FIRST ].skater_group is SkaterGroup.FORWARD
    assert charts[ Position.SECOND ].skater_group is SkaterGroup.DEFENSE
+
+
+def Test_Availabilities_TestNhlGames_ExpectShare(
+      monkeypatch: pytest.MonkeyPatch ) -> None:
+   share = 0.35
+   team = list( Team )[ Position.FIRST ]
+   monkeypatch.setattr(
+      'api.depth_chart_recorder.SkaterSeasonProvider.seasons_for_player_ids',
+      lambda player_ids, db_path: [
+         NhlSkaterSeason(
+            player_id=1,
+            season_id=20252026,
+            player_name='Stub',
+            position=SkaterPosition( 'D' ),
+            birth_date=date( 1997, 1, 13 ),
+            age=28.7,
+            team=team,
+            games_played=29,
+            goals=0,
+            assists=0,
+            points=0,
+            schedule_games=1,
+            pace_games=1,
+            g_pace=0.0,
+            a_pace=0.0,
+            p_pace=0.0,
+            gp_share=share )
+      ] )
+   monkeypatch.setattr(
+      'api.depth_chart_recorder.OtherLeagueSeasonProvider.seasons_for_player_ids',
+      lambda player_ids, db_path: [] )
+   monkeypatch.setattr(
+      AvailabilityWeightStore,
+      'read',
+      lambda: [ RecencyWeight( 0, 1.0 ) ] )
+   monkeypatch.setattr( RecencyTargetResolver, 'resolve', lambda: 20262027 )
+   roster = [ RosterSkater( 1, 'Stub', SkaterPosition( 'D' ), team ) ]
+   assert DepthChartRecorder._availabilities( roster )[ 1 ] == share
+
+
+def Test_Availabilities_TestMixedYear_ExpectFull(
+      monkeypatch: pytest.MonkeyPatch ) -> None:
+   team = list( Team )[ Position.FIRST ]
+   monkeypatch.setattr(
+      'api.depth_chart_recorder.SkaterSeasonProvider.seasons_for_player_ids',
+      lambda player_ids, db_path: [
+         NhlSkaterSeason(
+            player_id=1,
+            season_id=20252026,
+            player_name='Stub',
+            position=SkaterPosition( 'C' ),
+            birth_date=date( 1997, 1, 13 ),
+            age=20.8,
+            team=team,
+            games_played=9,
+            goals=0,
+            assists=0,
+            points=0,
+            schedule_games=1,
+            pace_games=1,
+            g_pace=0.0,
+            a_pace=0.0,
+            p_pace=0.0,
+            gp_share=0.11 )
+      ] )
+   monkeypatch.setattr(
+      'api.depth_chart_recorder.OtherLeagueSeasonProvider.seasons_for_player_ids',
+      lambda player_ids, db_path: [
+         OtherLeagueSkaterSeason(
+            player_id=1,
+            season_id=20252026,
+            league=list( ClubLeague )[ Position.FIRST ].value,
+            position=SkaterPosition( 'C' ),
+            age=20.8,
+            games_played=35,
+            goals=0,
+            assists=0,
+            points=0,
+            g_pace=0.0,
+            a_pace=0.0 )
+      ] )
+   monkeypatch.setattr(
+      AvailabilityWeightStore,
+      'read',
+      lambda: [ RecencyWeight( 0, 1.0 ) ] )
+   monkeypatch.setattr( RecencyTargetResolver, 'resolve', lambda: 20262027 )
+   roster = [ RosterSkater( 1, 'Stub', SkaterPosition( 'C' ), team ) ]
+   assert DepthChartRecorder._availabilities( roster )[ 1 ] == GamesShare.FULL
