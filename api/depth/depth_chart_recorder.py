@@ -17,7 +17,6 @@ from ..ingest.nhl_client import NhlClient
 from ..ingest.roster_skater_ingester import RosterSkaterIngester
 from ..paths import Paths
 from ..recency_target_resolver import RecencyTargetResolver
-from .retired_roster_binder import RetiredRosterBinder
 from ..season import Season
 from ..skaters.other_league_season_provider import OtherLeagueSeasonProvider
 from ..skaters.player_status_store import PlayerStatusStore
@@ -58,11 +57,6 @@ class DepthChartRecorder():
       }
       roster = RosterSkaterIngester.build_rows( force=force )
       statuses = PlayerStatusStore.read( str( Paths.DB_PATH ) )
-      roster = RetiredRosterBinder.bind(
-         roster,
-         ice_usages,
-         statuses,
-         cls._names( RetiredRosterBinder.missing( roster, ice_usages, statuses ) ) )
       availabilities = RetiredAvailabilityBinder.bind(
          cls._availabilities( roster ),
          statuses )
@@ -141,21 +135,6 @@ class DepthChartRecorder():
             target )
          for player_id in player_ids
       }
-
-
-   @classmethod
-   def _names( cls, player_ids: list[ int ] ) -> dict[ int, str ]:
-      if not player_ids:
-         return {}
-
-      names = {}
-
-      for season in SkaterSeasonProvider.seasons_for_player_ids(
-            player_ids,
-            Paths.DB_PATH ):
-         names[ season.player_id ] = season.player_name
-
-      return names
 
 
    @classmethod

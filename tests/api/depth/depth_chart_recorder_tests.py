@@ -259,7 +259,7 @@ def Test_Availabilities_TestMixedYear_ExpectFull(
    assert DepthChartRecorder._availabilities( roster )[ 1 ] == GamesShare.FULL
 
 
-def Test_Record_TestInactiveUsage_ExpectZeroAvailability(
+def Test_Record_TestInactiveUsage_ExpectOmitted(
       monkeypatch: pytest.MonkeyPatch,
       tmp_path: Path ) -> None:
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
@@ -318,38 +318,17 @@ def Test_Record_TestInactiveUsage_ExpectZeroAvailability(
    monkeypatch.setattr(
       'api.depth.depth_chart_recorder.PlayerStatusStore.read',
       lambda db_path: [ PlayerStatus( retired_id, False ) ] )
-   monkeypatch.setattr(
-      'api.depth.depth_chart_recorder.SkaterSeasonProvider.seasons_for_player_ids',
-      lambda player_ids, db_path: [
-         NhlSkaterSeason(
-            player_id=retired_id,
-            season_id=20252026,
-            player_name='Retired',
-            position=SkaterPosition( 'D' ),
-            birth_date=date( 1997, 1, 13 ),
-            age=28.7,
-            team=team,
-            games_played=67,
-            goals=0,
-            assists=0,
-            points=0,
-            schedule_games=1,
-            pace_games=1,
-            g_pace=0.0,
-            a_pace=0.0,
-            p_pace=0.0,
-            gp_share=0.82 )
-      ] )
    charts = DepthChartRecorder.record( Position.SECOND, {} )
    defense = next(
       chart
       for chart in charts
       if chart.skater_group is SkaterGroup.DEFENSE )
-   by_id = {
-      skater.player_id: skater.availability
+   ids = [
+      skater.player_id
       for skater, _toi in defense.regulars
-   }
-   assert by_id[ retired_id ] == 0.0
+   ] + [ skater.player_id for skater in defense.extras ]
+   assert retired_id not in ids
+   assert defense.regulars[ Position.FIRST ][ Position.FIRST ].player_id == 1
 
 
 def Test_TeamRates_TestPriorSeason_ExpectPriorRates(
