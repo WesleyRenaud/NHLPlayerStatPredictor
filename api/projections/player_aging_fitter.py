@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from ..aging_pair_totals import AgingPairTotals
-from ..nhl_skater_season import NhlSkaterSeason
+from ..aging.aging_pair_totals import AgingPairTotals
 from .player_aging_rate import PlayerAgingRate
-from ..skater_season_years import SkaterSeasonYears
+from ..skaters.nhl_skater_season import NhlSkaterSeason
+from ..skaters.skater_season_years import SkaterSeasonYears
 
 
 class PlayerAgingFitter():

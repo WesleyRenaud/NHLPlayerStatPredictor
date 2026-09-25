@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from ..league_factor import LeagueFactor
-from ..nhl_skater_season import NhlSkaterSeason
-from ..other_league_skater_season import OtherLeagueSkaterSeason
+from ..aging.league_factor import LeagueFactor
 from .previous_season_group import PreviousSeasonGroup
 from .previous_season_nhl_skater import PreviousSeasonNhlSkater
 from .previous_season_skater import PreviousSeasonSkater
 from ..shared.enums.position import Position
+from ..skaters.nhl_skater_season import NhlSkaterSeason
+from ..skaters.other_league_skater_season import OtherLeagueSkaterSeason
 from .translated_pace_averager import TranslatedPaceAverager
 
 

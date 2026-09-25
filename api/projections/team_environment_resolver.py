@@ -3,7 +3,7 @@ from __future__ import annotations
 from .previous_season_group import PreviousSeasonGroup
 from .previous_season_nhl_skater import PreviousSeasonNhlSkater
 from .previous_season_skater import PreviousSeasonSkater
-from ..roster_skater import RosterSkater
+from ..skaters.roster_skater import RosterSkater
 from .team_environment import TeamEnvironment
 from .team_quality_calculator import TeamQualityCalculator
 

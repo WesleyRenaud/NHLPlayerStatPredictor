@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from ..league_factor import LeagueFactor
-from ..other_league_skater_season import OtherLeagueSkaterSeason
-from ..recency_weight import RecencyWeight
+from ..aging.league_factor import LeagueFactor
+from ..recency.recency_weight import RecencyWeight
 from ..season import Season
 from .season_pace import SeasonPace
-from ..skater_season import SkaterSeason
+from ..skaters.other_league_skater_season import OtherLeagueSkaterSeason
+from ..skaters.skater_season import SkaterSeason
 from .year_pace import YearPace
 
 

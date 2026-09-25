@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ..coordinators.player_names_coordinator import PlayerNamesCoordinator
-from ...json_request_handler import JsonRequestHandler
+from ...server.json_request_handler import JsonRequestHandler
 
 
 class PlayerNamesController():

@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from datetime import date
 
-from api.league_factor import LeagueFactor
-from api.nhl_skater_season import NhlSkaterSeason
-from api.other_league_skater_season import OtherLeagueSkaterSeason
+from api.aging.league_factor import LeagueFactor
 from api.projections.season_pace import SeasonPace
 from api.projections.season_pace_averager import SeasonPaceAverager
 from api.projections.translated_pace_averager import TranslatedPaceAverager
-from api.recency_weight import RecencyWeight
+from api.recency.recency_weight import RecencyWeight
 from api.shared.enums.position import Position
-from api.skater_position import SkaterPosition
-from api.team import Team
+from api.skaters.nhl_skater_season import NhlSkaterSeason
+from api.skaters.other_league_skater_season import OtherLeagueSkaterSeason
+from api.skaters.skater_position import SkaterPosition
+from api.skaters.team import Team
 
 
 def _nhl(

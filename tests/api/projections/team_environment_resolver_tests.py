@@ -7,10 +7,10 @@ from api.projections.season_pace import SeasonPace
 from api.projections.team_environment import TeamEnvironment
 from api.projections.team_environment_resolver import TeamEnvironmentResolver
 from api.projections.team_quality_calculator import TeamQualityCalculator
-from api.roster_skater import RosterSkater
 from api.shared.enums.position import Position
-from api.skater_position import SkaterPosition
-from api.team import Team
+from api.skaters.roster_skater import RosterSkater
+from api.skaters.skater_position import SkaterPosition
+from api.skaters.team import Team
 
 
 def _roster( player_id: int, team: Team ) -> RosterSkater:

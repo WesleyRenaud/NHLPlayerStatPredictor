@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ..coordinators.projection_coordinator import ProjectionCoordinator
-from ...json_request_handler import JsonRequestHandler
+from ...server.json_request_handler import JsonRequestHandler
 
 
 class ProjectionsController():

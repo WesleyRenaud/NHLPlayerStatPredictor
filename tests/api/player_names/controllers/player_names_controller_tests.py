@@ -4,13 +4,13 @@ import json
 
 import pytest
 
-from api.json_handler_mixin import JsonHandlerMixin
 import api.player_names.controllers.player_names_controller as player_names_controller
 from api.player_names.controllers.player_names_controller import PlayerNamesController
 from api.player_names.player_name_summary import PlayerNameSummary
+from api.server.json_handler_mixin import JsonHandlerMixin
 from api.shared.enums.position import Position
-from api.skater_position import SkaterPosition
-from api.team import Team
+from api.skaters.skater_position import SkaterPosition
+from api.skaters.team import Team
 
 
 class _RecordingHandler( JsonHandlerMixin ):

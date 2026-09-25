@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from ..nhl_skater_season import NhlSkaterSeason
-from ..recency_weight import RecencyWeight
+from ..recency.recency_weight import RecencyWeight
 from ..season import Season
 from .season_pace import SeasonPace
+from ..skaters.nhl_skater_season import NhlSkaterSeason
 
 
 class SeasonPaceAverager():

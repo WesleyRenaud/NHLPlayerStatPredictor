@@ -3,13 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 import sqlite3
 
-from api.other_league_season_provider import OtherLeagueSeasonProvider
-from api.other_league_season_store import OtherLeagueSeasonStore
-from api.other_league_skater_season import OtherLeagueSkaterSeason
 from api.seed.schema_creator import SchemaCreator
 from api.seed.schema_migrator import SchemaMigrator
 from api.shared.enums.position import Position
-from api.skater_position import SkaterPosition
+from api.skaters.other_league_season_provider import OtherLeagueSeasonProvider
+from api.skaters.other_league_season_store import OtherLeagueSeasonStore
+from api.skaters.other_league_skater_season import OtherLeagueSkaterSeason
+from api.skaters.skater_position import SkaterPosition
 
 
 def _row() -> OtherLeagueSkaterSeason:

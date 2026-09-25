@@ -9,8 +9,8 @@ import api.player_names.coordinators.player_names_coordinator as player_names_co
 from api.player_names.coordinators.player_names_coordinator import PlayerNamesCoordinator
 from api.player_names.player_name_summary import PlayerNameSummary
 from api.shared.enums.position import Position
-from api.skater_position import SkaterPosition
-from api.team import Team
+from api.skaters.skater_position import SkaterPosition
+from api.skaters.team import Team
 
 
 def Test_GetPlayerSummaries_TestProvider_ExpectSummaries(

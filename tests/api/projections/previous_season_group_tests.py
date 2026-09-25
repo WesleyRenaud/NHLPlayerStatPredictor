@@ -5,8 +5,8 @@ from api.projections.previous_season_nhl_skater import PreviousSeasonNhlSkater
 from api.projections.previous_season_skater import PreviousSeasonSkater
 from api.projections.season_pace import SeasonPace
 from api.shared.enums.position import Position
-from api.skater_position import SkaterPosition
-from api.team import Team
+from api.skaters.skater_position import SkaterPosition
+from api.skaters.team import Team
 
 
 def Test_Skaters_TestNhlAndOther_ExpectCombined() -> None:

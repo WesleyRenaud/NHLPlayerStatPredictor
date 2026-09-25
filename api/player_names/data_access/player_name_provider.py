@@ -5,8 +5,8 @@ import sqlite3
 from ...database_connection_provider import DatabaseConnectionProvider
 from ..player_name_summary import PlayerNameSummary
 from ...seed.schema_creator import SchemaCreator
-from ...skater_position import SkaterPosition
-from ...team import Team
+from ...skaters.skater_position import SkaterPosition
+from ...skaters.team import Team
 
 
 class PlayerNameProvider():

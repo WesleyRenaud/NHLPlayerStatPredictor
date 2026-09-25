@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from ..aging_factor import AgingFactor
+from ..aging.aging_factor import AgingFactor
+from ..aging.league_factor import LeagueFactor
 from .aging_pace_adjuster import AgingPaceAdjuster
-from ..league_factor import LeagueFactor
-from ..recency_weight import RecencyWeight
+from ..recency.recency_weight import RecencyWeight
 from .season_pace import SeasonPace
 from ..shared.enums.position import Position
-from ..skater import Skater
+from ..skaters.skater import Skater
 from .translated_pace_averager import TranslatedPaceAverager
 
 

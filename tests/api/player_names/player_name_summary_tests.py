@@ -3,8 +3,8 @@ from __future__ import annotations
 from api.player_names.player_name_summary import PlayerNameSummary
 from api.season import Season
 from api.shared.enums.position import Position
-from api.skater_position import SkaterPosition
-from api.team import Team
+from api.skaters.skater_position import SkaterPosition
+from api.skaters.team import Team
 
 
 def Test_ToDict_TestSummary_ExpectMappedFields() -> None:

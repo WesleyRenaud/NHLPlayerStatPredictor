@@ -3,8 +3,8 @@ from __future__ import annotations
 from api.projections.current_season_nhl_skater import CurrentSeasonNhlSkater
 from api.projections.season_pace import SeasonPace
 from api.shared.enums.position import Position
-from api.skater_position import SkaterPosition
-from api.team import Team
+from api.skaters.skater_position import SkaterPosition
+from api.skaters.team import Team
 
 
 def Test_Contribution_TestPace_ExpectGoalsPlusAssists() -> None:

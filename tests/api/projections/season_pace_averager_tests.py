@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from datetime import date
 
-from api.nhl_skater_season import NhlSkaterSeason
 from api.projections.season_pace_averager import SeasonPaceAverager
-from api.recency_weight import RecencyWeight
+from api.recency.recency_weight import RecencyWeight
 from api.season import Season
 from api.shared.enums.position import Position
-from api.skater_position import SkaterPosition
-from api.team import Team
+from api.skaters.nhl_skater_season import NhlSkaterSeason
+from api.skaters.skater_position import SkaterPosition
+from api.skaters.team import Team
 
 
 def _season( g_pace: float, a_pace: float, season_id: int ) -> NhlSkaterSeason:

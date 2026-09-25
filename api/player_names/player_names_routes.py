@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import ClassVar
 
 from .controllers.player_names_controller import PlayerNamesController
-from ..json_request_handler import PostRouteHandler
+from ..server.json_request_handler import PostRouteHandler
 
 
 class PlayerNamesRoutes():

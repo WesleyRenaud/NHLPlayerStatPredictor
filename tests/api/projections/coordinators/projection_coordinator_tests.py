@@ -5,25 +5,25 @@ from pathlib import Path
 
 import pytest
 
-from api.aging_factor import AgingFactor
-from api.games_share import GamesShare
-from api.league_factor import LeagueFactor
-from api.nhl_skater_season import NhlSkaterSeason
-from api.other_league_skater_season import OtherLeagueSkaterSeason
+from api.aging.aging_factor import AgingFactor
+from api.aging.league_factor import LeagueFactor
+from api.availability.games_share import GamesShare
+from api.depth.skater_ice import SkaterIce
 from api.paths import Paths
 import api.projections.coordinators.projection_coordinator as projection_coordinator
 from api.projections.coordinators.projection_coordinator import ProjectionCoordinator
 from api.projections.projection import Projection
 from api.projections.season_pace import SeasonPace
-from api.recency_weight import RecencyWeight
+from api.recency.recency_weight import RecencyWeight
 from api.shared.enums.position import Position
-from api.skater import Skater
-from api.skater_group import SkaterGroup
-from api.skater_ice import SkaterIce
-from api.skater_position import SkaterPosition
-from api.team import Team
-from api.team_factor import TeamFactor
-from api.team_factor_skater import TeamFactorSkater
+from api.skaters.nhl_skater_season import NhlSkaterSeason
+from api.skaters.other_league_skater_season import OtherLeagueSkaterSeason
+from api.skaters.skater import Skater
+from api.skaters.skater_group import SkaterGroup
+from api.skaters.skater_position import SkaterPosition
+from api.skaters.team import Team
+from api.team_factor.team_factor import TeamFactor
+from api.team_factor.team_factor_skater import TeamFactorSkater
 
 
 def _stub_team_factors(
