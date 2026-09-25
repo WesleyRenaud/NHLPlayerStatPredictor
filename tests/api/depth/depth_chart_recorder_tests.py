@@ -7,6 +7,7 @@ import pytest
 
 from api.availability.availability_weight_store import AvailabilityWeightStore
 from api.availability.games_share import GamesShare
+from api.depth.club_ice import ClubIce
 from api.depth.depth_chart_recorder import DepthChartRecorder
 from api.depth.depth_chart_store import DepthChartStore
 from api.depth.depth_group import DepthGroup
@@ -14,6 +15,7 @@ from api.depth.slot_average import SlotAverage
 from api.depth.slot_average_store import SlotAverageStore
 from api.depth.slot_chosen_share import SlotChosenShare
 from api.depth.slot_chosen_share_store import SlotChosenShareStore
+from api.depth.usable_nhl_ice import UsableNhlIce
 from api.ingest.roster_skater_ingester import RosterSkaterIngester
 from api.paths import Paths
 from api.recency.recency_weight import RecencyWeight
@@ -36,6 +38,18 @@ def _seasons() -> list[ SeasonLength ]:
       SeasonLength( 20242025, 82, date( 2024, 10, 4 ), date( 2025, 4, 17 ) ),
       SeasonLength( 20252026, 84, date( 2025, 10, 8 ), date( 2026, 4, 17 ) ),
    ]
+
+
+def _ice( toi: float, team: Team ) -> UsableNhlIce:
+   return UsableNhlIce( 20252026, toi, [ ClubIce( team, 80, toi ) ] )
+
+
+def _stub_usable(
+      monkeypatch: pytest.MonkeyPatch,
+      ices: dict[ int, UsableNhlIce ] ) -> None:
+   monkeypatch.setattr(
+      'api.depth.depth_chart_recorder.ClubIceProvider.resolve',
+      lambda player_id: ices.get( player_id ) )
 
 
 def _write_slots() -> None:
@@ -64,35 +78,13 @@ def Test_Record_TestRosterAndUsage_ExpectStoredChart(
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
    _write_slots()
    team = list( Team )[ Position.FIRST ]
-   monkeypatch.setattr( RecencyTargetResolver, 'prior', lambda: 20252026 )
-   monkeypatch.setattr(
-      'api.depth.depth_chart_recorder.NhlClient.skater_timeonice',
-      lambda season_id, force=False: [
-         {
-            'playerId': 1,
-            'positionCode': 'D',
-            'gamesPlayed': 80,
-            'timeOnIcePerGame': 1440.0,
-            'teamAbbrevs': team.value,
-            'shootsCatches': 'L',
-         },
-         {
-            'playerId': 2,
-            'positionCode': 'D',
-            'gamesPlayed': 80,
-            'timeOnIcePerGame': 1320.0,
-            'teamAbbrevs': team.value,
-            'shootsCatches': 'R',
-         },
-         {
-            'playerId': 3,
-            'positionCode': 'C',
-            'gamesPlayed': 80,
-            'timeOnIcePerGame': 1200.0,
-            'teamAbbrevs': team.value,
-            'shootsCatches': 'L',
-         },
-      ] )
+   _stub_usable(
+      monkeypatch,
+      {
+         1: _ice( 24.0, team ),
+         2: _ice( 22.0, team ),
+         3: _ice( 20.0, team ),
+      } )
    monkeypatch.setattr(
       RosterSkaterIngester,
       'build_rows',
@@ -130,27 +122,12 @@ def Test_Record_TestForwardAndDefense_ExpectBothCharts(
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
    _write_slots()
    team = list( Team )[ Position.FIRST ]
-   monkeypatch.setattr( RecencyTargetResolver, 'prior', lambda: 20252026 )
-   monkeypatch.setattr(
-      'api.depth.depth_chart_recorder.NhlClient.skater_timeonice',
-      lambda season_id, force=False: [
-         {
-            'playerId': 1,
-            'positionCode': 'D',
-            'gamesPlayed': 80,
-            'timeOnIcePerGame': 1440.0,
-            'teamAbbrevs': team.value,
-            'shootsCatches': 'L',
-         },
-         {
-            'playerId': 3,
-            'positionCode': 'C',
-            'gamesPlayed': 80,
-            'timeOnIcePerGame': 1200.0,
-            'teamAbbrevs': team.value,
-            'shootsCatches': 'L',
-         },
-      ] )
+   _stub_usable(
+      monkeypatch,
+      {
+         1: _ice( 24.0, team ),
+         3: _ice( 20.0, team ),
+      } )
    monkeypatch.setattr(
       RosterSkaterIngester,
       'build_rows',
@@ -266,43 +243,13 @@ def Test_Record_TestInactiveUsage_ExpectOmitted(
    _write_slots()
    team = list( Team )[ Position.FIRST ]
    retired_id = 4
-   monkeypatch.setattr( RecencyTargetResolver, 'prior', lambda: 20252026 )
-   monkeypatch.setattr(
-      'api.depth.depth_chart_recorder.NhlClient.skater_timeonice',
-      lambda season_id, force=False: [
-         {
-            'playerId': 1,
-            'positionCode': 'D',
-            'gamesPlayed': 80,
-            'timeOnIcePerGame': 1440.0,
-            'teamAbbrevs': team.value,
-            'shootsCatches': 'L',
-         },
-         {
-            'playerId': 2,
-            'positionCode': 'D',
-            'gamesPlayed': 80,
-            'timeOnIcePerGame': 1320.0,
-            'teamAbbrevs': team.value,
-            'shootsCatches': 'R',
-         },
-         {
-            'playerId': 3,
-            'positionCode': 'C',
-            'gamesPlayed': 80,
-            'timeOnIcePerGame': 1200.0,
-            'teamAbbrevs': team.value,
-            'shootsCatches': 'L',
-         },
-         {
-            'playerId': retired_id,
-            'positionCode': 'D',
-            'gamesPlayed': 67,
-            'timeOnIcePerGame': 1500.0,
-            'teamAbbrevs': team.value,
-            'shootsCatches': 'L',
-         },
-      ] )
+   _stub_usable(
+      monkeypatch,
+      {
+         1: _ice( 24.0, team ),
+         2: _ice( 22.0, team ),
+         3: _ice( 20.0, team ),
+      } )
    monkeypatch.setattr(
       RosterSkaterIngester,
       'build_rows',

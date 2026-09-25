@@ -19,3 +19,13 @@ class ClubIceParser():
             Time.clock( str( raw[ 'avgToi' ] ) ) )
          for raw in NhlTeamSplitBuilder._totals( landing, season_id )
       ]
+
+
+   @classmethod
+   def season_ids( cls, landing: Types.JsonObject ) -> list[ int ]:
+      return sorted(
+         {
+            int( raw[ 'season' ] )
+            for raw in NhlTeamSplitBuilder._totals( landing )
+         },
+         reverse=True )

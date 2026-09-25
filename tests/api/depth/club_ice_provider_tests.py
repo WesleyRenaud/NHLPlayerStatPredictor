@@ -7,6 +7,8 @@ import pytest
 from api.depth.club_ice import ClubIce
 import api.depth.club_ice_provider as club_ice_provider
 from api.depth.club_ice_provider import ClubIceProvider
+from api.depth.usable_nhl_ice import UsableNhlIce
+from api.depth.usable_nhl_ice_resolver import UsableNhlIceResolver
 from api.ingest.json_file_cache import JsonFileCache
 from api.ingest.nhl_client import NhlClient
 from api.shared.enums.position import Position
@@ -18,26 +20,23 @@ def _full_name( team: Team ) -> str:
    return team.name.replace( '_', ' ' ).title()
 
 
-def Test_Resolve_TestMissingLanding_ExpectEmpty(
+def Test_Resolve_TestMissingLanding_ExpectNone(
       tmp_path: Path,
       monkeypatch: pytest.MonkeyPatch ) -> None:
    monkeypatch.setattr(
       club_ice_provider,
       'JsonFileCache',
       lambda: JsonFileCache( tmp_path ) )
-   assert ClubIceProvider.resolve( 1, 20252026 ) == []
+   assert ClubIceProvider.resolve( 1 ) is None
 
 
-def Test_Resolve_TestLanding_ExpectClubIce(
+def Test_Resolve_TestLanding_ExpectIce(
       tmp_path: Path,
       monkeypatch: pytest.MonkeyPatch ) -> None:
-   first = list( Team )[ Position.FIRST ]
-   second = list( Team )[ Position.SECOND ]
+   team = list( Team )[ Position.FIRST ]
    season_id = 20252026
-   first_games = 50
-   second_games = 22
-   first_toi = '14:19'
-   second_toi = '12:13'
+   toi = '17:02'
+   games = UsableNhlIceResolver.MIN_GAMES
    monkeypatch.setattr(
       club_ice_provider,
       'JsonFileCache',
@@ -50,21 +49,13 @@ def Test_Resolve_TestLanding_ExpectClubIce(
                'leagueAbbrev': 'NHL',
                'season': season_id,
                'gameTypeId': NhlClient.REGULAR_SEASON_GAME_TYPE_ID,
-               'gamesPlayed': first_games,
-               'avgToi': first_toi,
-               'teamName': { 'default': _full_name( first ) },
-            },
-            {
-               'leagueAbbrev': 'NHL',
-               'season': season_id,
-               'gameTypeId': NhlClient.REGULAR_SEASON_GAME_TYPE_ID,
-               'gamesPlayed': second_games,
-               'avgToi': second_toi,
-               'teamName': { 'default': _full_name( second ) },
+               'gamesPlayed': games,
+               'avgToi': toi,
+               'teamName': { 'default': _full_name( team ) },
             },
          ]
       } )
-   assert ClubIceProvider.resolve( 1, season_id ) == [
-      ClubIce( first, first_games, Time.clock( first_toi ) ),
-      ClubIce( second, second_games, Time.clock( second_toi ) ),
-   ]
+   assert ClubIceProvider.resolve( 1 ) == UsableNhlIce(
+      season_id,
+      Time.clock( toi ),
+      [ ClubIce( team, games, Time.clock( toi ) ) ] )
