@@ -4,6 +4,7 @@ from api.availability.games_share import GamesShare
 from api.depth.depth_group import DepthGroup
 from api.depth.ice_usage import IceUsage
 from api.depth.last_core import LastCore
+from api.depth.usable_nhl_ice import UsableNhlIce
 from api.projections.nhl_lineup_selector import NhlLineupSelector
 from api.shared.enums.position import Position
 from api.skaters.skater_position import SkaterPosition
@@ -71,6 +72,47 @@ def Test_Teammates_TestTopSix_ExpectPacesAndShares() -> None:
    assert extras[ Position.FIRST ].player_id == 7
    assert extras[ Position.FIRST ].availability == 1.0
    assert extras[ Position.FIRST ].contribution == 33.0
+
+
+def Test_Teammates_TestShortExtra_ExpectNextUsable() -> None:
+   team = list( Team )[ Position.FIRST ]
+   ice_usages = {
+      player_id: _usage( 30.0 - player_id, 82 )
+      for player_id in range( 1, 7 )
+   }
+   ice_usages[ 7 ] = _usage( 15.0, UsableNhlIce.MIN_GAMES - 1 )
+   ice_usages[ 8 ] = _usage( 14.0, 80 )
+   regulars, extras = LastCore.teammates(
+      team,
+      ice_usages,
+      { player_id: float( player_id ) for player_id in range( 1, 9 ) },
+      82,
+      NhlLineupSelector.DRESSED_DEFENSE,
+      LastCore.EXTRA,
+      DepthGroup.defense().positions )
+   assert [ skater.player_id for skater in regulars ] == list( range( 1, 7 ) )
+   assert extras[ Position.FIRST ].player_id == 8
+   assert extras[ Position.FIRST ].availability == GamesShare.FULL
+   assert extras[ Position.FIRST ].contribution == 8.0
+
+
+def Test_Teammates_TestOnlyShortExtra_ExpectEmpty() -> None:
+   team = list( Team )[ Position.FIRST ]
+   ice_usages = {
+      player_id: _usage( 30.0 - player_id, 82 )
+      for player_id in range( 1, 7 )
+   }
+   ice_usages[ 7 ] = _usage( 15.0, UsableNhlIce.MIN_GAMES - 1 )
+   regulars, extras = LastCore.teammates(
+      team,
+      ice_usages,
+      { player_id: float( player_id ) for player_id in range( 1, 8 ) },
+      82,
+      NhlLineupSelector.DRESSED_DEFENSE,
+      LastCore.EXTRA,
+      DepthGroup.defense().positions )
+   assert [ skater.player_id for skater in regulars ] == list( range( 1, 7 ) )
+   assert extras == []
 
 
 def Test_Shares_TestForwardOnTeam_ExpectDefenseOnly() -> None:
