@@ -87,7 +87,7 @@ class TeamFactorCurrentBuilder():
       regulars = [
          TeammateSkater(
             skater.player_id,
-            paces[ skater.player_id ],
+            paces.get( skater.player_id, 0.0 ),
             skater.availability,
             None )
          for skater, _toi in chart.regulars

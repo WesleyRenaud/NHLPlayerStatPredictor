@@ -14,6 +14,7 @@ from api.games_share import GamesShare
 from api.nhl_skater_season import NhlSkaterSeason
 from api.other_league_skater_season import OtherLeagueSkaterSeason
 from api.paths import Paths
+from api.player_status import PlayerStatus
 from api.recency_target_resolver import RecencyTargetResolver
 from api.recency_weight import RecencyWeight
 from api.roster_skater import RosterSkater
@@ -104,6 +105,9 @@ def Test_Record_TestRosterAndUsage_ExpectStoredChart(
       '_availabilities',
       lambda roster: { row.player_id: 1.0 for row in roster } )
    monkeypatch.setattr(
+      'api.depth_chart_recorder.PlayerStatusStore.read',
+      lambda db_path: [] )
+   monkeypatch.setattr(
       'api.depth_chart_recorder.NhlClient.seasons',
       lambda force=False: _seasons() )
    charts = DepthChartRecorder.record( Position.SECOND )
@@ -156,6 +160,9 @@ def Test_Record_TestForwardAndDefense_ExpectBothCharts(
       DepthChartRecorder,
       '_availabilities',
       lambda roster: { row.player_id: 1.0 for row in roster } )
+   monkeypatch.setattr(
+      'api.depth_chart_recorder.PlayerStatusStore.read',
+      lambda db_path: [] )
    charts = DepthChartRecorder.record( Position.SECOND )
    assert len( charts ) == 2
    assert charts[ Position.FIRST ].skater_group is SkaterGroup.FORWARD
@@ -248,3 +255,96 @@ def Test_Availabilities_TestMixedYear_ExpectFull(
    monkeypatch.setattr( RecencyTargetResolver, 'resolve', lambda: 20262027 )
    roster = [ RosterSkater( 1, 'Stub', SkaterPosition( 'C' ), team ) ]
    assert DepthChartRecorder._availabilities( roster )[ 1 ] == GamesShare.FULL
+
+
+def Test_Record_TestInactiveUsage_ExpectZeroAvailability(
+      monkeypatch: pytest.MonkeyPatch,
+      tmp_path: Path ) -> None:
+   monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
+   _write_slots()
+   team = list( Team )[ Position.FIRST ]
+   retired_id = 4
+   monkeypatch.setattr( RecencyTargetResolver, 'prior', lambda: 20252026 )
+   monkeypatch.setattr(
+      'api.depth_chart_recorder.NhlClient.skater_timeonice',
+      lambda season_id, force=False: [
+         {
+            'playerId': 1,
+            'positionCode': 'D',
+            'gamesPlayed': 80,
+            'timeOnIcePerGame': 1440.0,
+            'teamAbbrevs': team.value,
+            'shootsCatches': 'L',
+         },
+         {
+            'playerId': 2,
+            'positionCode': 'D',
+            'gamesPlayed': 80,
+            'timeOnIcePerGame': 1320.0,
+            'teamAbbrevs': team.value,
+            'shootsCatches': 'R',
+         },
+         {
+            'playerId': 3,
+            'positionCode': 'C',
+            'gamesPlayed': 80,
+            'timeOnIcePerGame': 1200.0,
+            'teamAbbrevs': team.value,
+            'shootsCatches': 'L',
+         },
+         {
+            'playerId': retired_id,
+            'positionCode': 'D',
+            'gamesPlayed': 67,
+            'timeOnIcePerGame': 1500.0,
+            'teamAbbrevs': team.value,
+            'shootsCatches': 'L',
+         },
+      ] )
+   monkeypatch.setattr(
+      RosterSkaterIngester,
+      'build_rows',
+      lambda force=False: [
+         RosterSkater( 1, 'Left', SkaterPosition( 'D' ), team ),
+         RosterSkater( 2, 'Right', SkaterPosition( 'D' ), team ),
+         RosterSkater( 3, 'Center', SkaterPosition( 'C' ), team ),
+      ] )
+   monkeypatch.setattr(
+      DepthChartRecorder,
+      '_availabilities',
+      lambda roster: { row.player_id: 1.0 for row in roster } )
+   monkeypatch.setattr(
+      'api.depth_chart_recorder.PlayerStatusStore.read',
+      lambda db_path: [ PlayerStatus( retired_id, False ) ] )
+   monkeypatch.setattr(
+      'api.depth_chart_recorder.SkaterSeasonProvider.seasons_for_player_ids',
+      lambda player_ids, db_path: [
+         NhlSkaterSeason(
+            player_id=retired_id,
+            season_id=20252026,
+            player_name='Retired',
+            position=SkaterPosition( 'D' ),
+            birth_date=date( 1997, 1, 13 ),
+            age=28.7,
+            team=team,
+            games_played=67,
+            goals=0,
+            assists=0,
+            points=0,
+            schedule_games=1,
+            pace_games=1,
+            g_pace=0.0,
+            a_pace=0.0,
+            p_pace=0.0,
+            gp_share=0.82 )
+      ] )
+   charts = DepthChartRecorder.record( Position.SECOND )
+   defense = next(
+      chart
+      for chart in charts
+      if chart.skater_group is SkaterGroup.DEFENSE )
+   by_id = {
+      skater.player_id: skater.availability
+      for skater, _toi in defense.regulars
+   }
+   assert by_id[ retired_id ] == 0.0

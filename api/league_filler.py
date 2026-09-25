@@ -13,5 +13,5 @@ class LeagueFiller():
 
 
    @classmethod
-   def owns( cls, player_id: int ) -> bool:
+   def is_filler( cls, player_id: int ) -> bool:
       return player_id < 0

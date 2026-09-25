@@ -34,3 +34,19 @@ class PlayerStatusStore():
          conn.commit()
       finally:
          DatabaseConnectionProvider.close( conn )
+
+
+   @classmethod
+   def read( cls, db_path: str ) -> list[ PlayerStatus ]:
+      conn = DatabaseConnectionProvider.open( db_path )
+
+      try:
+         cursor = conn.execute(
+            '''
+            SELECT *
+            FROM PlayerStatus
+            ORDER BY PLAYER_ID
+            ''' )
+         return [ PlayerStatus.from_row( row ) for row in cursor.fetchall() ]
+      finally:
+         DatabaseConnectionProvider.close( conn )

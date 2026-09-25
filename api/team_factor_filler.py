@@ -38,4 +38,10 @@ class TeamFactorFiller():
       if player_id in paces:
          return paces[ player_id ]
 
-      return SlotFiller.contribution( slots, LeagueFiller.slot( player_id ) )
+      if LeagueFiller.is_filler( player_id ):
+         average = SlotFiller.average(
+            slots,
+            LeagueFiller.slot( player_id ) )
+         return average.contribution
+
+      return 0.0

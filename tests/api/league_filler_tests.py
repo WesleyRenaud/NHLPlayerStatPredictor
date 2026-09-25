@@ -11,6 +11,6 @@ def Test_Slot_TestFillerId_ExpectSlotNumber() -> None:
    assert LeagueFiller.slot( -13 ) == 13
 
 
-def Test_Owns_TestFillerAndPlayer_ExpectOnlyFiller() -> None:
-   assert LeagueFiller.owns( LeagueFiller.player_id( 7 ) )
-   assert not LeagueFiller.owns( 1 )
+def Test_IsFiller_TestFillerAndPlayer_ExpectOnlyFiller() -> None:
+   assert LeagueFiller.is_filler( LeagueFiller.player_id( 7 ) )
+   assert not LeagueFiller.is_filler( 1 )

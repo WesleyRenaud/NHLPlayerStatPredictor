@@ -37,7 +37,7 @@ def Test_Pad_TestSixDefense_ExpectSeventhPace() -> None:
    seventh = next(
       skater
       for skater in padded
-      if LeagueFiller.owns( skater.player_id ) )
+      if LeagueFiller.is_filler( skater.player_id ) )
    assert seventh.contribution == slots[ Position.FIRST ].contribution
    assert seventh.position == SkaterPosition( 'D' )
    assert len(
@@ -69,7 +69,7 @@ def Test_Pad_TestTwelveForwards_ExpectThirteenthPace() -> None:
    thirteenth = next(
       skater
       for skater in padded
-      if LeagueFiller.owns( skater.player_id ) )
+      if LeagueFiller.is_filler( skater.player_id ) )
    assert thirteenth.contribution == slots[ Position.FIRST ].contribution
    assert thirteenth.position == SkaterPosition( 'F' )
    assert len(
