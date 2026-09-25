@@ -10,13 +10,13 @@ from ..availability.mixed_season_share_binder import MixedSeasonShareBinder
 from ..depth.depth_chart_recorder import DepthChartRecorder
 from ..depth.depth_chart_store import DepthChartStore
 from ..depth.depth_group import DepthGroup
+from ..depth.ice_chosen_share_fitter import IceChosenShareFitter
+from ..depth.ice_chosen_share_store import IceChosenShareStore
 from ..depth.ice_usage_parser import IceUsageParser
 from ..depth.skater_ice_recorder import SkaterIceRecorder
 from ..depth.skater_ice_store import SkaterIceStore
 from ..depth.slot_average_fitter import SlotAverageFitter
 from ..depth.slot_average_store import SlotAverageStore
-from ..depth.slot_chosen_share_fitter import SlotChosenShareFitter
-from ..depth.slot_chosen_share_store import SlotChosenShareStore
 from .nhl_client import NhlClient
 from .other_league_season_ingester import OtherLeagueSeasonIngester
 from ..paths import Paths
@@ -109,12 +109,12 @@ class SkaterSeasonIngester():
             DepthGroup.forwards().spare_slot )
       SlotAverageStore.write( slots )
       season_length = Season.prior( seasons ).number_of_games
-      SlotChosenShareStore.write(
-         SlotChosenShareFitter.fit(
+      IceChosenShareStore.write(
+         IceChosenShareFitter.fit(
             d_usages,
             season_length,
             DepthGroup.defense() )
-         + SlotChosenShareFitter.fit(
+         + IceChosenShareFitter.fit(
             f_usages,
             season_length,
             DepthGroup.forwards() ) )

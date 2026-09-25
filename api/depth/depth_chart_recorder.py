@@ -9,6 +9,8 @@ from .depth_chart import DepthChart
 from .depth_chart_builder import DepthChartBuilder
 from .depth_chart_store import DepthChartStore
 from .depth_group import DepthGroup
+from .ice_chosen_share import IceChosenShare
+from .ice_chosen_share_store import IceChosenShareStore
 from .ice_skater_assembler import IceSkaterAssembler
 from ..ingest.nhl_client import NhlClient
 from ..ingest.roster_skater_ingester import RosterSkaterIngester
@@ -23,8 +25,6 @@ from ..skaters.skater_season_years import SkaterSeasonYears
 from ..skaters.team import Team
 from .slot_average import SlotAverage
 from .slot_average_store import SlotAverageStore
-from .slot_chosen_share import SlotChosenShare
-from .slot_chosen_share_store import SlotChosenShareStore
 from ..team_factor.team_factor_store import TeamFactorStore
 from .usable_nhl_ice import UsableNhlIce
 
@@ -52,7 +52,7 @@ class DepthChartRecorder():
          cls._availabilities( roster ),
          statuses )
       slot_averages = SlotAverageStore.read()
-      chosen_shares = SlotChosenShareStore.read()
+      chosen_shares = IceChosenShareStore.read()
       ices_by_player = cls._ices_by_player( roster )
       charts = []
 
@@ -79,7 +79,7 @@ class DepthChartRecorder():
          ices_by_player: dict[ int, UsableNhlIce | None ],
          availabilities: dict[ int, float ],
          slot_averages: list[ SlotAverage ],
-         chosen_shares: list[ SlotChosenShare ],
+         chosen_shares: list[ IceChosenShare ],
          pace_games: int,
          team_rates: dict[ Team, float ] ) -> list[ DepthChart ]:
       charts = []

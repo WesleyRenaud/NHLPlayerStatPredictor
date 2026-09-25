@@ -8,7 +8,6 @@ from api.depth.club_ice import ClubIce
 import api.depth.club_ice_provider as club_ice_provider
 from api.depth.club_ice_provider import ClubIceProvider
 from api.depth.usable_nhl_ice import UsableNhlIce
-from api.depth.usable_nhl_ice_resolver import UsableNhlIceResolver
 from api.ingest.json_file_cache import JsonFileCache
 from api.ingest.nhl_client import NhlClient
 from api.shared.enums.position import Position
@@ -36,7 +35,7 @@ def Test_Resolve_TestLanding_ExpectIce(
    team = list( Team )[ Position.FIRST ]
    season_id = 20252026
    toi = '17:02'
-   games = UsableNhlIceResolver.MIN_GAMES
+   games = UsableNhlIce.MIN_GAMES
    monkeypatch.setattr(
       club_ice_provider,
       'JsonFileCache',

@@ -44,7 +44,7 @@ jobs:
             data/processed/team_factors.json
             data/processed/depth_charts.json
             data/processed/slot_averages.json
-            data/processed/slot_chosen_shares.json
+            data/processed/ice_chosen_shares.json
             data/processed/skater_ice.json
             data/raw
           if-no-files-found: error

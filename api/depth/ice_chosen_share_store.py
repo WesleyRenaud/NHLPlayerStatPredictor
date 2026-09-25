@@ -3,12 +3,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from .ice_chosen_share import IceChosenShare
 from ..paths import Paths
-from .slot_chosen_share import SlotChosenShare
 
 
-class SlotChosenShareStore():
-   FILE_NAME = 'slot_chosen_shares.json'
+class IceChosenShareStore():
+   FILE_NAME = 'ice_chosen_shares.json'
 
 
    @classmethod
@@ -17,7 +17,7 @@ class SlotChosenShareStore():
 
 
    @classmethod
-   def write( cls, shares: list[ SlotChosenShare ] ) -> None:
+   def write( cls, shares: list[ IceChosenShare ] ) -> None:
       path = cls.path()
       path.parent.mkdir( parents=True, exist_ok=True )
       path.write_text(
@@ -25,9 +25,9 @@ class SlotChosenShareStore():
 
 
    @classmethod
-   def read( cls ) -> list[ SlotChosenShare ]:
+   def read( cls ) -> list[ IceChosenShare ]:
       if not cls.path().exists():
          return []
 
       rows = json.loads( cls.path().read_text() )
-      return [ SlotChosenShare.from_row( row ) for row in rows ]
+      return [ IceChosenShare.from_row( row ) for row in rows ]

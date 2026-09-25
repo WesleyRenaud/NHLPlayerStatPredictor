@@ -7,16 +7,13 @@ from .usable_nhl_ice import UsableNhlIce
 
 
 class UsableNhlIceResolver():
-   MIN_GAMES = 8
-
-
    @classmethod
    def resolve( cls, landing: Types.JsonObject ) -> UsableNhlIce | None:
       for season_id in ClubIceParser.season_ids( landing ):
          clubs = ClubIceParser.parse( landing, season_id )
          games = sum( club.games for club in clubs )
 
-         if games < cls.MIN_GAMES:
+         if games < UsableNhlIce.MIN_GAMES:
             continue
 
          return UsableNhlIce(

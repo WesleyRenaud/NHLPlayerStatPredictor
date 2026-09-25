@@ -9,9 +9,9 @@ from api.aging.aging_factor_store import AgingFactorStore
 from api.aging.league_factor_store import LeagueFactorStore
 from api.availability.availability_weight_store import AvailabilityWeightStore
 from api.depth.depth_chart_store import DepthChartStore
+from api.depth.ice_chosen_share_store import IceChosenShareStore
 from api.depth.skater_ice_store import SkaterIceStore
 from api.depth.slot_average_store import SlotAverageStore
-from api.depth.slot_chosen_share_store import SlotChosenShareStore
 from api.ingest.github_cli_result import GithubCliResult
 import api.ingest.ingest_artifact_puller as ingest_artifact_puller
 from api.ingest.ingest_artifact_puller import IngestArtifactPuller
@@ -77,7 +77,7 @@ def _write_artifact( root: Path ) -> None:
       ingest_artifact_puller.Paths.ROOT )
    ice_path.parent.mkdir( parents=True, exist_ok=True )
    ice_path.write_text( '[]' )
-   chosen_path = root / SlotChosenShareStore.path().relative_to(
+   chosen_path = root / IceChosenShareStore.path().relative_to(
       ingest_artifact_puller.Paths.ROOT )
    chosen_path.parent.mkdir( parents=True, exist_ok=True )
    chosen_path.write_text( '[]' )
@@ -133,7 +133,7 @@ def Test_Install_TestArtifactTree_ExpectCopiedDbAndRaw(
    assert TeamFactorStore.path().read_text() == '[]'
    assert DepthChartStore.path().read_text() == '[]'
    assert SlotAverageStore.path().read_text() == '[]'
-   assert SlotChosenShareStore.path().read_text() == '[]'
+   assert IceChosenShareStore.path().read_text() == '[]'
 
 
 def Test_ArtifactRoot_TestNestedArtifactDir_ExpectNested(
