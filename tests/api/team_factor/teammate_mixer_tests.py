@@ -97,16 +97,19 @@ def Test_Teammates_TestInjuredRegular_ExpectHealthyFive() -> None:
    assert abs( _teammates( 2, regulars, extras ) - 95.0 ) < 0.001
 
 
-def Test_Expected_TestSamePrior_ExpectHealthySix() -> None:
+def Test_Expected_TestPriorSet_ExpectCurrentMix() -> None:
    regulars = [
-      _regular( index, 20.0, 0.5, 0.5 )
-      for index in range( 1, 7 )
+      *[
+         _regular( index, 20.0, GamesShare.FULL, 0.5 )
+         for index in range( 1, 6 )
+      ],
+      _regular( 6, 20.0, 0.5, 0.0 ),
    ]
    extras = [ _regular( 7, 10.0, GamesShare.FULL, None ) ]
-   assert abs( _expected( regulars, extras ) - 120.0 ) < 0.001
+   assert abs( _expected( regulars, extras ) - 115.0 ) < 0.001
 
 
-def Test_Expected_TestPriorSicker_ExpectHealthierThisYear() -> None:
+def Test_Expected_TestPriorSicker_ExpectCurrentHealthy() -> None:
    regulars = [
       *[
          _regular( index, 20.0, GamesShare.FULL, GamesShare.FULL )
@@ -115,4 +118,4 @@ def Test_Expected_TestPriorSicker_ExpectHealthierThisYear() -> None:
       _regular( 6, 20.0, GamesShare.FULL, 0.0 ),
    ]
    extras = [ _regular( 7, 10.0, GamesShare.FULL, None ) ]
-   assert _expected( regulars, extras ) == 130.0
+   assert _expected( regulars, extras ) == 120.0

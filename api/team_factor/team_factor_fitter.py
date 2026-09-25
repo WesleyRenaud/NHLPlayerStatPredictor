@@ -38,8 +38,6 @@ class TeamFactorFitter():
          roster_paces,
          slots,
          charts,
-         usages,
-         season_length,
          ice )
       return sorted(
          [ *previous, *current ],
@@ -69,8 +67,6 @@ class TeamFactorFitter():
          roster_paces: list[ CurrentSeasonNhlSkater ],
          slots: list[ SlotAverage ],
          charts: list[ DepthChart ],
-         usages: dict[ int, IceUsage ],
-         season_length: int,
          ice: dict[ int, SkaterIce ] ) -> list[ TeamFactor ]:
       by_chart = {
          ( chart.team, chart.skater_group ): chart
@@ -81,8 +77,6 @@ class TeamFactorFitter():
          roster_paces,
          slots,
          by_chart,
-         usages,
-         season_length,
          ice )
 
 
@@ -116,8 +110,6 @@ class TeamFactorFitter():
          roster_paces: list[ CurrentSeasonNhlSkater ],
          slots: list[ SlotAverage ],
          charts: dict[ tuple[ Team, SkaterGroup ], DepthChart ],
-         usages: dict[ int, IceUsage ],
-         season_length: int,
          ice: dict[ int, SkaterIce ] ) -> list[ TeamFactor ]:
       return cls._rated(
          [
@@ -129,8 +121,6 @@ class TeamFactorFitter():
                   lineup,
                   slots,
                   charts,
-                  usages,
-                  season_length,
                   ice ) )
             for lineup in TeamLineup.group( roster_paces )
          ] )

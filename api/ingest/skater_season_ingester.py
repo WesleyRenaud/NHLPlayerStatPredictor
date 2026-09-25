@@ -151,8 +151,6 @@ class SkaterSeasonIngester():
                      aging_factors ),
                   slots,
                   charts,
-                  usages,
-                  season_length,
                   { row.player_id: row for row in ice_rows } )
             ],
             key=lambda factor: ( factor.season, factor.team.value ) ) )

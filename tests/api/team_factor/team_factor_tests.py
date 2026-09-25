@@ -105,21 +105,30 @@ def Test_Excluding_TestInjuredDefense_ExpectTeammatesWhenPlaying() -> None:
    assert abs( factor.excluding( 2 ) * total - 95.0 ) < 0.001
 
 
-def Test_DressedTotal_TestSamePrior_ExpectHealthySix() -> None:
-   regulars = [
-      TeamFactorSkater( index, 20.0, SkaterGroup( 'D' ), 0.5, False, 0.5 )
-      for index in range( 1, 7 )
-   ]
+def Test_DressedTotal_TestHalfOut_ExpectCurrentMix() -> None:
+   extra_pace = 10.0
+   regular_pace = 20.0
    extra = TeamFactorSkater(
       7,
-      10.0,
+      extra_pace,
       SkaterGroup( 'D' ),
       GamesShare.FULL,
       True,
       None )
+   injured = TeamFactorSkater( 1, regular_pace, SkaterGroup( 'D' ), 0.5, False, 0.5 )
+   rest = [
+      TeamFactorSkater( index, regular_pace, SkaterGroup( 'D' ), GamesShare.FULL, False, 0.5 )
+      for index in range( 2, 7 )
+   ]
    factor = TeamFactor(
       20262027,
       list( Team )[ Position.FIRST ],
       1.0,
-      [ extra, *regulars ] )
-   assert abs( factor.dressed_total() - 120.0 ) < 0.001
+      [ injured, extra, *rest ] )
+   playing = [ injured, *rest ]
+   healthy = sum( skater.contribution for skater in playing )
+   filled = sum( skater.contribution for skater in rest ) + extra.contribution
+   assert abs(
+      factor.dressed_total()
+      - injured.availability * healthy
+      - ( 1.0 - injured.availability ) * filled ) < 0.001

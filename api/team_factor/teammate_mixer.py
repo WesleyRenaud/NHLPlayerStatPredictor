@@ -1,14 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from dataclasses import replace
-
 from ..availability.availability_enumerator import AvailabilityEnumerator
-from ..availability.games_share import GamesShare
 from ..depth.depth_group import DepthGroup
 from ..depth.dressed_points_builder import DressedPointsBuilder
 from ..depth.slot_average import SlotAverage
-from .mix_delta import MixDelta
 from .teammate_skater import TeammateSkater
 
 
@@ -20,13 +15,7 @@ class TeammateMixer():
          extras: list[ TeammateSkater ],
          slot_averages: list[ SlotAverage ],
          group: DepthGroup ) -> float:
-      return cls._delta(
-         regulars,
-         lambda present: cls._expected(
-            present,
-            extras,
-            slot_averages,
-            group ) )
+      return cls._expected( regulars, extras, slot_averages, group )
 
 
    @classmethod
@@ -40,55 +29,24 @@ class TeammateMixer():
       player = cls._regular( player_id, regulars )
 
       if player is not None:
-         return cls._delta(
+         return cls._regular_teammates(
+            player,
             regulars,
-            lambda present: cls._regular_teammates(
-               next(
-                  skater
-                  for skater in present
-                  if skater.player_id == player_id ),
-               present,
-               extras,
-               slot_averages,
-               group ) )
+            extras,
+            slot_averages,
+            group )
 
       index = cls._extra_index( player_id, extras )
 
       if index is not None:
-         return cls._delta(
+         return cls._extra_teammates(
+            index,
             regulars,
-            lambda present: cls._extra_teammates(
-               index,
-               present,
-               extras,
-               slot_averages,
-               group ) )
+            extras,
+            slot_averages,
+            group )
 
       return cls.expected( regulars, extras, slot_averages, group )
-
-
-   @classmethod
-   def _delta(
-         cls,
-         regulars: list[ TeammateSkater ],
-         compute: Callable[ [ list[ TeammateSkater ] ], float ] ) -> float:
-      current = compute( regulars )
-
-      if any( skater.prior_availability is None for skater in regulars ):
-         return current
-
-      prior = [
-         replace( skater, availability=skater.prior_availability )
-         for skater in regulars
-      ]
-      healthy = [
-         replace( skater, availability=GamesShare.FULL )
-         for skater in regulars
-      ]
-      return MixDelta.resolve(
-         current,
-         compute( prior ),
-         compute( healthy ) )
 
 
    @classmethod

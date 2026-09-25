@@ -214,7 +214,7 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    monkeypatch.setattr(
       skater_season_ingester.TeamFactorFitter,
       'current',
-      lambda season, paces, slots, charts, usages, season_length, ice: (
+      lambda season, paces, slots, charts, ice: (
          fitted.append( True ) or [] ) )
    recorded: list[ bool ] = []
    monkeypatch.setattr(
