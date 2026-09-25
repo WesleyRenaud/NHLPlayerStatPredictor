@@ -4,6 +4,8 @@ from ..availability.availability_projector import AvailabilityProjector
 from ..availability.availability_weight_store import AvailabilityWeightStore
 from ..availability.mixed_season_share_binder import MixedSeasonShareBinder
 from ..availability.retired_availability_binder import RetiredAvailabilityBinder
+from .club_ice import ClubIce
+from .club_ice_provider import ClubIceProvider
 from .depth_chart import DepthChart
 from .depth_chart_builder import DepthChartBuilder
 from .depth_chart_store import DepthChartStore
@@ -47,8 +49,13 @@ class DepthChartRecorder():
          pace_games: int,
          team_rates: dict[ Team, float ],
          force: bool = False ) -> list[ DepthChart ]:
+      prior = RecencyTargetResolver.prior()
       ice_usages = IceUsageParser.parse(
-         NhlClient.skater_timeonice( RecencyTargetResolver.prior(), force ) )
+         NhlClient.skater_timeonice( prior, force ) )
+      ices_by_player = {
+         player_id: ClubIceProvider.resolve( player_id, prior )
+         for player_id in ice_usages
+      }
       roster = RosterSkaterIngester.build_rows( force=force )
       statuses = PlayerStatusStore.read( str( Paths.DB_PATH ) )
       roster = RetiredRosterBinder.bind(
@@ -73,7 +80,8 @@ class DepthChartRecorder():
                slot_averages,
                chosen_shares,
                pace_games,
-               team_rates ) )
+               team_rates,
+               ices_by_player ) )
 
       return charts
 
@@ -88,7 +96,8 @@ class DepthChartRecorder():
          slot_averages: list[ SlotAverage ],
          chosen_shares: list[ SlotChosenShare ],
          pace_games: int,
-         team_rates: dict[ Team, float ] ) -> list[ DepthChart ]:
+         team_rates: dict[ Team, float ],
+         ices_by_player: dict[ int, list[ ClubIce ] ] ) -> list[ DepthChart ]:
       charts = []
 
       for group in ( DepthGroup.forwards(), DepthGroup.defense() ):
@@ -102,7 +111,8 @@ class DepthChartRecorder():
                   group.skaters( roster, team ),
                   ice_usages,
                   availabilities,
-                  team_rates ),
+                  team_rates,
+                  ices_by_player ),
                slot_averages,
                chosen_shares,
                group,
