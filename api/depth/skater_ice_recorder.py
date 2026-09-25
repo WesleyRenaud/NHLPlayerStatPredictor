@@ -17,4 +17,4 @@ class SkaterIceRecorder():
 
    @classmethod
    def _row( cls, skater: IceSkater, toi: float ) -> SkaterIce:
-      return SkaterIce( skater.player_id, skater.last_toi, toi )
+      return SkaterIce( skater.player_id, skater.last_toi, skater.implied, toi )

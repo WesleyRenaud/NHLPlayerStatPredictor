@@ -9,6 +9,7 @@ from ..types import Types
 class SkaterIce():
    player_id: int
    last_toi: float | None
+   implied: float
    projected_toi: float
 
 
@@ -18,6 +19,7 @@ class SkaterIce():
       return cls(
          int( row[ 'player_id' ] ),
          None if last_toi is None else float( last_toi ),
+         float( row[ 'implied' ] ),
          float( row[ 'projected_toi' ] ) )
 
 
@@ -25,5 +27,6 @@ class SkaterIce():
       return {
          'player_id': self.player_id,
          'last_toi': None if self.last_toi is None else round( self.last_toi, 2 ),
+         'implied': round( self.implied, 2 ),
          'projected_toi': round( self.projected_toi, 2 ),
       }

@@ -21,11 +21,30 @@ def Test_Build_TestUsage_ExpectLastToi() -> None:
    skaters = IceSkaterAssembler.build(
       roster,
       ice_usages,
-      { 1: 1.0, 2: 1.0 } )
+      { 1: 1.0, 2: 1.0 },
+      {} )
    assert skaters[ Position.FIRST ].implied == 22.34
    assert skaters[ Position.FIRST ].last_toi == 22.34
    assert skaters[ Position.SECOND ].implied == 0.0
    assert skaters[ Position.SECOND ].last_toi is None
+
+
+def Test_Build_TestTeamRate_ExpectScaledClaim() -> None:
+   now = Team( 'CHI' )
+   last = Team( 'BUF' )
+   roster = [
+      RosterSkater( 1, 'Bowen Byram', SkaterPosition( 'D' ), now ),
+   ]
+   ice_usages = {
+      1: IceUsage( 22.0, 82, last, SkaterPosition( 'D' ) ),
+   }
+   skaters = IceSkaterAssembler.build(
+      roster,
+      ice_usages,
+      { 1: 1.0 },
+      { last: 0.8 } )
+   assert skaters[ Position.FIRST ].implied == 17.6
+   assert skaters[ Position.FIRST ].last_toi == 22.0
 
 
 def Test_Build_TestAvailability_ExpectProjectedShare() -> None:
@@ -33,5 +52,6 @@ def Test_Build_TestAvailability_ExpectProjectedShare() -> None:
    skaters = IceSkaterAssembler.build(
       [ RosterSkater( 1, 'A', SkaterPosition( 'D' ), team ) ],
       {},
-      { 1: 0.62 } )
+      { 1: 0.62 },
+      {} )
    assert skaters[ Position.FIRST ].availability == 0.62

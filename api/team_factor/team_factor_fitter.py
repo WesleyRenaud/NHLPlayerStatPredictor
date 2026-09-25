@@ -27,28 +27,63 @@ class TeamFactorFitter():
          charts: list[ DepthChart ],
          usages: dict[ int, IceUsage ],
          ice: dict[ int, SkaterIce ] ) -> list[ TeamFactor ]:
+      previous = cls.previous(
+         previous_season_id,
+         nhl_splits,
+         slots,
+         usages,
+         season_length )
+      current = cls.current(
+         current_season,
+         roster_paces,
+         slots,
+         charts,
+         usages,
+         season_length,
+         ice )
+      return sorted(
+         [ *previous, *current ],
+         key=lambda factor: ( factor.season, factor.team.value ) )
+
+
+   @classmethod
+   def previous(
+         cls,
+         season: int,
+         splits: list[ PreviousSeasonNhlSkater ],
+         slots: list[ SlotAverage ],
+         usages: dict[ int, IceUsage ],
+         season_length: int ) -> list[ TeamFactor ]:
+      return cls._previous(
+         season,
+         splits,
+         slots,
+         usages,
+         season_length )
+
+
+   @classmethod
+   def current(
+         cls,
+         season: int,
+         roster_paces: list[ CurrentSeasonNhlSkater ],
+         slots: list[ SlotAverage ],
+         charts: list[ DepthChart ],
+         usages: dict[ int, IceUsage ],
+         season_length: int,
+         ice: dict[ int, SkaterIce ] ) -> list[ TeamFactor ]:
       by_chart = {
          ( chart.team, chart.skater_group ): chart
          for chart in charts
       }
-      return sorted(
-         [
-            *cls._previous(
-               previous_season_id,
-               nhl_splits,
-               slots,
-               usages,
-               season_length ),
-            *cls._current(
-               current_season,
-               roster_paces,
-               slots,
-               by_chart,
-               usages,
-               season_length,
-               ice ),
-         ],
-         key=lambda factor: ( factor.season, factor.team.value ) )
+      return cls._current(
+         season,
+         roster_paces,
+         slots,
+         by_chart,
+         usages,
+         season_length,
+         ice )
 
 
    @classmethod
