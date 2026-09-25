@@ -64,3 +64,10 @@ test('Test_Filter_TestDiacritics_ExpectAsciiQueryMatches', () => {
    assert.deepEqual(PlayerNameMatcher.filter([player], 'bjork'), [player]);
    assert.deepEqual(PlayerNameMatcher.filter([player], 'viggo'), [player]);
 });
+
+
+test('Test_Filter_TestMixedCaseCk_ExpectQueryMatches', () => {
+   const player = { playerName: 'Stub McKenna' };
+   assert.deepEqual(PlayerNameMatcher.filter([player], 'mcke'), [player]);
+   assert.deepEqual(PlayerNameMatcher.filter([player], 'McKe'), [player]);
+});

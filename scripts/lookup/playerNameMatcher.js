@@ -30,7 +30,7 @@ export class PlayerNameMatcher {
       return String(value)
          .normalize('NFD')
          .replace(/\p{M}/gu, '')
-         .replaceAll('ck', 'k')
-         .toLowerCase();
+         .toLowerCase()
+         .replaceAll('ck', 'k');
    }
 }
