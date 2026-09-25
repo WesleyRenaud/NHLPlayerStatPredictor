@@ -118,7 +118,7 @@ class TeamFactorCurrentBuilder():
          ice: dict[ int, SkaterIce ] ) -> float:
       row = ice.get( player_id )
 
-      if row is None or row.last_toi is None or not row.implied:
+      if row is None or not row.last_toi:
          return points
 
-      return points * IcePaceScaler.ratio( row.implied, row.projected_toi )
+      return points * IcePaceScaler.ratio( row.last_toi, row.projected_toi )

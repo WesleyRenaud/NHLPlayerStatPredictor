@@ -515,7 +515,7 @@ def Test_GetProjection_TestLastPlayedNotPrior_ExpectLastPlayedQuality(
       games_played=games_played )
 
 
-def Test_GetProjection_TestIceChange_ExpectRateTimesToi(
+def Test_GetProjection_TestIceChange_ExpectLastToiScale(
       monkeypatch: pytest.MonkeyPatch,
       tmp_path: Path ) -> None:
    db_path = tmp_path / 'skaters.sqlite'
@@ -561,8 +561,8 @@ def Test_GetProjection_TestIceChange_ExpectRateTimesToi(
       projection_coordinator.PaceGamesResolver,
       'resolve',
       lambda: games_played )
-   goals = round( 45.0 )
-   assists = round( 60.0 )
+   goals = round( 36.0 )
+   assists = round( 48.0 )
    assert ProjectionCoordinator.get_projection( player_id ) == Projection(
       goals=goals,
       assists=assists,

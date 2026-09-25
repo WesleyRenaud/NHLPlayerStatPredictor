@@ -59,13 +59,12 @@ class TeamFactorPreviousBuilder():
          usages,
          paces,
          season_length,
-         True,
          group.dressed_count,
          group.extra_count,
          group.positions )
 
       if not regulars:
-         regulars, extras = cls._from_scoring( matching, group )
+         regulars, extras = cls._from_scoring( matching, season_length, group )
 
       return regulars, TeamFactorFiller.pad( extras, slots, group.spare_slot )
 
@@ -74,6 +73,7 @@ class TeamFactorPreviousBuilder():
    def _from_scoring(
          cls,
          matching: list[ PreviousSeasonNhlSkater ],
+         season_length: int,
          group: DepthGroup ) -> tuple[
             list[ TeammateSkater ],
             list[ TeammateSkater ] ]:
@@ -84,7 +84,7 @@ class TeamFactorPreviousBuilder():
          TeammateSkater(
             skater.player_id,
             cls._pace( skater ),
-            GamesShare.FULL,
+            GamesShare.resolve( skater.games, season_length ),
             None )
          for skater in ranked[ : group.dressed_count ]
       ]
