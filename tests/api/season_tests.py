@@ -8,11 +8,6 @@ from api.season import Season
 from api.season_length import SeasonLength
 from api.shared.enums.position import Position
 from api.skaters.team import Team
-from api.types import Types
-
-
-def _lengths( seasons: Types.JsonObjectList ) -> list[ SeasonLength ]:
-   return SeasonLength.from_rows( seasons )
 
 
 @pytest.mark.parametrize( 'season_id, expected', [
@@ -20,90 +15,87 @@ def _lengths( seasons: Types.JsonObjectList ) -> list[ SeasonLength ]:
    ( 20252026, '2025-26' ),
 ] )
 def Test_Label( season_id: int, expected: str ) -> None:
-   assert Season.label( season_id ) == expected
+   label = Season.label( season_id )
+
+   assert label == expected
 
 
 def Test_PrimaryTeam_TestSplitSeason_ExpectLastTeam() -> None:
    members = list( Team )
    teams = [ members[ Position.FIRST ], members[ Position.SECOND ] ]
-   assert Season.primary_team( teams ) == teams[ Position.LAST ]
+
+   team = Season.primary_team( teams )
+
+   assert team == teams[ Position.LAST ]
 
 
 def Test_Pace_TestHalfSeason_ExpectScaledToPace() -> None:
-   assert Season.pace( 20, 42, 84 ) == 40.0
+   value = 20
+   games_played = 42
+   pace_games = 84
+
+   pace = Season.pace( value, games_played, pace_games )
+
+   assert pace == value / games_played * pace_games
 
 
 def Test_AgeOn_TestKnownBirthday_ExpectFractionalAge() -> None:
-   age = Season.age_on( date( 1997, 1, 13 ), date( 2025, 10, 7 ) )
-   assert 28.7 < age < 28.8
+   birth_date = date( 1997, 1, 13 )
+   on_date = date( 2025, 10, 7 )
+   days_per_year = 365.25
+
+   age = Season.age_on( birth_date, on_date )
+
+   assert age == ( on_date - birth_date ).days / days_per_year
 
 
 def Test_PaceGames_TestLastSeason_ExpectScheduledLength() -> None:
-   seasons = _lengths(
-      [
-         {
-            'id': 20252026,
-            'startDate': '2025-10-07T00:00:00',
-            'regularSeasonEndDate': '2026-04-17',
-            'numberOfGames': 82,
-         },
-         {
-            'id': 20262027,
-            'startDate': '2026-09-29T17:00:00',
-            'regularSeasonEndDate': '2027-04-10',
-            'numberOfGames': 84,
-         },
-      ] )
-   assert Season.pace_games( seasons ) == Season.latest( seasons ).number_of_games
+   seasons = [
+      SeasonLength( 20252026, 82, date( 2025, 10, 7 ), date( 2026, 4, 17 ) ),
+      SeasonLength( 20262027, 84, date( 2026, 9, 29 ), date( 2027, 4, 10 ) ),
+   ]
+
+   pace_games = Season.pace_games( seasons )
+
+   assert pace_games == Season.latest( seasons ).number_of_games
 
 
 def Test_Latest_TestSeasons_ExpectLastLength() -> None:
-   seasons = _lengths(
-      [
-         {
-            'id': 20252026,
-            'startDate': '2025-10-07T00:00:00',
-            'regularSeasonEndDate': '2026-04-17',
-            'numberOfGames': 82,
-         },
-         {
-            'id': 20262027,
-            'startDate': '2026-09-29T17:00:00',
-            'regularSeasonEndDate': '2027-04-10',
-            'numberOfGames': 84,
-         },
-      ] )
-   assert Season.latest( seasons ) == sorted( seasons )[ Position.LAST ]
+   seasons = [
+      SeasonLength( 20252026, 82, date( 2025, 10, 7 ), date( 2026, 4, 17 ) ),
+      SeasonLength( 20262027, 84, date( 2026, 9, 29 ), date( 2027, 4, 10 ) ),
+   ]
+
+   latest = Season.latest( seasons )
+
+   assert latest == sorted( seasons )[ Position.LAST ]
 
 
 def Test_Prior_TestSeasons_ExpectSecondLastLength() -> None:
-   seasons = _lengths(
-      [
-         {
-            'id': 20242025,
-            'startDate': '2024-10-04T00:00:00',
-            'regularSeasonEndDate': '2025-04-17',
-            'numberOfGames': 82,
-         },
-         {
-            'id': 20252026,
-            'startDate': '2025-10-07T00:00:00',
-            'regularSeasonEndDate': '2026-04-17',
-            'numberOfGames': 82,
-         },
-         {
-            'id': 20262027,
-            'startDate': '2026-09-29T17:00:00',
-            'regularSeasonEndDate': '2027-04-10',
-            'numberOfGames': 84,
-         },
-      ] )
-   assert Season.prior( seasons ) == sorted( seasons )[ Position.SECOND_LAST ]
+   seasons = [
+      SeasonLength( 20242025, 82, date( 2024, 10, 4 ), date( 2025, 4, 17 ) ),
+      SeasonLength( 20252026, 82, date( 2025, 10, 7 ), date( 2026, 4, 17 ) ),
+      SeasonLength( 20262027, 84, date( 2026, 9, 29 ), date( 2027, 4, 10 ) ),
+   ]
+
+   prior = Season.prior( seasons )
+
+   assert prior == sorted( seasons )[ Position.SECOND_LAST ]
 
 
 def Test_RecencyLag_TestImmediatePrior_ExpectZero() -> None:
-   assert Season.recency_lag( 20212022, 20202021 ) == 0
+   target_season_id = 20212022
+   season_id = 20202021
+
+   lag = Season.recency_lag( target_season_id, season_id )
+
+   assert lag == 0
 
 
 def Test_RecencyLag_TestSkippedYear_ExpectOne() -> None:
-   assert Season.recency_lag( 20222023, 20202021 ) == 1
+   target_season_id = 20222023
+   season_id = 20202021
+
+   lag = Season.recency_lag( target_season_id, season_id )
+
+   assert lag == 1

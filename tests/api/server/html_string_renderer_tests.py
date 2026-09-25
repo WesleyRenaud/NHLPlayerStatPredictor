@@ -8,23 +8,37 @@ from api.server.page_strings import PageStrings
 
 def Test_Render_TestKnownToken_ExpectReplacedValue(
       monkeypatch: pytest.MonkeyPatch ) -> None:
+   heading = 'Stub Heading'
+   template = '<h1>{{ page.heading }}</h1>'
    monkeypatch.setattr(
       PageStrings,
       'VALUES',
-      { 'page.heading': 'Stub Heading' } )
-   rendered = HtmlStringRenderer.render( '<h1>{{ page.heading }}</h1>' )
-   assert rendered == '<h1>Stub Heading</h1>'
+      { 'page.heading': heading } )
+
+   rendered = HtmlStringRenderer.render( template )
+
+   assert rendered == f'<h1>{ heading }</h1>'
 
 
 def Test_Render_TestUnknownToken_ExpectUnchanged() -> None:
-   rendered = HtmlStringRenderer.render( '<h1>{{ page.missing }}</h1>' )
-   assert rendered == '<h1>{{ page.missing }}</h1>'
+   token = '{{ page.missing }}'
+   template = f'<h1>{ token }</h1>'
+
+   rendered = HtmlStringRenderer.render( template )
+
+   assert rendered == template
 
 
 def Test_Render_TestHtmlInValue_ExpectEscaped(
       monkeypatch: pytest.MonkeyPatch ) -> None:
+   heading = '<script>'
+   escaped = '&lt;script&gt;'
+   template = '{{ page.heading }}'
    monkeypatch.setattr(
       PageStrings,
       'VALUES',
-      { 'page.heading': '<script>' } )
-   assert HtmlStringRenderer.render( '{{ page.heading }}' ) == '&lt;script&gt;'
+      { 'page.heading': heading } )
+
+   rendered = HtmlStringRenderer.render( template )
+
+   assert rendered == escaped

@@ -48,26 +48,35 @@ def _project(
 
 
 def Test_Project_TestSixClaims_ExpectPieAndRatios() -> None:
+   first_implied = 26.0
+   second_implied = 24.0
+
    projected = _project(
       [
-         _skater( 1, 26.0 ),
-         _skater( 2, 24.0 ),
+         _skater( 1, first_implied ),
+         _skater( 2, second_implied ),
          _skater( 3, 20.0 ),
          _skater( 4, 20.0 ),
          _skater( 5, 16.0 ),
          _skater( 6, 14.0 ),
       ],
       [ _skater( 7, 12.0 ) ] )
+
    total = sum( toi for _skater_row, toi in projected )
    assert abs( total - DepthGroup.DEFENSE_ICE_MINUTES ) < 0.001
-   assert abs( _toi( projected, 1 ) / _toi( projected, 2 ) - 26.0 / 24.0 ) < 0.001
+   assert abs(
+      _toi( projected, 1 ) / _toi( projected, 2 )
+      - first_implied / second_implied ) < 0.001
 
 
 def Test_Project_TestInjuredTeammate_ExpectHealthyGetsMore() -> None:
+   injured = 0.5
+
    even = _project( _six(), [] )
    boosted = _project(
-      [ _skater( 1, 20.0 ), _skater( 2, 20.0, 0.5 ), *_six()[ 2: ] ],
+      [ _skater( 1, 20.0 ), _skater( 2, 20.0, injured ), *_six()[ Position.THIRD: ] ],
       [] )
+
    assert _toi( boosted, 1 ) > _toi( even, 1 )
 
 
@@ -75,76 +84,92 @@ def Test_Project_TestExtraFillsInjuredSlot_ExpectLessBoost() -> None:
    injured = [
       _skater( 1, 20.0 ),
       _skater( 2, 20.0, 0.5 ),
-      *_six()[ 2: ],
+      *_six()[ Position.THIRD: ],
    ]
+
    without = _project( injured, [] )
    with_extra = _project( injured, [ _skater( 7, 16.0 ) ] )
+
    assert _toi( with_extra, 1 ) < _toi( without, 1 )
 
 
 def Test_Project_TestNoNamedExtra_ExpectHealthyGetsMore() -> None:
    even = _project( _six(), [] )
    missing = _project(
-      [ _skater( 1, 20.0 ), _skater( 2, 20.0, 0.5 ), *_six()[ 2: ] ],
+      [ _skater( 1, 20.0 ), _skater( 2, 20.0, 0.5 ), *_six()[ Position.THIRD: ] ],
       [] )
+
    assert _toi( missing, 1 ) > _toi( even, 1 )
 
 
 def Test_Project_TestTwoAlwaysOut_ExpectMoreThanOneOut() -> None:
+   out = 0.0
+
    one_out = _project(
       [
          _skater( 1, 20.0 ),
-         _skater( 2, 20.0, 0.0 ),
-         *_six()[ 2: ],
+         _skater( 2, 20.0, out ),
+         *_six()[ Position.THIRD: ],
       ],
       [] )
    two_out = _project(
       [
          _skater( 1, 20.0 ),
-         _skater( 2, 20.0, 0.0 ),
+         _skater( 2, 20.0, out ),
          _skater( 3, 20.0 ),
-         _skater( 4, 20.0, 0.0 ),
+         _skater( 4, 20.0, out ),
          *_six()[ 4: ],
       ],
       [] )
+
    assert _toi( two_out, 1 ) > _toi( one_out, 1 )
 
 
 def Test_Project_TestTwoHalfOut_ExpectOverlapBoost() -> None:
+   half = 0.5
+
    one_half = _project(
       [
          _skater( 1, 20.0 ),
-         _skater( 2, 20.0, 0.5 ),
-         *_six()[ 2: ],
+         _skater( 2, 20.0, half ),
+         *_six()[ Position.THIRD: ],
       ],
       [] )
    two_half = _project(
       [
          _skater( 1, 20.0 ),
-         _skater( 2, 20.0, 0.5 ),
+         _skater( 2, 20.0, half ),
          _skater( 3, 20.0 ),
-         _skater( 4, 20.0, 0.5 ),
+         _skater( 4, 20.0, half ),
          *_six()[ 4: ],
       ],
       [] )
+
    assert _toi( two_half, 1 ) > _toi( one_half, 1 )
 
 
 def Test_Project_TestHalfAvailable_ExpectMoreThanHealthyShare() -> None:
-   even = _project( _six(), [ _skater( 7, 16.0 ) ] )
-   mixed = _project( _six( 0.5 ), [ _skater( 7, 16.0 ) ] )
+   half = 0.5
+   extra = _skater( 7, 16.0 )
+
+   even = _project( _six(), [ extra ] )
+   mixed = _project( _six( half ), [ extra ] )
+
    assert _toi( mixed, 1 ) > _toi( even, 1 )
 
 
 def Test_Project_TestForwardPie_ExpectOneEighty() -> None:
+   implied = 15.0
    regulars = [
-      _skater( index, 15.0 )
+      _skater( index, implied )
       for index in range( 1, NhlLineupSelector.DRESSED_FORWARDS + 1 )
    ]
+
    projected = IceAllocator.project(
       regulars,
       [],
       [],
       DepthGroup.forwards() )
+
    total = sum( toi for _skater_row, toi in projected )
    assert abs( total - DepthGroup.FORWARD_ICE_MINUTES ) < 0.001

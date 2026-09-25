@@ -36,48 +36,88 @@ def _season(
 
 
 def Test_Resolve_TestWeightedShares_ExpectAverage() -> None:
+   recent_share = GamesShare.FULL
+   older_share = 0.4
+   recent_weight = 0.75
+   older_weight = 0.25
    target = 20262027
-   assert AvailabilityProjector.resolve(
-      [ _season( 20252026, 1.0 ), _season( 20242025, 0.4 ) ],
-      [ RecencyWeight( 0, 0.75 ), RecencyWeight( 1, 0.25 ) ],
-      target ) == 0.85
+   seasons = [ _season( 20252026, recent_share ), _season( 20242025, older_share ) ]
+   weights = [
+      RecencyWeight( Position.FIRST, recent_weight ),
+      RecencyWeight( Position.SECOND, older_weight ),
+   ]
+
+   share = AvailabilityProjector.resolve( seasons, weights, target )
+
+   assert share == (
+      recent_weight * recent_share + older_weight * older_share
+   ) / ( recent_weight + older_weight )
 
 
 def Test_Resolve_TestMissingLag_ExpectRenormalized() -> None:
-   assert AvailabilityProjector.resolve(
-      [ _season( 20252026, 0.5 ) ],
-      [ RecencyWeight( 0, 0.75 ), RecencyWeight( 1, 0.25 ) ],
-      20262027 ) == 0.5
+   share = 0.5
+   present_weight = 0.75
+   missing_weight = 0.25
+   target = 20262027
+   seasons = [ _season( 20252026, share ) ]
+   weights = [
+      RecencyWeight( Position.FIRST, present_weight ),
+      RecencyWeight( Position.SECOND, missing_weight ),
+   ]
+
+   resolved = AvailabilityProjector.resolve( seasons, weights, target )
+
+   assert resolved == share
 
 
 def Test_Resolve_TestSkippedYear_ExpectRenormalizedWeights() -> None:
-   assert AvailabilityProjector.resolve(
-      [ _season( 20242025, 1.0 ), _season( 20232024, 0.4 ) ],
-      [
-         RecencyWeight( 0, 0.5 ),
-         RecencyWeight( 1, 0.3 ),
-         RecencyWeight( 2, 0.2 ),
-      ],
-      20262027 ) == 0.76
+   recent_share = GamesShare.FULL
+   older_share = 0.4
+   skipped_weight = 0.5
+   recent_weight = 0.3
+   older_weight = 0.2
+   target = 20262027
+   seasons = [ _season( 20242025, recent_share ), _season( 20232024, older_share ) ]
+   weights = [
+      RecencyWeight( Position.FIRST, skipped_weight ),
+      RecencyWeight( Position.SECOND, recent_weight ),
+      RecencyWeight( Position.THIRD, older_weight ),
+   ]
+
+   resolved = AvailabilityProjector.resolve( seasons, weights, target )
+
+   assert resolved == (
+      recent_weight * recent_share + older_weight * older_share
+   ) / ( recent_weight + older_weight )
 
 
 def Test_Resolve_TestEmpty_ExpectFull() -> None:
-   assert AvailabilityProjector.resolve(
-      [],
-      [ RecencyWeight( 0, 1.0 ) ],
-      20262027 ) == GamesShare.FULL
+   target = 20262027
+   seasons: list[ NhlSkaterSeason ] = []
+   weights = [ RecencyWeight( Position.FIRST, 1.0 ) ]
+
+   share = AvailabilityProjector.resolve( seasons, weights, target )
+
+   assert share == GamesShare.FULL
 
 
 def Test_Resolve_TestMissingShare_ExpectFull() -> None:
-   assert AvailabilityProjector.resolve(
-      [ _season( 20252026, None ) ],
-      [ RecencyWeight( 0, 1.0 ) ],
-      20262027 ) == GamesShare.FULL
+   target = 20262027
+   seasons = [ _season( 20252026, None ) ]
+   weights = [ RecencyWeight( Position.FIRST, 1.0 ) ]
+
+   share = AvailabilityProjector.resolve( seasons, weights, target )
+
+   assert share == GamesShare.FULL
 
 
 def Test_Resolve_TestInjuredNhlYear_ExpectShare() -> None:
    share = 0.07
-   assert AvailabilityProjector.resolve(
-      [ _season( 20252026, share, games_played=6 ) ],
-      [ RecencyWeight( 0, 1.0 ) ],
-      20262027 ) == share
+   games_played = 6
+   target = 20262027
+   seasons = [ _season( 20252026, share, games_played=games_played ) ]
+   weights = [ RecencyWeight( Position.FIRST, 1.0 ) ]
+
+   resolved = AvailabilityProjector.resolve( seasons, weights, target )
+
+   assert resolved == share

@@ -57,7 +57,7 @@ def _season(
       player_id=1,
       season_id=season_id,
       player_name='Stub Skater',
-      position=list( SkaterPosition )[ Position.FIRST ],
+      position=SkaterPosition( 'C' ),
       birth_date=date( 1997, 1, 13 ),
       age=age,
       team=list( Team )[ Position.FIRST ] if team is None else team,
@@ -129,12 +129,13 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
       projection_coordinator.PaceGamesResolver,
       'resolve',
       lambda: games_played )
-   goals = round( aged.goals )
-   assists = round( aged.assists )
-   assert ProjectionCoordinator.get_projection( player_id ) == Projection(
-      goals=goals,
-      assists=assists,
-      points=goals + assists,
+
+   projection = ProjectionCoordinator.get_projection( player_id )
+
+   assert projection == Projection(
+      goals=round( aged.goals ),
+      assists=round( aged.assists ),
+      points=round( aged.goals ) + round( aged.assists ),
       games_played=games_played )
    assert captured == [ ( player_id, str( db_path ) ) ]
    assert resolved == [
@@ -146,6 +147,8 @@ def Test_GetProjection_TestMissingPace_ExpectNone(
       monkeypatch: pytest.MonkeyPatch,
       tmp_path: Path ) -> None:
    db_path = tmp_path / 'skaters.sqlite'
+   player_id = 7
+   target_season_id = 20262027
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
    _stub_team_factors( monkeypatch )
    monkeypatch.setattr(
@@ -163,7 +166,7 @@ def Test_GetProjection_TestMissingPace_ExpectNone(
    monkeypatch.setattr(
       projection_coordinator.RecencyTargetResolver,
       'resolve',
-      lambda: 20262027 )
+      lambda: target_season_id )
    monkeypatch.setattr(
       projection_coordinator.BaselinePaceResolver,
       'resolve',
@@ -176,7 +179,10 @@ def Test_GetProjection_TestMissingPace_ExpectNone(
       projection_coordinator.AgingFactorStore,
       'read',
       lambda: [] )
-   assert ProjectionCoordinator.get_projection( 7 ) is None
+
+   projection = ProjectionCoordinator.get_projection( player_id )
+
+   assert projection is None
 
 
 def Test_GetProjection_TestTeamFactor_ExpectScaledProjection(
@@ -194,7 +200,6 @@ def Test_GetProjection_TestTeamFactor_ExpectScaledProjection(
    aged = SeasonPace( 10.4, 20.6 )
    current_rate = 0.87
    previous_rate = 1.12
-   delta = current_rate - previous_rate
    team_factors = [
       TeamFactor(
          current_season,
@@ -208,8 +213,8 @@ def Test_GetProjection_TestTeamFactor_ExpectScaledProjection(
          [ TeamFactorSkater( 99, 80.0, SkaterGroup( 'F' ), GamesShare.FULL, False, None ) ] ),
    ]
    scaled = SeasonPace(
-      aged.goals * ( 1.0 + delta ),
-      aged.assists * ( 1.0 + delta ) )
+      aged.goals * ( 1.0 + current_rate - previous_rate ),
+      aged.assists * ( 1.0 + current_rate - previous_rate ) )
    games_played = 84
 
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
@@ -246,12 +251,13 @@ def Test_GetProjection_TestTeamFactor_ExpectScaledProjection(
       projection_coordinator.PaceGamesResolver,
       'resolve',
       lambda: games_played )
-   goals = round( scaled.goals )
-   assists = round( scaled.assists )
-   assert ProjectionCoordinator.get_projection( player_id ) == Projection(
-      goals=goals,
-      assists=assists,
-      points=goals + assists,
+
+   projection = ProjectionCoordinator.get_projection( player_id )
+
+   assert projection == Projection(
+      goals=round( scaled.goals ),
+      assists=round( scaled.assists ),
+      points=round( scaled.goals ) + round( scaled.assists ),
       games_played=games_played )
 
 
@@ -340,12 +346,13 @@ def Test_GetProjection_TestSplitPreviousClubs_ExpectWeightedQuality(
       projection_coordinator.PaceGamesResolver,
       'resolve',
       lambda: games_played )
-   goals = round( scaled.goals )
-   assists = round( scaled.assists )
-   assert ProjectionCoordinator.get_projection( player_id ) == Projection(
-      goals=goals,
-      assists=assists,
-      points=goals + assists,
+
+   projection = ProjectionCoordinator.get_projection( player_id )
+
+   assert projection == Projection(
+      goals=round( scaled.goals ),
+      assists=round( scaled.assists ),
+      points=round( scaled.goals ) + round( scaled.assists ),
       games_played=games_played )
 
 
@@ -364,28 +371,59 @@ def Test_GetProjection_TestPlayerInLineup_ExpectTeammateScaledProjection(
    aged = SeasonPace( 10.4, 20.6 )
    current_rate = 1.2
    previous_rate = 0.9
+   current_player_pace = 40.0
+   current_teammate_pace = 60.0
+   previous_player_pace = 50.0
+   previous_teammate_pace = 50.0
    current_factor = TeamFactor(
       current_season,
       now,
       current_rate,
       [
-         TeamFactorSkater( player_id, 40.0, SkaterGroup( 'F' ), GamesShare.FULL, False, None ),
-         TeamFactorSkater( 8, 60.0, SkaterGroup( 'F' ), GamesShare.FULL, False, None ),
+         TeamFactorSkater(
+            player_id,
+            current_player_pace,
+            SkaterGroup( 'F' ),
+            GamesShare.FULL,
+            False,
+            None ),
+         TeamFactorSkater(
+            8,
+            current_teammate_pace,
+            SkaterGroup( 'F' ),
+            GamesShare.FULL,
+            False,
+            None ),
       ] )
    previous_factor = TeamFactor(
       previous_season_id,
       previous,
       previous_rate,
       [
-         TeamFactorSkater( player_id, 50.0, SkaterGroup( 'F' ), GamesShare.FULL, False, None ),
-         TeamFactorSkater( 8, 50.0, SkaterGroup( 'F' ), GamesShare.FULL, False, None ),
+         TeamFactorSkater(
+            player_id,
+            previous_player_pace,
+            SkaterGroup( 'F' ),
+            GamesShare.FULL,
+            False,
+            None ),
+         TeamFactorSkater(
+            8,
+            previous_teammate_pace,
+            SkaterGroup( 'F' ),
+            GamesShare.FULL,
+            False,
+            None ),
       ] )
-   delta = (
-      current_factor.excluding( player_id )
-      - previous_factor.excluding( player_id ) )
+   current_teammates = (
+      current_rate * current_teammate_pace
+      / ( current_player_pace + current_teammate_pace ) )
+   previous_teammates = (
+      previous_rate * previous_teammate_pace
+      / ( previous_player_pace + previous_teammate_pace ) )
    scaled = SeasonPace(
-      aged.goals * ( 1.0 + delta ),
-      aged.assists * ( 1.0 + delta ) )
+      aged.goals * ( 1.0 + current_teammates - previous_teammates ),
+      aged.assists * ( 1.0 + current_teammates - previous_teammates ) )
    games_played = 84
 
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
@@ -425,12 +463,13 @@ def Test_GetProjection_TestPlayerInLineup_ExpectTeammateScaledProjection(
       projection_coordinator.PaceGamesResolver,
       'resolve',
       lambda: games_played )
-   goals = round( scaled.goals )
-   assists = round( scaled.assists )
-   assert ProjectionCoordinator.get_projection( player_id ) == Projection(
-      goals=goals,
-      assists=assists,
-      points=goals + assists,
+
+   projection = ProjectionCoordinator.get_projection( player_id )
+
+   assert projection == Projection(
+      goals=round( scaled.goals ),
+      assists=round( scaled.assists ),
+      points=round( scaled.goals ) + round( scaled.assists ),
       games_played=games_played )
 
 
@@ -506,12 +545,13 @@ def Test_GetProjection_TestLastPlayedNotPrior_ExpectLastPlayedQuality(
       projection_coordinator.PaceGamesResolver,
       'resolve',
       lambda: games_played )
-   goals = round( scaled.goals )
-   assists = round( scaled.assists )
-   assert ProjectionCoordinator.get_projection( player_id ) == Projection(
-      goals=goals,
-      assists=assists,
-      points=goals + assists,
+
+   projection = ProjectionCoordinator.get_projection( player_id )
+
+   assert projection == Projection(
+      goals=round( scaled.goals ),
+      assists=round( scaled.assists ),
+      points=round( scaled.goals ) + round( scaled.assists ),
       games_played=games_played )
 
 
@@ -523,12 +563,17 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
    seasons = [ _season( 27.2 ) ]
    aged = SeasonPace( 30.0, 40.0 )
    games_played = 84
+   last = 20.0
+   implied = 16.0
+   projected = 24.0
+   weights = [ RecencyWeight( 0, 1.0 ) ]
+   target_season_id = 20232024
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
    _stub_team_factors( monkeypatch )
    monkeypatch.setattr(
       projection_coordinator.SkaterIceStore,
       'by_player',
-      lambda: { player_id: SkaterIce( player_id, 20.0, 16.0, 24.0 ) } )
+      lambda: { player_id: SkaterIce( player_id, last, implied, projected ) } )
    monkeypatch.setattr(
       projection_coordinator.SkaterSeasonProvider,
       'seasons_for_player_id',
@@ -536,11 +581,11 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
    monkeypatch.setattr(
       projection_coordinator.ScoringWeightStore,
       'read',
-      lambda: [ RecencyWeight( 0, 1.0 ) ] )
+      lambda: weights )
    monkeypatch.setattr(
       projection_coordinator.RecencyTargetResolver,
       'resolve',
-      lambda: 20232024 )
+      lambda: target_season_id )
    monkeypatch.setattr(
       projection_coordinator.BaselinePaceResolver,
       'resolve',
@@ -561,10 +606,13 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
       projection_coordinator.PaceGamesResolver,
       'resolve',
       lambda: games_played )
-   goals = round( 36.0 )
-   assists = round( 48.0 )
-   assert ProjectionCoordinator.get_projection( player_id ) == Projection(
-      goals=goals,
-      assists=assists,
-      points=goals + assists,
+
+   projection = ProjectionCoordinator.get_projection( player_id )
+
+   assert projection == Projection(
+      goals=round( aged.goals * projected / last ),
+      assists=round( aged.assists * projected / last ),
+      points=(
+         round( aged.goals * projected / last )
+         + round( aged.assists * projected / last ) ),
       games_played=games_played )

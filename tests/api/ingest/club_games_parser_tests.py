@@ -36,52 +36,64 @@ def Test_Parse_TestSplitSeason_ExpectClubGames() -> None:
    season_id = 20252026
    first_games = 50
    second_games = 22
-   assert ClubGamesParser.parse(
-      {
-         'seasonTotals': [
-            _row( season_id, first_games, first ),
-            _row( season_id, second_games, second ),
-         ]
-      },
-      season_id ) == [
-         ClubGames( first, first_games ),
-         ClubGames( second, second_games ),
+   landing = {
+      'seasonTotals': [
+         _row( season_id, first_games, first ),
+         _row( season_id, second_games, second ),
       ]
+   }
+
+   clubs = ClubGamesParser.parse( landing, season_id )
+
+   assert clubs == [
+      ClubGames( first, first_games ),
+      ClubGames( second, second_games ),
+   ]
 
 
 def Test_Parse_TestPlayoffRow_ExpectEmpty() -> None:
-   assert ClubGamesParser.parse(
-      {
-         'seasonTotals': [
-            _row(
-               20252026,
-               7,
-               list( Team )[ Position.FIRST ],
-               game_type_id=NhlClient.REGULAR_SEASON_GAME_TYPE_ID + 1 ),
-         ]
-      },
-      20252026 ) == []
+   season_id = 20252026
+   games_played = 7
+   team = list( Team )[ Position.FIRST ]
+   playoff_type = NhlClient.REGULAR_SEASON_GAME_TYPE_ID + 1
+   landing = {
+      'seasonTotals': [
+         _row( season_id, games_played, team, game_type_id=playoff_type ),
+      ]
+   }
+
+   clubs = ClubGamesParser.parse( landing, season_id )
+
+   assert clubs == []
 
 
 def Test_Parse_TestOtherLeague_ExpectEmpty() -> None:
-   assert ClubGamesParser.parse(
-      {
-         'seasonTotals': [
-            _row(
-               20252026,
-               46,
-               list( Team )[ Position.FIRST ],
-               league=list( ClubLeague )[ Position.FIRST ].value ),
-         ]
-      },
-      20252026 ) == []
+   season_id = 20252026
+   games_played = 46
+   team = list( Team )[ Position.FIRST ]
+   league = list( ClubLeague )[ Position.FIRST ].value
+   landing = {
+      'seasonTotals': [
+         _row( season_id, games_played, team, league=league ),
+      ]
+   }
+
+   clubs = ClubGamesParser.parse( landing, season_id )
+
+   assert clubs == []
 
 
 def Test_Parse_TestOtherSeason_ExpectEmpty() -> None:
-   assert ClubGamesParser.parse(
-      {
-         'seasonTotals': [
-            _row( 20242025, 82, list( Team )[ Position.FIRST ] ),
-         ]
-      },
-      20252026 ) == []
+   season_id = 20252026
+   other_season_id = 20242025
+   games_played = 82
+   team = list( Team )[ Position.FIRST ]
+   landing = {
+      'seasonTotals': [
+         _row( other_season_id, games_played, team ),
+      ]
+   }
+
+   clubs = ClubGamesParser.parse( landing, season_id )
+
+   assert clubs == []

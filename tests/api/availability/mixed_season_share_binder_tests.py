@@ -50,25 +50,42 @@ def _other( games_played: int, season_id: int = 20252026 ) -> OtherLeagueSkaterS
 
 def Test_Bind_TestNhlOnly_ExpectShareUnchanged() -> None:
    share = 0.11
-   assert MixedSeasonShareBinder.bind( [ _nhl( share ) ], [] )[ Position.FIRST ].gp_share == (
-      share )
+   nhl = [ _nhl( share ) ]
+
+   bound = MixedSeasonShareBinder.bind( nhl, [] )
+
+   assert bound[ Position.FIRST ].gp_share == share
 
 
 def Test_Bind_TestOtherLeagueGames_ExpectFull() -> None:
    share = 0.11
-   bound = MixedSeasonShareBinder.bind( [ _nhl( share ) ], [ _other( 35 ) ] )
+   other_games = 35
+   nhl = [ _nhl( share ) ]
+   other = [ _other( other_games ) ]
+
+   bound = MixedSeasonShareBinder.bind( nhl, other )
+
    assert bound[ Position.FIRST ].gp_share == GamesShare.FULL
 
 
 def Test_Bind_TestZeroOtherGames_ExpectShareUnchanged() -> None:
    share = 0.11
-   bound = MixedSeasonShareBinder.bind( [ _nhl( share ) ], [ _other( 0 ) ] )
+   other_games = 0
+   nhl = [ _nhl( share ) ]
+   other = [ _other( other_games ) ]
+
+   bound = MixedSeasonShareBinder.bind( nhl, other )
+
    assert bound[ Position.FIRST ].gp_share == share
 
 
 def Test_Bind_TestOtherSeasonDifferentYear_ExpectUnrelatedUnchanged() -> None:
    share = 0.11
-   bound = MixedSeasonShareBinder.bind(
-      [ _nhl( share ) ],
-      [ _other( 35, 20242025 ) ] )
+   other_games = 35
+   other_season = 20242025
+   nhl = [ _nhl( share ) ]
+   other = [ _other( other_games, other_season ) ]
+
+   bound = MixedSeasonShareBinder.bind( nhl, other )
+
    assert bound[ Position.FIRST ].gp_share == share

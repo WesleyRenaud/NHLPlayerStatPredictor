@@ -31,9 +31,13 @@ def _forward( player_id: int, team: Team ) -> CurrentSeasonNhlSkater:
 def Test_Pad_TestSixDefense_ExpectSeventhPace() -> None:
    team = list( Team )[ Position.FIRST ]
    slots = [ SlotAverage( 7, 15.0, 2.5, 12.5 ) ]
-   padded = RosterPadder.pad(
-      [ _defense( index, team ) for index in range( 1, NhlLineupSelector.DEFENSE ) ],
-      slots )
+   regulars = [
+      _defense( index, team )
+      for index in range( 1, NhlLineupSelector.DEFENSE )
+   ]
+
+   padded = RosterPadder.pad( regulars, slots )
+
    seventh = next(
       skater
       for skater in padded
@@ -54,18 +58,25 @@ def Test_Pad_TestFullDefense_ExpectUnchanged() -> None:
       _defense( index, team )
       for index in range( 1, NhlLineupSelector.DEFENSE + 1 )
    ]
-   assert RosterPadder.pad(
+
+   padded = RosterPadder.pad(
       rows,
-      [ SlotAverage( 7, 15.0, 2.5, 12.5 ) ] ) == rows
+      [ SlotAverage( 7, 15.0, 2.5, 12.5 ) ] )
+
+   assert padded == rows
 
 
 def Test_Pad_TestTwelveForwards_ExpectThirteenthPace() -> None:
    team = list( Team )[ Position.FIRST ]
    group = DepthGroup.forwards()
    slots = [ SlotAverage( group.spare_slot, 11.0, 8.0, 10.0 ) ]
-   padded = RosterPadder.pad(
-      [ _forward( index, team ) for index in range( 1, group.roster_count ) ],
-      slots )
+   regulars = [
+      _forward( index, team )
+      for index in range( 1, group.roster_count )
+   ]
+
+   padded = RosterPadder.pad( regulars, slots )
+
    thirteenth = next(
       skater
       for skater in padded

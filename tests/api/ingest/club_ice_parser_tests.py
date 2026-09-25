@@ -41,73 +41,91 @@ def Test_Parse_TestSplitSeason_ExpectClubIce() -> None:
    second_games = 22
    first_toi = '14:19'
    second_toi = '12:13'
-   assert ClubIceParser.parse(
-      {
-         'seasonTotals': [
-            _row( season_id, first_games, first, first_toi ),
-            _row( season_id, second_games, second, second_toi ),
-         ]
-      },
-      season_id ) == [
-         ClubIce( first, first_games, Time.clock( first_toi ) ),
-         ClubIce( second, second_games, Time.clock( second_toi ) ),
+   landing = {
+      'seasonTotals': [
+         _row( season_id, first_games, first, first_toi ),
+         _row( season_id, second_games, second, second_toi ),
       ]
+   }
+
+   clubs = ClubIceParser.parse( landing, season_id )
+
+   assert clubs == [
+      ClubIce( first, first_games, Time.clock( first_toi ) ),
+      ClubIce( second, second_games, Time.clock( second_toi ) ),
+   ]
 
 
 def Test_Parse_TestPlayoffRow_ExpectEmpty() -> None:
-   assert ClubIceParser.parse(
-      {
-         'seasonTotals': [
-            _row(
-               20252026,
-               7,
-               list( Team )[ Position.FIRST ],
-               '12:00',
-               game_type_id=NhlClient.REGULAR_SEASON_GAME_TYPE_ID + 1 ),
-         ]
-      },
-      20252026 ) == []
+   season_id = 20252026
+   games_played = 7
+   team = list( Team )[ Position.FIRST ]
+   toi = '12:00'
+   playoff_type = NhlClient.REGULAR_SEASON_GAME_TYPE_ID + 1
+   landing = {
+      'seasonTotals': [
+         _row( season_id, games_played, team, toi, game_type_id=playoff_type ),
+      ]
+   }
+
+   clubs = ClubIceParser.parse( landing, season_id )
+
+   assert clubs == []
 
 
 def Test_Parse_TestOtherLeague_ExpectEmpty() -> None:
-   assert ClubIceParser.parse(
-      {
-         'seasonTotals': [
-            _row(
-               20252026,
-               46,
-               list( Team )[ Position.FIRST ],
-               '18:00',
-               league=list( ClubLeague )[ Position.FIRST ].value ),
-         ]
-      },
-      20252026 ) == []
+   season_id = 20252026
+   games_played = 46
+   team = list( Team )[ Position.FIRST ]
+   toi = '18:00'
+   league = list( ClubLeague )[ Position.FIRST ].value
+   landing = {
+      'seasonTotals': [
+         _row( season_id, games_played, team, toi, league=league ),
+      ]
+   }
+
+   clubs = ClubIceParser.parse( landing, season_id )
+
+   assert clubs == []
 
 
 def Test_Parse_TestOtherSeason_ExpectEmpty() -> None:
-   assert ClubIceParser.parse(
-      {
-         'seasonTotals': [
-            _row( 20242025, 82, list( Team )[ Position.FIRST ], '20:00' ),
-         ]
-      },
-      20252026 ) == []
+   season_id = 20252026
+   other_season_id = 20242025
+   games_played = 82
+   team = list( Team )[ Position.FIRST ]
+   toi = '20:00'
+   landing = {
+      'seasonTotals': [
+         _row( other_season_id, games_played, team, toi ),
+      ]
+   }
+
+   clubs = ClubIceParser.parse( landing, season_id )
+
+   assert clubs == []
 
 
 def Test_SeasonIds_TestTwoSeasons_ExpectNewestFirst() -> None:
    team = list( Team )[ Position.FIRST ]
    recent = 20252026
    older = 20242025
-   assert ClubIceParser.season_ids(
-      {
-         'seasonTotals': [
-            _row( older, 50, team, '16:00' ),
-            _row( recent, 2, team, '21:17' ),
-            _row(
-               recent,
-               46,
-               team,
-               '18:00',
-               league=list( ClubLeague )[ Position.FIRST ].value ),
-         ]
-      } ) == [ recent, older ]
+   recent_games = 2
+   older_games = 50
+   other_league_games = 46
+   recent_toi = '21:17'
+   older_toi = '16:00'
+   other_league_toi = '18:00'
+   league = list( ClubLeague )[ Position.FIRST ].value
+   landing = {
+      'seasonTotals': [
+         _row( older, older_games, team, older_toi ),
+         _row( recent, recent_games, team, recent_toi ),
+         _row( recent, other_league_games, team, other_league_toi, league=league ),
+      ]
+   }
+
+   season_ids = ClubIceParser.season_ids( landing )
+
+   assert season_ids == [ recent, older ]

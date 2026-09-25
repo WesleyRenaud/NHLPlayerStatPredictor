@@ -32,8 +32,12 @@ def Test_Write_TestFactors_ExpectReadable(
          [ TeamFactorSkater( 29, 88.0, SkaterGroup( 'F' ), GamesShare.FULL, False, None ) ] ),
    ]
    TeamFactorStore.write( factors )
-   assert TeamFactorStore.read() == factors
-   assert TeamFactorStore.path().read_text() == json.dumps(
+
+   loaded = TeamFactorStore.read()
+   written = TeamFactorStore.path().read_text()
+
+   assert loaded == factors
+   assert written == json.dumps(
       [ factor.to_dict() for factor in factors ],
       indent=2 )
    assert TeamFactorStore.path() == tmp_path / TeamFactorStore.FILE_NAME

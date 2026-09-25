@@ -4,8 +4,9 @@ from api.server.page_strings import PageStrings
 
 
 def Test_Values_TestMap_ExpectStringKeysAndValues() -> None:
-   assert isinstance( PageStrings.VALUES, dict )
+   values = PageStrings.VALUES
 
-   for key, value in PageStrings.VALUES.items():
-      assert isinstance( key, str )
-      assert isinstance( value, str )
+   assert isinstance( values, dict )
+   assert all(
+      isinstance( key, str ) and isinstance( value, str )
+      for key, value in values.items() )

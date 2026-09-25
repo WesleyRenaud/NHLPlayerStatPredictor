@@ -23,17 +23,26 @@ def _usage(
 def Test_Fit_TestTwoToi_ExpectDressMeansAndChosen() -> None:
    team = list( Team )[ Position.FIRST ]
    position = SkaterPosition( 'D' )
+   season_length = 82
+   high_toi = 24.0
+   high_games = 82
+   low_toi = 18.0
+   low_games = 41
+
    shares = IceChosenShareFitter.fit(
       dict( [
-         _usage( 1, 24.0, 82, team, position ),
-         _usage( 2, 18.0, 41, team, position ),
+         _usage( 1, high_toi, high_games, team, position ),
+         _usage( 2, low_toi, low_games, team, position ),
       ] ),
-      82,
+      season_length,
       DepthGroup.defense() )
-   assert [ share.toi for share in shares ] == [ 18.0, 24.0 ]
+
+   assert [ share.toi for share in shares ] == [ low_toi, high_toi ]
    assert shares[ Position.FIRST ].skater_group is SkaterGroup( 'D' )
-   assert abs( shares[ Position.FIRST ].dress_share - 41.0 / 82.0 ) < 0.001
-   assert abs( shares[ Position.FIRST ].chosen - 0.5 ) < 0.001
+   assert abs(
+      shares[ Position.FIRST ].dress_share - low_games / season_length ) < 0.001
+   assert abs(
+      shares[ Position.FIRST ].chosen - low_games / high_games ) < 0.001
    assert shares[ Position.LAST ].dress_share == GamesShare.FULL
    assert shares[ Position.LAST ].chosen == GamesShare.FULL
 
@@ -41,6 +50,7 @@ def Test_Fit_TestTwoToi_ExpectDressMeansAndChosen() -> None:
 def Test_Fit_TestHigherToiFewerGames_ExpectChosenCapped() -> None:
    team = list( Team )[ Position.FIRST ]
    position = SkaterPosition( 'D' )
+
    shares = IceChosenShareFitter.fit(
       dict( [
          _usage( 1, 24.0, 70, team, position ),
@@ -48,6 +58,7 @@ def Test_Fit_TestHigherToiFewerGames_ExpectChosenCapped() -> None:
       ] ),
       82,
       DepthGroup.defense() )
+
    assert shares[ Position.FIRST ].chosen == GamesShare.FULL
    assert shares[ Position.LAST ].chosen == GamesShare.FULL
 
@@ -55,31 +66,49 @@ def Test_Fit_TestHigherToiFewerGames_ExpectChosenCapped() -> None:
 def Test_Fit_TestShortSample_ExpectOmitted() -> None:
    team = list( Team )[ Position.FIRST ]
    position = SkaterPosition( 'D' )
+   season_length = 82
+   toi = 18.0
+   games = 80
+
    shares = IceChosenShareFitter.fit(
       dict( [
          _usage( 1, 21.0, UsableNhlIce.MIN_GAMES - 1, team, position ),
-         _usage( 2, 18.0, 80, team, position ),
+         _usage( 2, toi, games, team, position ),
       ] ),
-      82,
+      season_length,
       DepthGroup.defense() )
-   assert [ share.toi for share in shares ] == [ 18.0 ]
-   assert abs( shares[ Position.FIRST ].dress_share - 80.0 / 82.0 ) < 0.001
+
+   assert [ share.toi for share in shares ] == [ toi ]
+   assert abs(
+      shares[ Position.FIRST ].dress_share - games / season_length ) < 0.001
    assert shares[ Position.FIRST ].chosen == GamesShare.FULL
 
 
 def Test_Fit_TestNearbyToi_ExpectSameBin() -> None:
    team = list( Team )[ Position.FIRST ]
    position = SkaterPosition( 'D' )
+   season_length = 82
+   first_toi = 17.6
+   first_games = 82
+   second_toi = 17.8
+   second_games = 40
+
    shares = IceChosenShareFitter.fit(
       dict( [
-         _usage( 1, 17.6, 82, team, position ),
-         _usage( 2, 17.8, 40, team, position ),
+         _usage( 1, first_toi, first_games, team, position ),
+         _usage( 2, second_toi, second_games, team, position ),
       ] ),
-      82,
+      season_length,
       DepthGroup.defense() )
-   assert [ share.toi for share in shares ] == [ 18.0 ]
-   assert abs( shares[ Position.FIRST ].dress_share - 61.0 / 82.0 ) < 0.001
+
+   dress_share = (
+      first_games / season_length + second_games / season_length
+   ) / 2
+   assert [ share.toi for share in shares ] == [ float( round( first_toi ) ) ]
+   assert abs( shares[ Position.FIRST ].dress_share - dress_share ) < 0.001
 
 
 def Test_Fit_TestEmpty_ExpectEmpty() -> None:
-   assert IceChosenShareFitter.fit( {}, 82, DepthGroup.forwards() ) == []
+   shares = IceChosenShareFitter.fit( {}, 82, DepthGroup.forwards() )
+
+   assert shares == []

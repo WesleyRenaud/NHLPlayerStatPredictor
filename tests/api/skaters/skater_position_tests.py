@@ -4,10 +4,11 @@ from api.skaters.skater_position import SkaterPosition
 
 
 def Test_Members_TestValues_ExpectUniqueStrings() -> None:
-   values = [ member.value for member in SkaterPosition ]
+   members = list( SkaterPosition )
+
+   values = [ member.value for member in members ]
+
    assert values
    assert len( values ) == len( set( values ) )
-
-   for member in SkaterPosition:
-      assert isinstance( member.value, str )
-      assert SkaterPosition( member.value ) is member
+   assert all( isinstance( value, str ) for value in values )
+   assert [ SkaterPosition( value ) for value in values ] == members

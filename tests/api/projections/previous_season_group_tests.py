@@ -17,4 +17,8 @@ def Test_Skaters_TestNhlAndOther_ExpectCombined() -> None:
       SkaterPosition( 'C' ),
       list( Team )[ Position.FIRST ] )
    other = PreviousSeasonSkater( 2, 46, SeasonPace( 8.0, 12.0 ), SkaterPosition( 'C' ) )
-   assert PreviousSeasonGroup( [ nhl ], [ other ] ).skaters() == [ nhl, other ]
+   group = PreviousSeasonGroup( [ nhl ], [ other ] )
+
+   skaters = group.skaters()
+
+   assert skaters == [ nhl, other ]

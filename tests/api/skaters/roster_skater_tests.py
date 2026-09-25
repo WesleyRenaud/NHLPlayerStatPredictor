@@ -33,44 +33,48 @@ def _season( season_id: int, player_id: int ) -> NhlSkaterSeason:
 def Test_FromRow_TestStoredFields_ExpectValues() -> None:
    position = list( SkaterPosition )[ Position.FIRST ]
    team = list( Team )[ Position.FIRST ]
-   row = RosterSkater.from_row( {
-      'PLAYER_ID': 7,
-      'PLAYER_NAME': 'Stub Skater',
-      'POSITION': position.value,
-      'TEAM': team.value,
+   row = RosterSkater( 7, 'Stub Skater', position, team )
+
+   loaded = RosterSkater.from_row( {
+      'PLAYER_ID': row.player_id,
+      'PLAYER_NAME': row.player_name,
+      'POSITION': row.position.value,
+      'TEAM': row.team.value,
    } )
-   assert row == RosterSkater( 7, 'Stub Skater', position, team )
+
+   assert loaded == row
 
 
 def Test_WithLastPlayed_TestNhlSeasons_ExpectLatestPerPlayer() -> None:
    roster_id = 2
    other_id = 1
+   latest_season_id = 20242025
+   earlier_season_id = 20232024
    team = list( Team )[ Position.FIRST ]
-   roster = [
-      RosterSkater(
-         roster_id,
-         'A',
-         SkaterPosition( 'C' ),
-         team )
+   player_name = 'A'
+   position = SkaterPosition( 'C' )
+   roster = [ RosterSkater( roster_id, player_name, position, team ) ]
+   seasons = [
+      _season( earlier_season_id, other_id ),
+      _season( latest_season_id, roster_id ),
+      _season( earlier_season_id, roster_id ),
    ]
-   stamped = RosterSkater.with_last_played(
-      roster,
-      [
-         _season( 20232024, other_id ),
-         _season( 20242025, roster_id ),
-         _season( 20232024, roster_id ),
-      ] )
+
+   stamped = RosterSkater.with_last_played( roster, seasons )
+
    assert stamped == [
       RosterSkater(
          roster_id,
-         'A',
-         SkaterPosition( 'C' ),
+         player_name,
+         position,
          team,
-         last_played_season_id=20242025 )
+         last_played_season_id=latest_season_id )
    ]
 
 
 def Test_WithLastPlayed_TestNoNhl_ExpectNone() -> None:
+   other_id = 1
+   other_season_id = 20242025
    team = list( Team )[ Position.FIRST ]
    roster = [
       RosterSkater(
@@ -79,6 +83,8 @@ def Test_WithLastPlayed_TestNoNhl_ExpectNone() -> None:
          SkaterPosition( 'C' ),
          team )
    ]
-   assert RosterSkater.with_last_played(
-      roster,
-      [ _season( 20242025, 1 ) ] ) == roster
+   seasons = [ _season( other_season_id, other_id ) ]
+
+   stamped = RosterSkater.with_last_played( roster, seasons )
+
+   assert stamped == roster

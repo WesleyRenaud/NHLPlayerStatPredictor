@@ -13,14 +13,27 @@ test('Test_NormalizePlayers_TestArray_ExpectPlayers', () => {
       team: 'TM',
       firstSeason: '2018-19',
    };
-   assert.deepEqual(
-      PlayerNamesApiNormalizer.normalizePlayers([stubPlayer]),
-      [PlayerSearchSummary.normalize(stubPlayer)]
-   );
+   const players = [stubPlayer];
+
+   const normalized = PlayerNamesApiNormalizer.normalizePlayers(players);
+
+   assert.deepEqual(normalized, [PlayerSearchSummary.normalize(stubPlayer)]);
 });
 
 
 test('Test_NormalizePlayers_TestMissing_ExpectEmpty', () => {
-   assert.deepEqual(PlayerNamesApiNormalizer.normalizePlayers({}), []);
-   assert.deepEqual(PlayerNamesApiNormalizer.normalizePlayers(null), []);
+   const response = {};
+
+   const normalized = PlayerNamesApiNormalizer.normalizePlayers(response);
+
+   assert.deepEqual(normalized, []);
+});
+
+
+test('Test_NormalizePlayers_TestNull_ExpectEmpty', () => {
+   const response = null;
+
+   const normalized = PlayerNamesApiNormalizer.normalizePlayers(response);
+
+   assert.deepEqual(normalized, []);
 });

@@ -21,11 +21,14 @@ def Test_InsertRows_TestInsertedStatus_ExpectPersistedFlag( tmp_path: Path ) -> 
    finally:
       DatabaseConnectionProvider.close( conn )
 
-   assert stored[ Position.FIRST ]
+   assert stored[ Position.FIRST ] == row.is_active
 
 
 def Test_Read_TestInsertedRows_ExpectAll( tmp_path: Path ) -> None:
    db_path = str( tmp_path / 'skaters.sqlite' )
    row = PlayerStatus( player_id=7, is_active=False )
    PlayerStatusStore.insert_rows( [ row ], db_path=db_path )
-   assert PlayerStatusStore.read( db_path ) == [ row ]
+
+   loaded = PlayerStatusStore.read( db_path )
+
+   assert loaded == [ row ]

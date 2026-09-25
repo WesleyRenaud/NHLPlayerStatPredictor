@@ -19,15 +19,22 @@ def _skater( player_id: int, games: int, points: float ) -> PreviousSeasonSkater
 
 
 def Test_Average_TestEmpty_ExpectNone() -> None:
-   assert TeamQualityCalculator.average( [] ) is None
+   skaters: list[ PreviousSeasonSkater ] = []
+
+   quality = TeamQualityCalculator.average( skaters )
+
+   assert quality is None
 
 
 def Test_Average_TestMixedGames_ExpectGamesWeightedPoints() -> None:
    heavy = _skater( 1, 80, 100.0 )
    light = _skater( 2, 20, 20.0 )
-   assert TeamQualityCalculator.average( [ heavy, light ] ) == (
+
+   quality = TeamQualityCalculator.average( [ heavy, light ] )
+
+   assert quality == (
       ( heavy.contribution + light.contribution )
-      / ( 80 + 20 ) )
+      / ( heavy.games + light.games ) )
 
 
 def Test_Total_TestProjected_ExpectPaceSum() -> None:
@@ -42,8 +49,10 @@ def Test_Total_TestProjected_ExpectPaceSum() -> None:
       SeasonPace( 10.0, 10.0 ),
       team,
       SkaterPosition( 'C' ) )
-   assert TeamQualityCalculator.total( [ heavy, light ] ) == (
-      heavy.contribution + light.contribution )
+
+   total = TeamQualityCalculator.total( [ heavy, light ] )
+
+   assert total == heavy.contribution + light.contribution
 
 
 def Test_Total_TestMixedGames_ExpectGamesWeightedSum() -> None:
@@ -60,5 +69,7 @@ def Test_Total_TestMixedGames_ExpectGamesWeightedSum() -> None:
       SeasonPace( 10.0, 10.0 ),
       SkaterPosition( 'C' ),
       team )
-   assert TeamQualityCalculator.total( [ heavy, light ] ) == (
-      heavy.contribution + light.contribution )
+
+   total = TeamQualityCalculator.total( [ heavy, light ] )
+
+   assert total == heavy.contribution + light.contribution

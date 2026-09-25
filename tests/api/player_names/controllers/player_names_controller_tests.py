@@ -8,7 +8,6 @@ import api.player_names.controllers.player_names_controller as player_names_cont
 from api.player_names.controllers.player_names_controller import PlayerNamesController
 from api.player_names.player_name_summary import PlayerNameSummary
 from api.server.json_handler_mixin import JsonHandlerMixin
-from api.shared.enums.position import Position
 from api.skaters.skater_position import SkaterPosition
 from api.skaters.team import Team
 
@@ -44,16 +43,18 @@ def Test_GetPlayerNames_TestCoordinatorSummaries_ExpectJsonPayload(
       PlayerNameSummary(
          1,
          'Stub Alpha',
-         list( SkaterPosition )[ Position.FIRST ],
-         list( Team )[ Position.FIRST ],
+         SkaterPosition( 'C' ),
+         Team( 'MTL' ),
          20202021 ),
    ]
+   handler = _RecordingHandler()
    monkeypatch.setattr(
       player_names_controller.PlayerNamesCoordinator,
       'get_player_summaries',
       lambda: stub_summaries )
-   handler = _RecordingHandler()
+
    PlayerNamesController.get_player_names( handler )
+
    assert json.loads( handler.body.decode( 'utf-8' ) ) == [
       summary.to_dict() for summary in stub_summaries
    ]

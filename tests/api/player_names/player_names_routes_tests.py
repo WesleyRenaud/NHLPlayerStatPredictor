@@ -5,11 +5,12 @@ from api.player_names.player_names_routes import PlayerNamesRoutes
 
 
 def Test_Routes_TestEntries_ExpectCallableHandlers() -> None:
-   assert PlayerNamesRoutes.ROUTES
-   assert PlayerNamesRoutes.ROUTES[ PlayerNamesRoutes.GET_PLAYER_NAMES ] is (
-      PlayerNamesController.get_player_names )
+   get_player_names = PlayerNamesRoutes.GET_PLAYER_NAMES
+   handler = PlayerNamesController.get_player_names
 
-   for path, route in PlayerNamesRoutes.ROUTES.items():
-      assert isinstance( path, str )
-      assert path.startswith( '/' )
-      assert callable( route )
+   routes = PlayerNamesRoutes.ROUTES
+
+   assert routes[ get_player_names ] is handler
+   assert all(
+      isinstance( path, str ) and path.startswith( '/' ) and callable( route )
+      for path, route in routes.items() )

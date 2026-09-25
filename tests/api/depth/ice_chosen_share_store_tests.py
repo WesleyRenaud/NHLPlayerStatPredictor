@@ -18,10 +18,12 @@ def Test_Write_TestShares_ExpectReadable(
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
    shares = [ IceChosenShare( 18.0, SkaterGroup( 'D' ), 0.5, 0.56 ) ]
    IceChosenShareStore.write( shares )
-   assert IceChosenShareStore.read() == [
-      IceChosenShare.from_row( shares[ Position.FIRST ].to_dict() )
-   ]
-   assert IceChosenShareStore.path().read_text() == json.dumps(
+
+   loaded = IceChosenShareStore.read()
+   written = IceChosenShareStore.path().read_text()
+
+   assert loaded == shares
+   assert written == json.dumps(
       [ shares[ Position.FIRST ].to_dict() ],
       indent=2 )
 
@@ -30,4 +32,7 @@ def Test_Read_TestMissing_ExpectEmpty(
       monkeypatch: pytest.MonkeyPatch,
       tmp_path: Path ) -> None:
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
-   assert IceChosenShareStore.read() == []
+
+   shares = IceChosenShareStore.read()
+
+   assert shares == []

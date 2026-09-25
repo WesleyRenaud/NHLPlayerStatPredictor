@@ -16,8 +16,12 @@ def Test_Write_TestFactors_ExpectReadable(
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
    factors = [ AgingFactor( 24, -0.009, 0.002 ), AgingFactor( 28, -0.07, -0.044 ) ]
    AgingFactorStore.write( factors )
-   assert AgingFactorStore.read() == factors
-   assert AgingFactorStore.path().read_text() == json.dumps(
+
+   loaded = AgingFactorStore.read()
+   written = AgingFactorStore.path().read_text()
+
+   assert loaded == factors
+   assert written == json.dumps(
       [ factor.to_dict() for factor in factors ],
       indent=2 )
    assert AgingFactorStore.path() == tmp_path / AgingFactorStore.FILE_NAME

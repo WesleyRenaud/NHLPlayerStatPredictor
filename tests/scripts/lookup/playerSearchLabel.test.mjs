@@ -11,8 +11,10 @@ test('Test_Meta_TestPlayer_ExpectPositionTeamAndSeason', () => {
       team: 'TM',
       firstSeason: '2018-19',
    };
-   const meta = PlayerSearchLabel.meta(player);
    const career = PlayerSearchLabel.career(player);
+
+   const meta = PlayerSearchLabel.meta(player);
+
    assert.ok(meta.includes(player.position));
    assert.ok(meta.includes(player.team));
    assert.ok(meta.includes(career));
@@ -29,7 +31,9 @@ test('Test_Format_TestPlayer_ExpectNameAndMeta', () => {
       team: 'TM',
       firstSeason: '2018-19',
    };
+
    const label = PlayerSearchLabel.format(player);
+
    assert.ok(label.includes(player.playerName));
    assert.ok(label.includes(PlayerSearchLabel.meta(player)));
 });

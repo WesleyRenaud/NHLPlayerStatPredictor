@@ -27,34 +27,41 @@ afterEach(() => {
 
 test('Test_PostJson_TestValidPayload_ExpectParsedResponse', async () => {
    const payload = { names: [ 'Stub Alpha' ] };
-   globalThis.fetch = async (url, options) => {
-      assert.equal(url, ApiRoutes.GET_PLAYER_NAMES);
-      assert.equal(options.method, 'POST');
+   const url = ApiRoutes.GET_PLAYER_NAMES;
+   const method = 'POST';
+   let captured;
+   globalThis.fetch = async (requestedUrl, options) => {
+      captured = { url: requestedUrl, options };
       return _mockResponse({
          text: JSON.stringify(payload),
       });
    };
 
-   assert.deepEqual(await ApiClient.postJson(ApiRoutes.GET_PLAYER_NAMES), payload);
+   const parsed = await ApiClient.postJson(url);
+
+   assert.equal(captured.url, url);
+   assert.equal(captured.options.method, method);
+   assert.deepEqual(parsed, payload);
 });
 
 
 test('Test_PostJson_TestHttpError_ExpectApiClientError', async () => {
+   const status = 500;
+   const statusText = 'Internal Server Error';
+   const url = '/stub';
+   const errorName = 'ApiClientError';
    globalThis.fetch = async () => _mockResponse({
       ok: false,
-      status: 500,
-      statusText: 'Internal Server Error',
+      status,
+      statusText,
       text: '{"error":"Stub failure"}',
    });
 
-   await assert.rejects(
-      async () => {
-         await ApiClient.postJson('/stub');
-      },
-      error => {
-         assert.equal(error.name, 'ApiClientError');
-         assert.equal(error.status, 500);
-         return true;
-      }
-   );
+   const rejected = ApiClient.postJson(url);
+
+   await assert.rejects(rejected, error => {
+      assert.equal(error.name, errorName);
+      assert.equal(error.status, status);
+      return true;
+   });
 });

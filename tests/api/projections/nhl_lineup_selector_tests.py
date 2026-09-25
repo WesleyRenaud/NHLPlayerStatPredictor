@@ -50,7 +50,10 @@ def Test_Select_TestExcessDepth_ExpectTopForwardsAndDefense() -> None:
          position=SkaterPosition( 'D' ) )
       for player_id in range( 101, 101 + NhlLineupSelector.DEFENSE + 1 )
    ]
-   assert NhlLineupSelector.select( [ *forwards, *defense ] ) == [
+
+   lineups = NhlLineupSelector.select( [ *forwards, *defense ] )
+
+   assert lineups == [
       TeamLineup(
          team,
          [
@@ -72,8 +75,10 @@ def Test_Select_TestWings_ExpectForwardSlots() -> None:
       5.0,
       position=SkaterPosition( 'L' ) )
    defense = _pace( 50, team, 40.0, position=SkaterPosition( 'D' ) )
-   assert NhlLineupSelector.select(
-      [ *centers, wing, defense ] ) == [ TeamLineup( team, [ *centers, defense ] ) ]
+
+   lineups = NhlLineupSelector.select( [ *centers, wing, defense ] )
+
+   assert lineups == [ TeamLineup( team, [ *centers, defense ] ) ]
 
 
 def Test_Select_TestTeams_ExpectIsolatedCuts() -> None:
@@ -87,20 +92,25 @@ def Test_Select_TestTeams_ExpectIsolatedCuts() -> None:
       _pace( player_id, previous, 50.0 - player_id )
       for player_id in range( 21, 21 + NhlLineupSelector.FORWARDS + 1 )
    ]
-   assert NhlLineupSelector.select(
-      [ *now_forwards, *previous_forwards ] ) == [
-         TeamLineup( now, now_forwards[ :NhlLineupSelector.FORWARDS ] ),
-         TeamLineup(
-            previous,
-            previous_forwards[ :NhlLineupSelector.FORWARDS ] ),
-      ]
+
+   lineups = NhlLineupSelector.select( [ *now_forwards, *previous_forwards ] )
+
+   assert lineups == [
+      TeamLineup( now, now_forwards[ :NhlLineupSelector.FORWARDS ] ),
+      TeamLineup(
+         previous,
+         previous_forwards[ :NhlLineupSelector.FORWARDS ] ),
+   ]
 
 
 def Test_Select_TestSweaterPoints_ExpectGamesWeightedRank() -> None:
    team = list( Team )[ Position.FIRST ]
    injured = _split( 1, team, 80.0, 10 )
    regular = _split( 2, team, 20.0, 82 )
-   assert NhlLineupSelector.select( [ injured, regular ] ) == [
+
+   lineups = NhlLineupSelector.select( [ injured, regular ] )
+
+   assert lineups == [
       TeamLineup( team, [ regular, injured ] ),
    ]
 
@@ -112,7 +122,10 @@ def Test_Forwards_TestExcess_ExpectDressedForwardsOnly() -> None:
       for player_id in range( 1, NhlLineupSelector.DRESSED_FORWARDS + 2 )
    ]
    defense = _pace( 50, team, 40.0, position=SkaterPosition( 'D' ) )
-   assert NhlLineupSelector.forwards( [ *forwards, defense ] ) == [
+
+   lineups = NhlLineupSelector.forwards( [ *forwards, defense ] )
+
+   assert lineups == [
       TeamLineup(
          team,
          forwards[ :NhlLineupSelector.DRESSED_FORWARDS ] ),

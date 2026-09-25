@@ -8,5 +8,8 @@ from api.skaters.skater_position import SkaterPosition
 def Test_Contribution_TestGames_ExpectGamesTimesPace() -> None:
    pace = SeasonPace( 10.0, 20.0 )
    games = 82
-   assert PreviousSeasonSkater( 1, games, pace, SkaterPosition( 'C' ) ).contribution == (
-      games * ( pace.goals + pace.assists ) )
+   skater = PreviousSeasonSkater( 1, games, pace, SkaterPosition( 'C' ) )
+
+   contribution = skater.contribution
+
+   assert contribution == games * ( pace.goals + pace.assists )

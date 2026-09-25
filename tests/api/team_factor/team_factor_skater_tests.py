@@ -15,4 +15,7 @@ def Test_ToDict_TestSkater_ExpectPlayerIdAndContribution() -> None:
 
 def Test_FromRow_TestDict_ExpectSkater() -> None:
    skater = TeamFactorSkater( 29, 88.0, SkaterGroup( 'F' ), GamesShare.FULL, False, None )
-   assert TeamFactorSkater.from_row( skater.to_dict() ) == skater
+
+   loaded = TeamFactorSkater.from_row( skater.to_dict() )
+
+   assert loaded == skater

@@ -77,36 +77,37 @@ def Test_Record_TestRosterAndUsage_ExpectStoredChart(
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
    _write_slots()
    team = list( Team )[ Position.FIRST ]
+   left = RosterSkater( 1, 'Left', SkaterPosition( 'D' ), team )
+   right = RosterSkater( 2, 'Right', SkaterPosition( 'D' ), team )
+   center = RosterSkater( 3, 'Center', SkaterPosition( 'C' ), team )
    _stub_usable(
       monkeypatch,
       {
-         1: _ice( 24.0, team ),
-         2: _ice( 22.0, team ),
-         3: _ice( 20.0, team ),
+         left.player_id: _ice( 24.0, team ),
+         right.player_id: _ice( 22.0, team ),
+         center.player_id: _ice( 20.0, team ),
       } )
    monkeypatch.setattr(
       RosterSkaterIngester,
       'build_rows',
-      lambda force=False: [
-         RosterSkater( 1, 'Left', SkaterPosition( 'D' ), team ),
-         RosterSkater( 2, 'Right', SkaterPosition( 'D' ), team ),
-         RosterSkater( 3, 'Center', SkaterPosition( 'C' ), team ),
-      ] )
+      lambda force=False: [ left, right, center ] )
    monkeypatch.setattr(
       DepthChartRecorder,
       '_availabilities',
-      lambda roster: { row.player_id: 1.0 for row in roster } )
+      lambda roster: { row.player_id: GamesShare.FULL for row in roster } )
    monkeypatch.setattr(
       'api.depth.depth_chart_recorder.PlayerStatusStore.read',
       lambda db_path: [] )
    monkeypatch.setattr(
       'api.depth.depth_chart_recorder.NhlClient.seasons',
       lambda force=False: _seasons() )
+
    charts = DepthChartRecorder.record( Position.SECOND, {} )
+
    defense = next(
       chart
       for chart in charts
-      if chart.skater_group is SkaterGroup.DEFENSE )
+      if chart.skater_group is SkaterGroup( 'D' ) )
    assert len( charts ) == 2
    assert defense.team == team
    assert len( defense.regulars ) == 2
@@ -137,14 +138,16 @@ def Test_Record_TestForwardAndDefense_ExpectBothCharts(
    monkeypatch.setattr(
       DepthChartRecorder,
       '_availabilities',
-      lambda roster: { row.player_id: 1.0 for row in roster } )
+      lambda roster: { row.player_id: GamesShare.FULL for row in roster } )
    monkeypatch.setattr(
       'api.depth.depth_chart_recorder.PlayerStatusStore.read',
       lambda db_path: [] )
+
    charts = DepthChartRecorder.record( Position.SECOND, {} )
+
    assert len( charts ) == 2
-   assert charts[ Position.FIRST ].skater_group is SkaterGroup.FORWARD
-   assert charts[ Position.SECOND ].skater_group is SkaterGroup.DEFENSE
+   assert charts[ Position.FIRST ].skater_group is SkaterGroup( 'F' )
+   assert charts[ Position.SECOND ].skater_group is SkaterGroup( 'D' )
 
 
 def Test_Availabilities_TestNhlGames_ExpectShare(
@@ -182,7 +185,10 @@ def Test_Availabilities_TestNhlGames_ExpectShare(
       lambda: [ RecencyWeight( 0, 1.0 ) ] )
    monkeypatch.setattr( RecencyTargetResolver, 'resolve', lambda: 20262027 )
    roster = [ RosterSkater( 1, 'Stub', SkaterPosition( 'D' ), team ) ]
-   assert DepthChartRecorder._availabilities( roster )[ 1 ] == share
+
+   availability = DepthChartRecorder._availabilities( roster )[ 1 ]
+
+   assert availability == share
 
 
 def Test_Availabilities_TestMixedYear_ExpectFull(
@@ -232,7 +238,10 @@ def Test_Availabilities_TestMixedYear_ExpectFull(
       lambda: [ RecencyWeight( 0, 1.0 ) ] )
    monkeypatch.setattr( RecencyTargetResolver, 'resolve', lambda: 20262027 )
    roster = [ RosterSkater( 1, 'Stub', SkaterPosition( 'C' ), team ) ]
-   assert DepthChartRecorder._availabilities( roster )[ 1 ] == GamesShare.FULL
+
+   availability = DepthChartRecorder._availabilities( roster )[ 1 ]
+
+   assert availability == GamesShare.FULL
 
 
 def Test_Record_TestInactiveUsage_ExpectOmitted(
@@ -242,6 +251,7 @@ def Test_Record_TestInactiveUsage_ExpectOmitted(
    _write_slots()
    team = list( Team )[ Position.FIRST ]
    retired_id = 4
+   first_id = 1
    _stub_usable(
       monkeypatch,
       {
@@ -260,31 +270,38 @@ def Test_Record_TestInactiveUsage_ExpectOmitted(
    monkeypatch.setattr(
       DepthChartRecorder,
       '_availabilities',
-      lambda roster: { row.player_id: 1.0 for row in roster } )
+      lambda roster: { row.player_id: GamesShare.FULL for row in roster } )
    monkeypatch.setattr(
       'api.depth.depth_chart_recorder.PlayerStatusStore.read',
       lambda db_path: [ PlayerStatus( retired_id, False ) ] )
+
    charts = DepthChartRecorder.record( Position.SECOND, {} )
+
    defense = next(
       chart
       for chart in charts
-      if chart.skater_group is SkaterGroup.DEFENSE )
+      if chart.skater_group is SkaterGroup( 'D' ) )
    ids = [
       skater.player_id
       for skater, _toi in defense.regulars
    ] + [ skater.player_id for skater in defense.extras ]
    assert retired_id not in ids
-   assert defense.regulars[ Position.FIRST ][ Position.FIRST ].player_id == 1
+   assert defense.regulars[ Position.FIRST ][ Position.FIRST ].player_id == first_id
 
 
 def Test_TeamRates_TestPriorSeason_ExpectPriorRates(
       monkeypatch: pytest.MonkeyPatch ) -> None:
    team = list( Team )[ Position.FIRST ]
+   prior_rate = 0.8
+   current_rate = 1.2
    monkeypatch.setattr( RecencyTargetResolver, 'prior', lambda: 20242025 )
    monkeypatch.setattr(
       'api.depth.depth_chart_recorder.TeamFactorStore.read',
       lambda: [
-         TeamFactor( 20242025, team, 0.8 ),
-         TeamFactor( 20252026, team, 1.2 ),
+         TeamFactor( 20242025, team, prior_rate ),
+         TeamFactor( 20252026, team, current_rate ),
       ] )
-   assert DepthChartRecorder._team_rates() == { team: 0.8 }
+
+   rates = DepthChartRecorder._team_rates()
+
+   assert rates == { team: prior_rate }

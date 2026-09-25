@@ -16,7 +16,9 @@ test('Test_Bind_TestPlayer_ExpectValueAndPlayer', () => {
       value: '',
       dataset: {},
    };
+
    PlayerNameBinder.bind(inputEl, player);
+
    assert.equal(inputEl.value, player.playerName);
    assert.equal(PlayerNameBinder.playerId(inputEl), String(player.playerId));
    assert.equal(PlayerNameBinder.player(inputEl), player);
@@ -29,22 +31,28 @@ test('Test_Clear_TestDataset_ExpectRemoved', () => {
       playerName: 'Stub Alpha',
    };
    const inputEl = {
-      value: 'Stub Alpha',
+      value: player.playerName,
       dataset: {
-         playerId: '7',
+         playerId: String(player.playerId),
       },
    };
    PlayerNameBinder.bind(inputEl, player);
+
    PlayerNameBinder.clear(inputEl);
+
    assert.equal(PlayerNameBinder.playerId(inputEl), undefined);
    assert.equal(PlayerNameBinder.player(inputEl), undefined);
 });
 
 
 test('Test_Player_TestUnbound_ExpectUndefined', () => {
+   const playerName = 'Stub Alpha';
    const inputEl = {
-      value: 'Stub Alpha',
+      value: playerName,
       dataset: {},
    };
-   assert.equal(PlayerNameBinder.player(inputEl), undefined);
+
+   const player = PlayerNameBinder.player(inputEl);
+
+   assert.equal(player, undefined);
 });

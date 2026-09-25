@@ -24,7 +24,7 @@ def _season( age: float, season_id: int = 20232024 ) -> NhlSkaterSeason:
       player_id=1,
       season_id=season_id,
       player_name='Stub Skater',
-      position=list( SkaterPosition )[ Position.FIRST ],
+      position=SkaterPosition( 'C' ),
       birth_date=date( 1997, 1, 13 ),
       age=age,
       team=list( Team )[ Position.FIRST ],
@@ -71,12 +71,14 @@ def Test_Resolve_TestSeasons_ExpectAgedPace(
       lambda recency_pace, completed_age, aging_factors, player_seasons: adjusted.append(
          ( recency_pace, completed_age, aging_factors, player_seasons ) ) or aged )
 
-   assert BaselinePaceResolver.resolve(
+   resolved = BaselinePaceResolver.resolve(
       Skater( seasons ),
       weights,
       target_season_id,
       league_factors,
-      factors ) == aged
+      factors )
+
+   assert resolved == aged
    assert averaged == [
       ( seasons, weights, target_season_id, league_factors )
    ]
@@ -123,12 +125,14 @@ def Test_Resolve_TestOtherLeagueOnly_ExpectOtherLeagueAge(
       lambda recency_pace, completed_age, aging_factors, player_seasons: adjusted.append(
          ( recency_pace, completed_age, aging_factors, player_seasons ) ) or aged )
 
-   assert BaselinePaceResolver.resolve(
+   resolved = BaselinePaceResolver.resolve(
       Skater( seasons ),
       weights,
       target_season_id,
       [],
-      factors ) == aged
+      factors )
+
+   assert resolved == aged
    assert adjusted == [
       ( pace, int( other_age ), factors, [] )
    ]
@@ -146,8 +150,12 @@ def Test_Resolve_TestMissingPace_ExpectNone(
       'adjust',
       lambda recency_pace, completed_age, aging_factors, player_seasons: adjusted.append(
          recency_pace ) )
+   skater = Skater( [] )
+   target_season_id = 20262027
 
-   assert BaselinePaceResolver.resolve( Skater( [] ), [], 20262027, [], [] ) is None
+   resolved = BaselinePaceResolver.resolve( skater, [], target_season_id, [], [] )
+
+   assert resolved is None
    assert adjusted == []
 
 
@@ -169,6 +177,7 @@ def Test_Resolve_TestMixed_ExpectLastNhlAge(
    seasons = [ *nhl, other ]
    weights = [ RecencyWeight( 0, 1.0 ) ]
    factors = [ AgingFactor( 19, 0.12, 0.09 ) ]
+   target_season_id = 20262027
    pace = SeasonPace( 31.4, 42.1 )
    aged = SeasonPace( 10.4, 20.6 )
    adjusted: list[ tuple[
@@ -186,12 +195,15 @@ def Test_Resolve_TestMixed_ExpectLastNhlAge(
       'adjust',
       lambda recency_pace, completed_age, aging_factors, player_seasons: adjusted.append(
          ( recency_pace, completed_age, aging_factors, player_seasons ) ) or aged )
-   assert BaselinePaceResolver.resolve(
+
+   resolved = BaselinePaceResolver.resolve(
       Skater( seasons ),
       weights,
-      20262027,
+      target_season_id,
       [],
-      factors ) == aged
+      factors )
+
+   assert resolved == aged
    assert adjusted == [
       ( pace, nhl[ Position.LAST ].completed_age(), factors, nhl )
    ]

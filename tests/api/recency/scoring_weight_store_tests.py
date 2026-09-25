@@ -16,8 +16,12 @@ def Test_Write_TestWeights_ExpectReadable(
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
    weights = [ RecencyWeight( 0, 0.75 ), RecencyWeight( 1, 0.25 ) ]
    ScoringWeightStore.write( weights )
-   assert ScoringWeightStore.read() == weights
-   assert ScoringWeightStore.path().read_text() == json.dumps(
+
+   loaded = ScoringWeightStore.read()
+   written = ScoringWeightStore.path().read_text()
+
+   assert loaded == weights
+   assert written == json.dumps(
       [ weight.to_dict() for weight in weights ],
       indent=2 )
    assert ScoringWeightStore.path() == tmp_path / ScoringWeightStore.FILE_NAME

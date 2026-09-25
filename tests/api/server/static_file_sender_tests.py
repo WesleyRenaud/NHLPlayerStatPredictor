@@ -40,20 +40,27 @@ class _RecordingHandler():
 def Test_Send_TestExistingFile_ExpectOk(
       tmp_path: Path,
       monkeypatch: pytest.MonkeyPatch ) -> None:
+   heading = 'Stub Heading'
+   token = '{{ page.heading }}'
+   filepath = tmp_path / 'page.html'
+   filepath.write_text( f'<h1>{ token }</h1>', encoding='utf-8' )
+   handler = _RecordingHandler()
    monkeypatch.setattr(
       PageStrings,
       'VALUES',
-      { 'page.heading': 'Stub Heading' } )
-   filepath = tmp_path / 'page.html'
-   filepath.write_text( '<h1>{{ page.heading }}</h1>', encoding='utf-8' )
-   handler = _RecordingHandler()
+      { 'page.heading': heading } )
+
    StaticFileSender.send( handler, filepath )
+
    assert handler.status == 200
-   assert b'Stub Heading' in handler.body
-   assert b'{{ page.heading }}' not in handler.body
+   assert heading.encode() in handler.body
+   assert token.encode() not in handler.body
 
 
 def Test_Send_TestMissingFile_ExpectNotFound( tmp_path: Path ) -> None:
    handler = _RecordingHandler()
-   StaticFileSender.send( handler, tmp_path / 'missing.css' )
+   missing = tmp_path / 'missing.css'
+
+   StaticFileSender.send( handler, missing )
+
    assert handler.status == 404

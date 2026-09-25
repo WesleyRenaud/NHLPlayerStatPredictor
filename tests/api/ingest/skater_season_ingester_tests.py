@@ -44,7 +44,7 @@ def _season(
       player_id=player_id,
       season_id=season_id,
       player_name='Stub Skater',
-      position=list( SkaterPosition )[ Position.FIRST ],
+      position=SkaterPosition( 'C' ),
       birth_date=date( 1997, 1, 13 ),
       age=28.7,
       team=list( Team )[ Position.FIRST ],
@@ -82,8 +82,57 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
                20.0 + lag * 8.0 + offset * 3.0,
                share,
                lag + 1 ) )
+
+   season_player_id = 1
+   roster_player_id = 2
+   position = SkaterPosition( 'C' )
+   team = list( Team )[ Position.FIRST ]
+   previous_rate = 0.87
+   default_rate = 1.0
+   pace_games = 84
+   previous_season_id = 20212022
+   current_season = 20222023
    db_path = tmp_path / 'skaters.sqlite'
    inserted: list[ tuple[ list[ NhlSkaterSeason ], str ] ] = []
+   landing = {
+      'playerId': season_player_id,
+      'position': position.value,
+      'isActive': True,
+   }
+   roster_landing = {
+      'playerId': roster_player_id,
+      'position': position.value,
+      'isActive': True,
+   }
+   statuses: list[ tuple[ list[ object ], str ] ] = []
+   fetched: list[ list[ int ] ] = []
+   roster_rows = [
+      RosterSkater(
+         player_id=roster_player_id,
+         player_name='Roster Rookie',
+         position=position,
+         team=team )
+   ]
+   roster_inserted: list[ tuple[ list[ RosterSkater ], str ] ] = []
+   other_rows = []
+   roster_paces = [
+      CurrentSeasonNhlSkater(
+         roster_player_id,
+         SeasonPace( 10.0, 20.0 ),
+         team,
+         position )
+   ]
+   built: list[ tuple[
+      list[ RosterSkater ],
+      list[ NhlSkaterSeason ],
+      list[ RecencyWeight ],
+      int,
+      list[ LeagueFactor ],
+      list[ AgingFactor ] ] ] = []
+   fitted: list[ bool ] = []
+   previous_rates: list[ dict ] = []
+   previous_seasons: list[ int ] = []
+   recorded: list[ bool ] = []
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
    monkeypatch.setattr(
@@ -94,22 +143,6 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       skater_season_ingester.SkaterSeasonStore,
       'insert_rows',
       lambda written, path: inserted.append( ( written, path ) ) )
-   landing = { 'playerId': 1, 'position': SkaterPosition( 'C' ).value, 'isActive': True }
-   roster_landing = {
-      'playerId': 2,
-      'position': SkaterPosition( 'C' ).value,
-      'isActive': True,
-   }
-   statuses: list[ tuple[ list[ object ], str ] ] = []
-   fetched: list[ list[ int ] ] = []
-   roster_rows = [
-      RosterSkater(
-         player_id=2,
-         player_name='Roster Rookie',
-         position=list( SkaterPosition )[ Position.FIRST ],
-         team=list( Team )[ Position.FIRST ] )
-   ]
-   roster_inserted: list[ tuple[ list[ RosterSkater ], str ] ] = []
    monkeypatch.setattr(
       skater_season_ingester.RosterSkaterIngester,
       'build_rows',
@@ -123,8 +156,7 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       'fetch',
       lambda player_ids, force=False: (
          fetched.append( player_ids )
-         or { 1: landing, 2: roster_landing } ) )
-   other_rows = []
+         or { season_player_id: landing, roster_player_id: roster_landing } ) )
    monkeypatch.setattr(
       skater_season_ingester.OtherLeagueSeasonIngester,
       'build_rows',
@@ -144,9 +176,7 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    monkeypatch.setattr(
       skater_season_ingester.Season,
       'pace_games',
-      lambda seasons: 84 )
-   previous_season_id = 20212022
-   current_season = 20222023
+      lambda seasons: pace_games )
    monkeypatch.setattr(
       skater_season_ingester.Season,
       'prior',
@@ -155,7 +185,6 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
          82,
          date( 2021, 10, 12 ),
          date( 2022, 4, 29 ) ) )
-   team = list( Team )[ Position.FIRST ]
    roster_rows = RosterSkater.with_last_played( roster_rows, rows )
    last_played_ids = sorted( {
       previous_season_id,
@@ -167,27 +196,10 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       TeamFactor(
          season_id,
          team,
-         0.87 if season_id == previous_season_id else 1.0,
+         previous_rate if season_id == previous_season_id else default_rate,
          [] )
       for season_id in last_played_ids
    ]
-   roster_paces = [
-      CurrentSeasonNhlSkater(
-         2,
-         SeasonPace( 10.0, 20.0 ),
-         list( Team )[ Position.FIRST ],
-         list( SkaterPosition )[ Position.FIRST ] )
-   ]
-   built: list[ tuple[
-      list[ RosterSkater ],
-      list[ NhlSkaterSeason ],
-      list[ RecencyWeight ],
-      int,
-      list[ LeagueFactor ],
-      list[ AgingFactor ] ] ] = []
-   fitted: list[ bool ] = []
-   previous_rates: list[ dict ] = []
-   previous_seasons: list[ int ] = []
    monkeypatch.setattr(
       skater_season_ingester.RecencyTargetResolver,
       'prior',
@@ -216,7 +228,6 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       'current',
       lambda season, paces, slots, charts, ice: (
          fitted.append( True ) or [] ) )
-   recorded: list[ bool ] = []
    monkeypatch.setattr(
       skater_season_ingester.DepthChartRecorder,
       'record',
@@ -236,39 +247,46 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       skater_season_ingester.SkaterIceStore,
       'write',
       lambda rows: None )
+
    SkaterSeasonIngester.main()
+   stored_weights = ScoringWeightStore.read()
+   stored_availability = AvailabilityWeightStore.read()
+   stored_aging = AgingFactorStore.read()
+   stored_leagues = LeagueFactorStore.read()
+   stored_teams = TeamFactorStore.read()
+   stored_ice_shares = IceChosenShareStore.read()
+
    assert inserted == [ ( rows, str( db_path ) ) ]
    assert roster_inserted == [ ( roster_rows, str( db_path ) ) ]
-   assert fetched == [ list( range( 1, AvailabilityDecayFitter.WINDOW + 1 ) ) ]
+   assert fetched == [ list( range( season_player_id, AvailabilityDecayFitter.WINDOW + 1 ) ) ]
    assert statuses == [
-      ( [ PlayerStatus( 1, True ), PlayerStatus( 2, True ) ], str( db_path ) )
+      (
+         [
+            PlayerStatus( season_player_id, True ),
+            PlayerStatus( roster_player_id, True ),
+         ],
+         str( db_path ) )
    ]
-   weights = RecencyDecayFitter.fit( rows )
-   assert ScoringWeightStore.read() == weights
-   availability_weights = AvailabilityDecayFitter.fit(
+   assert stored_weights == RecencyDecayFitter.fit( rows )
+   assert stored_availability == AvailabilityDecayFitter.fit(
       MixedSeasonShareBinder.bind( rows, other_rows ) )
-   assert AvailabilityWeightStore.read() == availability_weights
-   aging_factors = AgingCurveFitter.fit( rows, other_rows )
-   assert AgingFactorStore.read() == aging_factors
-   league_factors = LeagueFactorFitter.fit(
+   assert stored_aging == AgingCurveFitter.fit( rows, other_rows )
+   assert stored_leagues == LeagueFactorFitter.fit(
       rows,
       other_rows,
-      aging_factors )
-   assert LeagueFactorStore.read() == league_factors
-   assert TeamFactorStore.read() == sorted(
-      team_factors,
-      key=lambda factor: ( factor.season, factor.team.value ) )
+      stored_aging )
+   assert stored_teams == team_factors
    assert previous_seasons == last_played_ids
    assert built == [
       (
          roster_rows,
          rows,
-         weights,
+         stored_weights,
          current_season,
-         league_factors,
-         aging_factors )
+         stored_leagues,
+         stored_aging )
    ]
    assert fitted == [ True ]
    assert recorded == [ False ]
-   assert previous_rates == [ { team: 0.87 } ]
-   assert IceChosenShareStore.read() == []
+   assert previous_rates == [ { team: previous_rate } ]
+   assert stored_ice_shares == []

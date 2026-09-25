@@ -20,6 +20,10 @@ from api.shared.enums.position import Position
 from api.team_factor.team_factor_store import TeamFactorStore
 
 
+_SQLITE_BYTES = b'sqlite'
+_EMPTY_JSON = '[]'
+
+
 def _bind_paths( monkeypatch: pytest.MonkeyPatch, root: Path ) -> None:
    paths = ingest_artifact_puller.Paths
    data_name = paths.DATA_DIR.name
@@ -42,45 +46,45 @@ def _write_artifact( root: Path ) -> None:
    raw_path = root / ingest_artifact_puller.Paths.RAW_DIR.relative_to(
       ingest_artifact_puller.Paths.ROOT )
    db_path.parent.mkdir( parents=True, exist_ok=True )
-   db_path.write_bytes( b'sqlite' )
+   db_path.write_bytes( _SQLITE_BYTES )
    raw_path.mkdir( parents=True, exist_ok=True )
-   ( raw_path / 'seasons.json' ).write_text( '[]' )
+   ( raw_path / 'seasons.json' ).write_text( _EMPTY_JSON )
    weights_path = root / ScoringWeightStore.path().relative_to(
       ingest_artifact_puller.Paths.ROOT )
    weights_path.parent.mkdir( parents=True, exist_ok=True )
-   weights_path.write_text( '[]' )
+   weights_path.write_text( _EMPTY_JSON )
    availability_path = root / AvailabilityWeightStore.path().relative_to(
       ingest_artifact_puller.Paths.ROOT )
    availability_path.parent.mkdir( parents=True, exist_ok=True )
-   availability_path.write_text( '[]' )
+   availability_path.write_text( _EMPTY_JSON )
    aging_path = root / AgingFactorStore.path().relative_to(
       ingest_artifact_puller.Paths.ROOT )
    aging_path.parent.mkdir( parents=True, exist_ok=True )
-   aging_path.write_text( '[]' )
+   aging_path.write_text( _EMPTY_JSON )
    leagues_path = root / LeagueFactorStore.path().relative_to(
       ingest_artifact_puller.Paths.ROOT )
    leagues_path.parent.mkdir( parents=True, exist_ok=True )
-   leagues_path.write_text( '[]' )
+   leagues_path.write_text( _EMPTY_JSON )
    teams_path = root / TeamFactorStore.path().relative_to(
       ingest_artifact_puller.Paths.ROOT )
    teams_path.parent.mkdir( parents=True, exist_ok=True )
-   teams_path.write_text( '[]' )
+   teams_path.write_text( _EMPTY_JSON )
    charts_path = root / DepthChartStore.path().relative_to(
       ingest_artifact_puller.Paths.ROOT )
    charts_path.parent.mkdir( parents=True, exist_ok=True )
-   charts_path.write_text( '[]' )
+   charts_path.write_text( _EMPTY_JSON )
    slots_path = root / SlotAverageStore.path().relative_to(
       ingest_artifact_puller.Paths.ROOT )
    slots_path.parent.mkdir( parents=True, exist_ok=True )
-   slots_path.write_text( '[]' )
+   slots_path.write_text( _EMPTY_JSON )
    ice_path = root / SkaterIceStore.path().relative_to(
       ingest_artifact_puller.Paths.ROOT )
    ice_path.parent.mkdir( parents=True, exist_ok=True )
-   ice_path.write_text( '[]' )
+   ice_path.write_text( _EMPTY_JSON )
    chosen_path = root / IceChosenShareStore.path().relative_to(
       ingest_artifact_puller.Paths.ROOT )
    chosen_path.parent.mkdir( parents=True, exist_ok=True )
-   chosen_path.write_text( '[]' )
+   chosen_path.write_text( _EMPTY_JSON )
 
 
 def Test_ListedRunId_TestRuns_ExpectFirstId( monkeypatch: pytest.MonkeyPatch ) -> None:
@@ -95,7 +99,10 @@ def Test_ListedRunId_TestRuns_ExpectFirstId( monkeypatch: pytest.MonkeyPatch ) -
          '' )
 
    monkeypatch.setattr( ingest_artifact_puller.GithubCli, 'invoke', fake_invoke )
-   assert IngestArtifactPuller._listed_run_id() == run_id
+
+   listed = IngestArtifactPuller._listed_run_id()
+
+   assert listed == run_id
    assert IngestArtifactPuller.WORKFLOW in captured[ Position.FIRST ]
    assert IngestArtifactPuller.RUN_ID_FIELD in captured[ Position.FIRST ]
 
@@ -105,7 +112,10 @@ def Test_ListedRunId_TestEmptyList_ExpectEmpty( monkeypatch: pytest.MonkeyPatch 
       ingest_artifact_puller.GithubCli,
       'invoke',
       lambda args: GithubCliResult( Position.FIRST, json.dumps( [] ), '' ) )
-   assert IngestArtifactPuller._listed_run_id() == ''
+
+   listed = IngestArtifactPuller._listed_run_id()
+
+   assert listed == ''
 
 
 def Test_Main_TestEmptyList_ExpectSystemExit( monkeypatch: pytest.MonkeyPatch ) -> None:
@@ -123,17 +133,29 @@ def Test_Install_TestArtifactTree_ExpectCopiedDbAndRaw(
    _bind_paths( monkeypatch, tmp_path / 'repo' )
    artifact_root = tmp_path / 'artifact'
    _write_artifact( artifact_root )
+
    IngestArtifactPuller.install( artifact_root )
-   assert ingest_artifact_puller.Paths.DB_PATH.read_bytes() == b'sqlite'
-   assert ( ingest_artifact_puller.Paths.RAW_DIR / 'seasons.json' ).read_text() == '[]'
-   assert ScoringWeightStore.path().read_text() == '[]'
-   assert AvailabilityWeightStore.path().read_text() == '[]'
-   assert AgingFactorStore.path().read_text() == '[]'
-   assert LeagueFactorStore.path().read_text() == '[]'
-   assert TeamFactorStore.path().read_text() == '[]'
-   assert DepthChartStore.path().read_text() == '[]'
-   assert SlotAverageStore.path().read_text() == '[]'
-   assert IceChosenShareStore.path().read_text() == '[]'
+   stored_db = ingest_artifact_puller.Paths.DB_PATH.read_bytes()
+   stored_seasons = ( ingest_artifact_puller.Paths.RAW_DIR / 'seasons.json' ).read_text()
+   stored_weights = ScoringWeightStore.path().read_text()
+   stored_availability = AvailabilityWeightStore.path().read_text()
+   stored_aging = AgingFactorStore.path().read_text()
+   stored_leagues = LeagueFactorStore.path().read_text()
+   stored_teams = TeamFactorStore.path().read_text()
+   stored_charts = DepthChartStore.path().read_text()
+   stored_slots = SlotAverageStore.path().read_text()
+   stored_chosen = IceChosenShareStore.path().read_text()
+
+   assert stored_db == _SQLITE_BYTES
+   assert stored_seasons == _EMPTY_JSON
+   assert stored_weights == _EMPTY_JSON
+   assert stored_availability == _EMPTY_JSON
+   assert stored_aging == _EMPTY_JSON
+   assert stored_leagues == _EMPTY_JSON
+   assert stored_teams == _EMPTY_JSON
+   assert stored_charts == _EMPTY_JSON
+   assert stored_slots == _EMPTY_JSON
+   assert stored_chosen == _EMPTY_JSON
 
 
 def Test_ArtifactRoot_TestNestedArtifactDir_ExpectNested(
@@ -143,23 +165,31 @@ def Test_ArtifactRoot_TestNestedArtifactDir_ExpectNested(
    download_dir = tmp_path / 'download'
    nested = download_dir / IngestArtifactPuller.ARTIFACT
    _write_artifact( nested )
-   assert IngestArtifactPuller._artifact_root( download_dir ) == nested
+
+   artifact_root = IngestArtifactPuller._artifact_root( download_dir )
+
+   assert artifact_root == nested
 
 
 def Test_Main_TestDownloadedArtifact_ExpectInstalled(
       monkeypatch: pytest.MonkeyPatch,
       tmp_path: Path ) -> None:
+   run_id = '99'
    _bind_paths( monkeypatch, tmp_path / 'repo' )
 
-   def fake_download( run_id: str, download_dir: Path ) -> bool:
+   def fake_download( listed_run_id: str, download_dir: Path ) -> bool:
       _write_artifact( download_dir )
       return True
 
-   monkeypatch.setattr( IngestArtifactPuller, '_listed_run_id', lambda: '99' )
+   monkeypatch.setattr( IngestArtifactPuller, '_listed_run_id', lambda: run_id )
    monkeypatch.setattr( IngestArtifactPuller, '_download', fake_download )
+
    IngestArtifactPuller.main()
-   assert ingest_artifact_puller.Paths.DB_PATH.read_bytes() == b'sqlite'
-   assert IngestArtifactPuller._stamp_path().read_text() == '99'
+   stored_db = ingest_artifact_puller.Paths.DB_PATH.read_bytes()
+   stored_stamp = IngestArtifactPuller._stamp_path().read_text()
+
+   assert stored_db == _SQLITE_BYTES
+   assert stored_stamp == run_id
 
 
 def Test_Sync_TestMatchingStamp_ExpectDownloadSkipped(
@@ -168,7 +198,7 @@ def Test_Sync_TestMatchingStamp_ExpectDownloadSkipped(
    run_id = '99'
    _bind_paths( monkeypatch, tmp_path / 'repo' )
    ingest_artifact_puller.Paths.PROCESSED_DIR.mkdir( parents=True, exist_ok=True )
-   ingest_artifact_puller.Paths.DB_PATH.write_bytes( b'sqlite' )
+   ingest_artifact_puller.Paths.DB_PATH.write_bytes( _SQLITE_BYTES )
    IngestArtifactPuller._stamp_path().write_text( run_id )
    downloaded: list[ str ] = []
 
@@ -178,13 +208,16 @@ def Test_Sync_TestMatchingStamp_ExpectDownloadSkipped(
 
    monkeypatch.setattr( IngestArtifactPuller, '_listed_run_id', lambda: run_id )
    monkeypatch.setattr( IngestArtifactPuller, '_download', fake_download )
+
    IngestArtifactPuller.sync()
+
    assert downloaded == []
 
 
 def Test_Sync_TestNewRun_ExpectPulled(
       monkeypatch: pytest.MonkeyPatch,
       tmp_path: Path ) -> None:
+   new_run_id = '2'
    _bind_paths( monkeypatch, tmp_path / 'repo' )
    ingest_artifact_puller.Paths.PROCESSED_DIR.mkdir( parents=True, exist_ok=True )
    ingest_artifact_puller.Paths.DB_PATH.write_bytes( b'old' )
@@ -194,17 +227,22 @@ def Test_Sync_TestNewRun_ExpectPulled(
       _write_artifact( download_dir )
       return True
 
-   monkeypatch.setattr( IngestArtifactPuller, '_listed_run_id', lambda: '2' )
+   monkeypatch.setattr( IngestArtifactPuller, '_listed_run_id', lambda: new_run_id )
    monkeypatch.setattr( IngestArtifactPuller, '_download', fake_download )
+
    IngestArtifactPuller.sync()
-   assert ingest_artifact_puller.Paths.DB_PATH.read_bytes() == b'sqlite'
-   assert IngestArtifactPuller._stamp_path().read_text() == '2'
+   stored_db = ingest_artifact_puller.Paths.DB_PATH.read_bytes()
+   stored_stamp = IngestArtifactPuller._stamp_path().read_text()
+
+   assert stored_db == _SQLITE_BYTES
+   assert stored_stamp == new_run_id
 
 
 def Test_Sync_TestFailedList_ExpectSkipped( monkeypatch: pytest.MonkeyPatch ) -> None:
    pulled: list[ str ] = []
-
    monkeypatch.setattr( IngestArtifactPuller, '_listed_run_id', lambda: '' )
    monkeypatch.setattr( IngestArtifactPuller, '_pull', lambda run_id: pulled.append( run_id ) )
+
    IngestArtifactPuller.sync()
+
    assert pulled == []

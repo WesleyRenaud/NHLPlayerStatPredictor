@@ -4,7 +4,6 @@ from pathlib import Path
 import sqlite3
 
 from api.seed.schema_migrator import SchemaMigrator
-from api.shared.enums.position import Position
 from api.skaters.other_league_season_provider import OtherLeagueSeasonProvider
 from api.skaters.other_league_season_store import OtherLeagueSeasonStore
 from api.skaters.other_league_skater_season import OtherLeagueSkaterSeason
@@ -30,9 +29,10 @@ def Test_InsertRows_TestInsertedSeason_ExpectReadableByPlayer( tmp_path: Path ) 
    db_path = str( tmp_path / 'skaters.sqlite' )
    row = _row()
    OtherLeagueSeasonStore.insert_rows( [ row ], db_path=db_path )
+
    rows = OtherLeagueSeasonProvider.seasons_for_player_id( row.player_id, db_path )
-   assert len( rows ) == 1
-   assert rows[ Position.FIRST ] == row
+
+   assert rows == [ row ]
 
 
 def Test_InsertRows_TestPriorSchema_ExpectReadableByPlayer( tmp_path: Path ) -> None:
@@ -62,6 +62,7 @@ def Test_InsertRows_TestPriorSchema_ExpectReadableByPlayer( tmp_path: Path ) -> 
    SchemaMigrator.migrate( db_path )
    row = _row()
    OtherLeagueSeasonStore.insert_rows( [ row ], db_path=db_path )
+
    rows = OtherLeagueSeasonProvider.seasons_for_player_id( row.player_id, db_path )
-   assert len( rows ) == 1
-   assert rows[ Position.FIRST ] == row
+
+   assert rows == [ row ]

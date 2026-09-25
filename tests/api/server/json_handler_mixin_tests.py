@@ -35,7 +35,9 @@ class _RecordingHandler( JsonHandlerMixin ):
 def Test_WriteJson_TestPayload_ExpectEncodedBody() -> None:
    handler = _RecordingHandler()
    payload = { 'names': [ 'Stub Alpha' ] }
+
    handler._write_json( payload )
+
    assert handler.status == 200
    assert handler.headers[ 'Content-type' ] == 'application/json'
    assert json.loads( handler.body.decode( 'utf-8' ) ) == payload
@@ -47,4 +49,7 @@ def Test_ReadJsonBody_TestPayload_ExpectDecodedObject() -> None:
    handler = _RecordingHandler()
    handler.headers[ 'Content-Length' ] = str( len( encoded ) )
    handler.rfile = BytesIO( encoded )
-   assert handler._read_json_body() == payload
+
+   body = handler._read_json_body()
+
+   assert body == payload

@@ -5,15 +5,20 @@ import { PlayerNameAutocompleteHelper } from '../../../scripts/lookup/playerName
 
 
 test('Test_Debounce_TestDelay_ExpectSingleCall', async () => {
+   const first = 1;
+   const second = 2;
+   const delay = 20;
+   const wait = delay * 2;
    const calls = [];
    const debounced = PlayerNameAutocompleteHelper.debounce(value => {
       calls.push(value);
-   }, 20);
+   }, delay);
 
-   debounced(1);
-   debounced(2);
+   debounced(first);
+   debounced(second);
    await new Promise(resolve => {
-      setTimeout(resolve, 40);
+      setTimeout(resolve, wait);
    });
-   assert.deepEqual(calls, [ 2 ]);
+
+   assert.deepEqual(calls, [ second ]);
 });

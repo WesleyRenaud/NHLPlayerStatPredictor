@@ -21,114 +21,152 @@ def _usage( toi: float, games: int ) -> IceUsage:
 
 def Test_Shares_TestRankedByToi_ExpectDressedGamesShare() -> None:
    team = list( Team )[ Position.FIRST ]
+   season_length = 82
+   dressed_count = NhlLineupSelector.DRESSED_DEFENSE
+   high_toi = 26.0
+   high_games = 82
+   mid_toi = 24.0
+   mid_games = 41
+   low_toi = 20.0
+   low_games = 82
+
    shares = LastCore.shares(
       team,
       {
-         1: _usage( 24.0, 41 ),
-         2: _usage( 20.0, 82 ),
-         3: _usage( 26.0, 82 ),
+         1: _usage( mid_toi, mid_games ),
+         2: _usage( low_toi, low_games ),
+         3: _usage( high_toi, high_games ),
       },
-      82,
-      NhlLineupSelector.DRESSED_DEFENSE,
+      season_length,
+      dressed_count,
       DepthGroup.defense().positions )
-   assert shares[ Position.FIRST ] == 1.0
-   assert shares[ Position.SECOND ] == 0.5
-   assert shares[ Position.THIRD ] == 1.0
-   assert len( shares ) == NhlLineupSelector.DRESSED_DEFENSE
-   assert shares[ -1 ] == GamesShare.FULL
+
+   assert shares[ Position.FIRST ] == high_games / season_length
+   assert shares[ Position.SECOND ] == mid_games / season_length
+   assert shares[ Position.THIRD ] == low_games / season_length
+   assert len( shares ) == dressed_count
+   assert shares[ Position.LAST ] == GamesShare.FULL
 
 
 def Test_Shares_TestLowGames_ExpectRankedByToi() -> None:
    team = list( Team )[ Position.FIRST ]
+   season_length = 82
+   high_toi = 30.0
+   high_games = 6
+   low_toi = 16.0
+   low_games = 82
+
    shares = LastCore.shares(
       team,
       {
-         1: _usage( 30.0, 6 ),
-         2: _usage( 16.0, 82 ),
+         1: _usage( high_toi, high_games ),
+         2: _usage( low_toi, low_games ),
       },
-      82,
+      season_length,
       NhlLineupSelector.DRESSED_DEFENSE,
       DepthGroup.defense().positions )
-   assert shares[ Position.FIRST ] == 6 / 82
-   assert shares[ Position.SECOND ] == 1.0
+
+   assert shares[ Position.FIRST ] == high_games / season_length
+   assert shares[ Position.SECOND ] == low_games / season_length
 
 
 def Test_Teammates_TestTopSix_ExpectPacesAndShares() -> None:
    team = list( Team )[ Position.FIRST ]
+   season_length = 82
+   toi_base = 30.0
+   pace_base = 40.0
+   extra_id = 7
    ice_usages = {
-      player_id: _usage( 30.0 - player_id, 82 - player_id )
-      for player_id in range( 1, 8 )
+      player_id: _usage( toi_base - player_id, season_length - player_id )
+      for player_id in range( 1, extra_id + 1 )
    }
+   paces = { player_id: pace_base - player_id for player_id in range( 1, extra_id + 1 ) }
+
    regulars, extras = LastCore.teammates(
       team,
       ice_usages,
-      { player_id: 40.0 - player_id for player_id in range( 1, 8 ) },
-      82,
+      paces,
+      season_length,
       NhlLineupSelector.DRESSED_DEFENSE,
       LastCore.EXTRA,
       DepthGroup.defense().positions )
+
    assert [ skater.player_id for skater in regulars ] == list( range( 1, 7 ) )
-   assert regulars[ Position.FIRST ].availability == 81 / 82
-   assert extras[ Position.FIRST ].player_id == 7
-   assert extras[ Position.FIRST ].availability == 1.0
-   assert extras[ Position.FIRST ].contribution == 33.0
+   assert regulars[ Position.FIRST ].availability == (
+      season_length - 1 ) / season_length
+   assert extras[ Position.FIRST ].player_id == extra_id
+   assert extras[ Position.FIRST ].availability == GamesShare.FULL
+   assert extras[ Position.FIRST ].contribution == paces[ extra_id ]
 
 
 def Test_Teammates_TestShortExtra_ExpectNextUsable() -> None:
    team = list( Team )[ Position.FIRST ]
+   season_length = 82
+   extra_id = 8
    ice_usages = {
-      player_id: _usage( 30.0 - player_id, 82 )
+      player_id: _usage( 30.0 - player_id, season_length )
       for player_id in range( 1, 7 )
    }
    ice_usages[ 7 ] = _usage( 15.0, UsableNhlIce.MIN_GAMES - 1 )
-   ice_usages[ 8 ] = _usage( 14.0, 80 )
+   ice_usages[ extra_id ] = _usage( 14.0, 80 )
+   paces = { player_id: float( player_id ) for player_id in range( 1, extra_id + 1 ) }
+
    regulars, extras = LastCore.teammates(
       team,
       ice_usages,
-      { player_id: float( player_id ) for player_id in range( 1, 9 ) },
-      82,
+      paces,
+      season_length,
       NhlLineupSelector.DRESSED_DEFENSE,
       LastCore.EXTRA,
       DepthGroup.defense().positions )
+
    assert [ skater.player_id for skater in regulars ] == list( range( 1, 7 ) )
-   assert extras[ Position.FIRST ].player_id == 8
+   assert extras[ Position.FIRST ].player_id == extra_id
    assert extras[ Position.FIRST ].availability == GamesShare.FULL
-   assert extras[ Position.FIRST ].contribution == 8.0
+   assert extras[ Position.FIRST ].contribution == paces[ extra_id ]
 
 
 def Test_Teammates_TestOnlyShortExtra_ExpectEmpty() -> None:
    team = list( Team )[ Position.FIRST ]
+   season_length = 82
    ice_usages = {
-      player_id: _usage( 30.0 - player_id, 82 )
+      player_id: _usage( 30.0 - player_id, season_length )
       for player_id in range( 1, 7 )
    }
    ice_usages[ 7 ] = _usage( 15.0, UsableNhlIce.MIN_GAMES - 1 )
+
    regulars, extras = LastCore.teammates(
       team,
       ice_usages,
       { player_id: float( player_id ) for player_id in range( 1, 8 ) },
-      82,
+      season_length,
       NhlLineupSelector.DRESSED_DEFENSE,
       LastCore.EXTRA,
       DepthGroup.defense().positions )
+
    assert [ skater.player_id for skater in regulars ] == list( range( 1, 7 ) )
    assert extras == []
 
 
 def Test_Shares_TestForwardOnTeam_ExpectDefenseOnly() -> None:
    team = list( Team )[ Position.FIRST ]
+   season_length = 82
+   defense_toi = 24.0
+   defense_games = 82
+
    shares = LastCore.shares(
       team,
       {
-         1: _usage( 24.0, 82 ),
+         1: _usage( defense_toi, defense_games ),
          2: IceUsage(
             30.0,
-            82,
+            season_length,
             team,
             SkaterPosition( 'C' ) ),
       },
-      82,
+      season_length,
       NhlLineupSelector.DRESSED_DEFENSE,
       DepthGroup.defense().positions )
-   assert shares[ Position.FIRST ] == 1.0
+
+   assert shares[ Position.FIRST ] == defense_games / season_length
    assert shares[ Position.SECOND ] == GamesShare.FULL

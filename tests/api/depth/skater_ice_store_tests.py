@@ -17,11 +17,13 @@ def Test_Write_TestRows_ExpectReadable(
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
    rows = [ SkaterIce( 97, 21.5, 21.5, 22.0 ) ]
    SkaterIceStore.write( rows )
-   assert SkaterIceStore.read() == [
-      SkaterIce.from_row( rows[ Position.FIRST ].to_dict() )
-   ]
-   assert SkaterIceStore.by_player() == { 97: SkaterIceStore.read()[ Position.FIRST ] }
-   assert SkaterIceStore.path().read_text() == json.dumps(
+
+   loaded = SkaterIceStore.read()
+   written = SkaterIceStore.path().read_text()
+
+   assert loaded == rows
+   assert SkaterIceStore.by_player() == { rows[ Position.FIRST ].player_id: loaded[ Position.FIRST ] }
+   assert written == json.dumps(
       [ rows[ Position.FIRST ].to_dict() ],
       indent=2 )
 
@@ -30,5 +32,9 @@ def Test_Read_TestMissing_ExpectEmpty(
       monkeypatch: pytest.MonkeyPatch,
       tmp_path: Path ) -> None:
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
-   assert SkaterIceStore.read() == []
-   assert SkaterIceStore.by_player() == {}
+
+   rows = SkaterIceStore.read()
+   by_player = SkaterIceStore.by_player()
+
+   assert rows == []
+   assert by_player == {}

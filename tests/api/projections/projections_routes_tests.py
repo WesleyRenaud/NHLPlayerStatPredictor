@@ -5,11 +5,12 @@ from api.projections.projections_routes import ProjectionsRoutes
 
 
 def Test_Routes_TestEntries_ExpectCallableHandlers() -> None:
-   assert ProjectionsRoutes.ROUTES
-   assert ProjectionsRoutes.ROUTES[ ProjectionsRoutes.GET_PROJECTION ] is (
-      ProjectionsController.get_projection )
+   get_projection = ProjectionsRoutes.GET_PROJECTION
+   handler = ProjectionsController.get_projection
 
-   for path, route in ProjectionsRoutes.ROUTES.items():
-      assert isinstance( path, str )
-      assert path.startswith( '/' )
-      assert callable( route )
+   routes = ProjectionsRoutes.ROUTES
+
+   assert routes[ get_projection ] is handler
+   assert all(
+      isinstance( path, str ) and path.startswith( '/' ) and callable( route )
+      for path, route in routes.items() )

@@ -5,19 +5,33 @@ from api.skaters.player_status_builder import PlayerStatusBuilder
 
 
 def Test_Build_TestActiveLanding_ExpectTrue() -> None:
-   status = PlayerStatusBuilder.build( { 'playerId': 7, 'isActive': True } )
-   assert status == PlayerStatus( 7, True )
+   player_id = 7
+   is_active = True
+   landing = { 'playerId': player_id, 'isActive': is_active }
+
+   status = PlayerStatusBuilder.build( landing )
+
+   assert status == PlayerStatus( player_id, is_active )
 
 
 def Test_Build_TestInactiveLanding_ExpectFalse() -> None:
-   status = PlayerStatusBuilder.build( { 'playerId': 7, 'isActive': False } )
-   assert status == PlayerStatus( 7, False )
+   player_id = 7
+   is_active = False
+   landing = { 'playerId': player_id, 'isActive': is_active }
+
+   status = PlayerStatusBuilder.build( landing )
+
+   assert status == PlayerStatus( player_id, is_active )
 
 
 def Test_BuildAll_TestMissingLanding_ExpectSkipped() -> None:
    first_id = 7
    second_id = 8
-   landing = { 'playerId': second_id, 'isActive': True }
-   assert PlayerStatusBuilder.build_all(
-      [ first_id, second_id ],
-      { second_id: landing } ) == [ PlayerStatus( second_id, True ) ]
+   is_active = True
+   landing = { 'playerId': second_id, 'isActive': is_active }
+   player_ids = [ first_id, second_id ]
+   landings = { second_id: landing }
+
+   statuses = PlayerStatusBuilder.build_all( player_ids, landings )
+
+   assert statuses == [ PlayerStatus( second_id, is_active ) ]

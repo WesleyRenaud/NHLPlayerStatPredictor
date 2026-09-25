@@ -4,22 +4,35 @@ from api.skaters.team import Team
 
 
 def Test_Members_TestValues_ExpectUniqueStrings() -> None:
-   values = [ member.value for member in Team ]
+   members = list( Team )
+
+   values = [ member.value for member in members ]
+
    assert values
    assert len( values ) == len( set( values ) )
-
-   for member in Team:
-      assert isinstance( member.value, str )
-      assert Team( member.value ) is member
+   assert all( isinstance( value, str ) for value in values )
+   assert [ Team( value ) for value in values ] == members
 
 
 def Test_FromName_TestAccentedName_ExpectTeam() -> None:
-   assert Team.from_name( 'Montréal Canadiens' ) == Team( 'MTL' )
+   name = 'Montréal Canadiens'
+
+   team = Team.from_name( name )
+
+   assert team == Team( 'MTL' )
 
 
 def Test_FromName_TestDottedName_ExpectTeam() -> None:
-   assert Team.from_name( 'St. Louis Blues' ) == Team( 'STL' )
+   name = 'St. Louis Blues'
+
+   team = Team.from_name( name )
+
+   assert team == Team( 'STL' )
 
 
 def Test_FromName_TestUtahHockeyClub_ExpectMammoth() -> None:
-   assert Team.from_name( 'Utah Hockey Club' ) == Team( 'UTA' )
+   name = 'Utah Hockey Club'
+
+   team = Team.from_name( name )
+
+   assert team == Team( 'UTA' )

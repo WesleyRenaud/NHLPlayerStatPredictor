@@ -16,8 +16,12 @@ def Test_Write_TestFactors_ExpectReadable(
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
    factors = [ LeagueFactor( 'AAA', 0.44 ), LeagueFactor( 'BBB', 0.28 ) ]
    LeagueFactorStore.write( factors )
-   assert LeagueFactorStore.read() == factors
-   assert LeagueFactorStore.path().read_text() == json.dumps(
+
+   loaded = LeagueFactorStore.read()
+   written = LeagueFactorStore.path().read_text()
+
+   assert loaded == factors
+   assert written == json.dumps(
       [ factor.to_dict() for factor in factors ],
       indent=2 )
    assert LeagueFactorStore.path() == tmp_path / LeagueFactorStore.FILE_NAME
