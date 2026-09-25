@@ -1,22 +1,22 @@
 from __future__ import annotations
 
-from ...aging_factor_store import AgingFactorStore
+from ...aging.aging_factor_store import AgingFactorStore
+from ...aging.league_factor_store import LeagueFactorStore
 from ..baseline_pace_resolver import BaselinePaceResolver
-from ...ice_pace_scaler import IcePaceScaler
-from ...league_factor_store import LeagueFactorStore
-from ...other_league_season_provider import OtherLeagueSeasonProvider
+from ...depth.ice_pace_scaler import IcePaceScaler
+from ...depth.skater_ice_store import SkaterIceStore
 from ...pace_games_resolver import PaceGamesResolver
 from ...paths import Paths
 from ..projection import Projection
+from ...recency.scoring_weight_store import ScoringWeightStore
 from ...recency_target_resolver import RecencyTargetResolver
-from ...roster_skater_provider import RosterSkaterProvider
-from ...scoring_weight_store import ScoringWeightStore
 from ...shared.enums.position import Position
-from ...skater import Skater
-from ...skater_ice_store import SkaterIceStore
-from ...skater_season_provider import SkaterSeasonProvider
-from ...team_factor import TeamFactor
-from ...team_factor_store import TeamFactorStore
+from ...skaters.other_league_season_provider import OtherLeagueSeasonProvider
+from ...skaters.roster_skater_provider import RosterSkaterProvider
+from ...skaters.skater import Skater
+from ...skaters.skater_season_provider import SkaterSeasonProvider
+from ...team_factor.team_factor import TeamFactor
+from ...team_factor.team_factor_store import TeamFactorStore
 from ..team_pace_adjuster import TeamPaceAdjuster
 
 

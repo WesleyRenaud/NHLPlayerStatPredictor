@@ -4,7 +4,7 @@ from datetime import date, datetime
 
 from .season_length import SeasonLength
 from .shared.enums.position import Position
-from .team import Team
+from .skaters.team import Team
 
 
 class Season():

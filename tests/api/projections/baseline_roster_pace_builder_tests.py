@@ -4,20 +4,20 @@ from datetime import date
 
 import pytest
 
-from api.aging_factor import AgingFactor
-from api.league_factor import LeagueFactor
-from api.nhl_skater_season import NhlSkaterSeason
-from api.other_league_skater_season import OtherLeagueSkaterSeason
+from api.aging.aging_factor import AgingFactor
+from api.aging.league_factor import LeagueFactor
 import api.projections.baseline_roster_pace_builder as baseline_roster_pace_builder
 from api.projections.baseline_roster_pace_builder import BaselineRosterPaceBuilder
 from api.projections.current_season_nhl_skater import CurrentSeasonNhlSkater
 from api.projections.season_pace import SeasonPace
-from api.recency_weight import RecencyWeight
-from api.roster_skater import RosterSkater
+from api.recency.recency_weight import RecencyWeight
 from api.shared.enums.position import Position
-from api.skater import Skater
-from api.skater_position import SkaterPosition
-from api.team import Team
+from api.skaters.nhl_skater_season import NhlSkaterSeason
+from api.skaters.other_league_skater_season import OtherLeagueSkaterSeason
+from api.skaters.roster_skater import RosterSkater
+from api.skaters.skater import Skater
+from api.skaters.skater_position import SkaterPosition
+from api.skaters.team import Team
 
 
 def _roster(

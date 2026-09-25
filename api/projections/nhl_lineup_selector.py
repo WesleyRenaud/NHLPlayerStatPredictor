@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .nhl_lineup_row import NhlLineupRow
-from ..skater_group import SkaterGroup
+from ..skaters.skater_group import SkaterGroup
 from .team_lineup import TeamLineup
 
 

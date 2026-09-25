@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .season_pace import SeasonPace
-from ..skater_position import SkaterPosition
+from ..skaters.skater_position import SkaterPosition
 
 
 @dataclass( frozen=True )

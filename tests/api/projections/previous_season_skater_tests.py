@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from api.projections.previous_season_skater import PreviousSeasonSkater
 from api.projections.season_pace import SeasonPace
-from api.skater_position import SkaterPosition
+from api.skaters.skater_position import SkaterPosition
 
 
 def Test_Contribution_TestGames_ExpectGamesTimesPace() -> None:

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from ..aging_factor import AgingFactor
-from ..nhl_skater_season import NhlSkaterSeason
+from ..aging.aging_factor import AgingFactor
 from .player_aging_fitter import PlayerAgingFitter
 from .season_pace import SeasonPace
 from ..shared.enums.position import Position
+from ..skaters.nhl_skater_season import NhlSkaterSeason
 
 
 class AgingPaceAdjuster():

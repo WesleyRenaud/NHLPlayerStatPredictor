@@ -3,16 +3,16 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
-from api.nhl_skater_season import NhlSkaterSeason
-from api.other_league_season_store import OtherLeagueSeasonStore
-from api.other_league_skater_season import OtherLeagueSkaterSeason
 from api.player_names.data_access.player_name_provider import PlayerNameProvider
-from api.roster_skater import RosterSkater
-from api.roster_skater_store import RosterSkaterStore
 from api.shared.enums.position import Position
-from api.skater_position import SkaterPosition
-from api.skater_season_store import SkaterSeasonStore
-from api.team import Team
+from api.skaters.nhl_skater_season import NhlSkaterSeason
+from api.skaters.other_league_season_store import OtherLeagueSeasonStore
+from api.skaters.other_league_skater_season import OtherLeagueSkaterSeason
+from api.skaters.roster_skater import RosterSkater
+from api.skaters.roster_skater_store import RosterSkaterStore
+from api.skaters.skater_position import SkaterPosition
+from api.skaters.skater_season_store import SkaterSeasonStore
+from api.skaters.team import Team
 
 
 def _season(

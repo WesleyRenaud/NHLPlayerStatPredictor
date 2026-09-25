@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from ..aging_factor import AgingFactor
+from ..aging.aging_factor import AgingFactor
+from ..aging.league_factor import LeagueFactor
 from .baseline_pace_resolver import BaselinePaceResolver
 from .current_season_nhl_skater import CurrentSeasonNhlSkater
-from ..league_factor import LeagueFactor
-from ..recency_weight import RecencyWeight
-from ..roster_skater import RosterSkater
-from ..skater import Skater
-from ..skater_season import SkaterSeason
+from ..recency.recency_weight import RecencyWeight
+from ..skaters.roster_skater import RosterSkater
+from ..skaters.skater import Skater
+from ..skaters.skater_season import SkaterSeason
 
 
 class BaselineRosterPaceBuilder():

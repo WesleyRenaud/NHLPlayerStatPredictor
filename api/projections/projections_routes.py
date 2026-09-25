@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import ClassVar
 
 from .controllers.projections_controller import ProjectionsController
-from ..json_request_handler import PostRouteHandler
+from ..server.json_request_handler import PostRouteHandler
 
 
 class ProjectionsRoutes():

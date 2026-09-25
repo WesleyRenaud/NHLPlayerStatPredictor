@@ -5,10 +5,10 @@ import json
 
 import pytest
 
-from api.json_handler_mixin import JsonHandlerMixin
 import api.projections.controllers.projections_controller as projections_controller
 from api.projections.controllers.projections_controller import ProjectionsController
 from api.projections.projection import Projection
+from api.server.json_handler_mixin import JsonHandlerMixin
 
 
 class _RecordingHandler( JsonHandlerMixin ):

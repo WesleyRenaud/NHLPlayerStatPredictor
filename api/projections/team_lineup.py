@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .nhl_lineup_row import NhlLineupRow
-from ..team import Team
+from ..skaters.team import Team
 from .team_quality_calculator import TeamQualityCalculator
 
 

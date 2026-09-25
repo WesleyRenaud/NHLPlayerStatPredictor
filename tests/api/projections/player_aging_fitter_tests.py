@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from datetime import date
 
-from api.nhl_skater_season import NhlSkaterSeason
 from api.projections.player_aging_fitter import PlayerAgingFitter
 from api.projections.player_aging_rate import PlayerAgingRate
 from api.shared.enums.position import Position
-from api.skater_position import SkaterPosition
-from api.team import Team
+from api.skaters.nhl_skater_season import NhlSkaterSeason
+from api.skaters.skater_position import SkaterPosition
+from api.skaters.team import Team
 
 
 def _season(

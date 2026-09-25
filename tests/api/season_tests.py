@@ -7,7 +7,7 @@ import pytest
 from api.season import Season
 from api.season_length import SeasonLength
 from api.shared.enums.position import Position
-from api.team import Team
+from api.skaters.team import Team
 from api.types import Types
 
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .nhl_client import NhlClient
+from .ingest.nhl_client import NhlClient
 from .season import Season
 
 

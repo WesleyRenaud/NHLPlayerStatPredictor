@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from ..skater_position import SkaterPosition
-from ..team import Team
+from ..skaters.skater_position import SkaterPosition
+from ..skaters.team import Team
 
 
 class NhlLineupRow( Protocol ):
