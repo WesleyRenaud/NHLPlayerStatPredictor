@@ -40,7 +40,6 @@ class LastCore():
          ice_usages: dict[ int, IceUsage ],
          paces: dict[ int, float ],
          season_length: int,
-         healthy: bool,
          dressed_count: int,
          extra_count: int,
          positions: set[ SkaterPosition ] ) -> tuple[
@@ -48,17 +47,11 @@ class LastCore():
             list[ TeammateSkater ] ]:
       ranked = cls.ranked( team, ice_usages, positions )
       regulars = [
-         cls._teammate( player_id, usage, paces, season_length, False, healthy )
+         cls._teammate( player_id, usage, paces, season_length, False )
          for player_id, usage in ranked[ : dressed_count ]
       ]
       extras = [
-         cls._teammate(
-            player_id,
-            usage,
-            paces,
-            season_length,
-            True,
-            False )
+         cls._teammate( player_id, usage, paces, season_length, True )
          for player_id, usage in ranked[ dressed_count: dressed_count + extra_count ]
       ]
       return regulars, extras
@@ -91,9 +84,8 @@ class LastCore():
          usage: IceUsage,
          paces: dict[ int, float ],
          season_length: int,
-         extra: bool,
-         healthy: bool ) -> TeammateSkater:
-      availability = GamesShare.FULL if extra or healthy else (
+         extra: bool ) -> TeammateSkater:
+      availability = GamesShare.FULL if extra else (
          GamesShare.resolve( usage.games, season_length ) )
       return TeammateSkater(
          player_id,

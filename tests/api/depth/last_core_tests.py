@@ -63,7 +63,6 @@ def Test_Teammates_TestTopSix_ExpectPacesAndShares() -> None:
       ice_usages,
       { player_id: 40.0 - player_id for player_id in range( 1, 8 ) },
       82,
-      False,
       NhlLineupSelector.DRESSED_DEFENSE,
       LastCore.EXTRA,
       DepthGroup.defense().positions )
@@ -72,23 +71,6 @@ def Test_Teammates_TestTopSix_ExpectPacesAndShares() -> None:
    assert extras[ Position.FIRST ].player_id == 7
    assert extras[ Position.FIRST ].availability == 1.0
    assert extras[ Position.FIRST ].contribution == 33.0
-
-
-def Test_Teammates_TestHealthy_ExpectFullShare() -> None:
-   team = list( Team )[ Position.FIRST ]
-   regulars, _extras = LastCore.teammates(
-      team,
-      {
-         player_id: _usage( 30.0 - player_id, 41 )
-         for player_id in range( 1, 7 )
-      },
-      { player_id: 20.0 for player_id in range( 1, 7 ) },
-      82,
-      True,
-      NhlLineupSelector.DRESSED_DEFENSE,
-      LastCore.EXTRA,
-      DepthGroup.defense().positions )
-   assert regulars[ Position.FIRST ].availability == GamesShare.FULL
 
 
 def Test_Shares_TestForwardOnTeam_ExpectDefenseOnly() -> None:

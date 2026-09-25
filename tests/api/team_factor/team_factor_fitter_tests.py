@@ -3,8 +3,11 @@ from __future__ import annotations
 from api.availability.games_share import GamesShare
 from api.depth.depth_chart import DepthChart
 from api.depth.depth_group import DepthGroup
+from api.depth.ice_pace_scaler import IcePaceScaler
 from api.depth.ice_skater import IceSkater
+from api.depth.ice_usage import IceUsage
 from api.depth.last_toi import LastToi
+from api.depth.skater_ice import SkaterIce
 from api.depth.slot_average import SlotAverage
 from api.projections.current_season_nhl_skater import CurrentSeasonNhlSkater
 from api.projections.nhl_lineup_row import NhlLineupRow
@@ -117,7 +120,8 @@ def _fit(
       splits: list[ PreviousSeasonNhlSkater ],
       paces: list[ CurrentSeasonNhlSkater ],
       season_length: int,
-      slots: list[ SlotAverage ] | None = None ) -> list[ TeamFactor ]:
+      slots: list[ SlotAverage ] | None = None,
+      usages: dict[ int, IceUsage ] | None = None ) -> list[ TeamFactor ]:
    return TeamFactorFitter.fit(
       current_season,
       previous_season_id,
@@ -126,7 +130,7 @@ def _fit(
       season_length,
       [] if slots is None else slots,
       _charts( paces ),
-      {},
+      {} if usages is None else usages,
       {} )
 
 
@@ -425,6 +429,58 @@ def Test_Fit_TestShortDefense_ExpectPaddedSeventh() -> None:
    assert abs( current.dressed_total() - regular_points ) < 0.001
 
 
+def Test_Fit_TestPreviousCallUp_ExpectGamesShare() -> None:
+   now = list( Team )[ Position.FIRST ]
+   previous = list( Team )[ Position.SECOND ]
+   current_season = 20262027
+   previous_season_id = 20252026
+   season_length = 82
+   callup_pace = 168.0
+   defense = [
+      _split( 1, previous, callup_pace, games=1, position=SkaterPosition( 'D' ) ),
+      *[
+         _split( player_id, previous, 20.0, position=SkaterPosition( 'D' ) )
+         for player_id in range( 2, NhlLineupSelector.DRESSED_DEFENSE + 1 )
+      ],
+      _split(
+         NhlLineupSelector.DEFENSE,
+         previous,
+         10.0,
+         position=SkaterPosition( 'D' ) ),
+   ]
+   usages = {
+      1: IceUsage( 16.5, 1, previous, SkaterPosition( 'D' ) ),
+      **{
+         player_id: IceUsage( 15.0, season_length, previous, SkaterPosition( 'D' ) )
+         for player_id in range( 2, NhlLineupSelector.DRESSED_DEFENSE + 1 )
+      },
+      NhlLineupSelector.DEFENSE: IceUsage(
+         10.0,
+         season_length,
+         previous,
+         SkaterPosition( 'D' ) ),
+   }
+   factors = _fit(
+      current_season,
+      previous_season_id,
+      [ *defense, _split( 50, now, 40.0, position=SkaterPosition( 'D' ) ) ],
+      [ _pace( 50, now, 40.0, position=SkaterPosition( 'D' ) ) ],
+      season_length,
+      usages=usages )
+   last = next(
+      factor
+      for factor in factors
+      if factor.season == previous_season_id and factor.team == previous )
+   callup = next( skater for skater in last.skaters if skater.player_id == 1 )
+   assert callup.availability == 1 / season_length
+   present = callup_pace + 20.0 * ( NhlLineupSelector.DRESSED_DEFENSE - 1 )
+   replacement = 20.0 * ( NhlLineupSelector.DRESSED_DEFENSE - 1 ) + 10.0
+   expected = (
+      present / season_length
+      + replacement * ( season_length - 1 ) / season_length )
+   assert abs( last.dressed_total() - expected ) < 0.001
+
+
 def Test_Fit_TestPreviousDefense_ExpectHealthySix() -> None:
    now = list( Team )[ Position.FIRST ]
    previous = list( Team )[ Position.SECOND ]
@@ -450,3 +506,34 @@ def Test_Fit_TestPreviousDefense_ExpectHealthySix() -> None:
       for factor in factors
       if factor.season == previous_season_id and factor.team == previous )
    assert abs( last.dressed_total() - 120.0 ) < 0.001
+
+
+def Test_Fit_TestCurrentIce_ExpectLastToiScale() -> None:
+   now = list( Team )[ Position.FIRST ]
+   previous = list( Team )[ Position.SECOND ]
+   current_season = 20262027
+   previous_season_id = 20252026
+   player_id = 1
+   points = 100.0
+   last_toi = 20.0
+   implied = 10.0
+   projected = 24.0
+   paces = [ _pace( player_id, now, points ) ]
+   factors = TeamFactorFitter.fit(
+      current_season,
+      previous_season_id,
+      [ _split( 2, previous, 40.0 ) ],
+      paces,
+      82,
+      [],
+      _charts( paces ),
+      {},
+      { player_id: SkaterIce( player_id, last_toi, implied, projected ) } )
+   current = next(
+      factor
+      for factor in factors
+      if factor.season == current_season and factor.team == now )
+   scaled = points * IcePaceScaler.ratio( last_toi, projected )
+   assert any(
+      skater.player_id == player_id and abs( skater.contribution - scaled ) < 0.001
+      for skater in current.skaters )
