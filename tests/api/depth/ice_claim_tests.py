@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from api.depth.club_ice import ClubIce
 from api.depth.ice_claim import IceClaim
 from api.shared.enums.position import Position
 from api.skaters.team import Team
@@ -7,9 +8,34 @@ from api.skaters.team import Team
 
 def Test_Resolve_TestMissingRate_ExpectLastToi() -> None:
    team = list( Team )[ Position.FIRST ]
-   assert IceClaim.resolve( 22.0, team, {} ) == 22.0
+   toi = 22.0
+   assert IceClaim.resolve(
+      [ ClubIce( team, 82, toi ) ],
+      {} ) == toi
 
 
 def Test_Resolve_TestTeamRate_ExpectScaledToi() -> None:
    team = list( Team )[ Position.FIRST ]
-   assert IceClaim.resolve( 22.0, team, { team: 0.8 } ) == 17.6
+   assert IceClaim.resolve(
+      [ ClubIce( team, 82, 22.0 ) ],
+      { team: 0.8 } ) == 17.6
+
+
+def Test_Resolve_TestSplitClubs_ExpectGamesWeightedClaim() -> None:
+   first = list( Team )[ Position.FIRST ]
+   second = list( Team )[ Position.SECOND ]
+   first_games = 50
+   second_games = 22
+   first_toi = 14.0
+   second_toi = 12.0
+   first_rate = 0.8
+   second_rate = 1.2
+   assert IceClaim.resolve(
+      [
+         ClubIce( first, first_games, first_toi ),
+         ClubIce( second, second_games, second_toi ),
+      ],
+      { first: first_rate, second: second_rate } ) == (
+         first_toi * first_rate * first_games
+         + second_toi * second_rate * second_games
+      ) / ( first_games + second_games )
