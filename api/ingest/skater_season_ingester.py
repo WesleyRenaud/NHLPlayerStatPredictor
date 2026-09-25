@@ -115,32 +115,45 @@ class SkaterSeasonIngester():
             f_usages,
             season_length,
             DepthGroup.forwards() ) )
+      previous_factors = TeamFactorFitter.previous(
+         previous_season_id,
+         NhlTeamSplitBuilder.build(
+            landings,
+            previous_season_id,
+            Season.pace_games( seasons ) ),
+         slots,
+         usages,
+         season_length )
       charts = DepthChartRecorder.record(
-         force=force,
-         pace_games=Season.pace_games( seasons ) )
+         Season.pace_games( seasons ),
+         {
+            factor.team: factor.rate
+            for factor in previous_factors
+         },
+         force=force )
       DepthChartStore.write( charts )
       ice_rows = SkaterIceRecorder.record( charts )
       SkaterIceStore.write( ice_rows )
       TeamFactorStore.write(
-         TeamFactorFitter.fit(
-            current_season,
-            previous_season_id,
-            NhlTeamSplitBuilder.build(
-               landings,
-               previous_season_id,
-               Season.pace_games( NhlClient.seasons( force=force ) ) ),
-            BaselineRosterPaceBuilder.build(
-               roster_rows,
-               rows + other_rows,
-               weights,
-               current_season,
-               league_factors,
-               aging_factors ),
-            season_length,
-            slots,
-            charts,
-            usages,
-            { row.player_id: row for row in ice_rows } ) )
+         sorted(
+            [
+               *previous_factors,
+               *TeamFactorFitter.current(
+                  current_season,
+                  BaselineRosterPaceBuilder.build(
+                     roster_rows,
+                     rows + other_rows,
+                     weights,
+                     current_season,
+                     league_factors,
+                     aging_factors ),
+                  slots,
+                  charts,
+                  usages,
+                  season_length,
+                  { row.player_id: row for row in ice_rows } )
+            ],
+            key=lambda factor: ( factor.season, factor.team.value ) ) )
       print( f'Ingested { len( rows ) } skater-seasons.', flush=True )
 
 

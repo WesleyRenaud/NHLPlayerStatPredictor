@@ -348,7 +348,7 @@ def Test_GetProjection_TestIceChange_ExpectRateTimesToi(
    monkeypatch.setattr(
       projection_coordinator.SkaterIceStore,
       'by_player',
-      lambda: { player_id: SkaterIce( player_id, 20.0, 24.0 ) } )
+      lambda: { player_id: SkaterIce( player_id, 20.0, 16.0, 24.0 ) } )
    monkeypatch.setattr(
       projection_coordinator.SkaterSeasonProvider,
       'seasons_for_player_id',
@@ -381,8 +381,8 @@ def Test_GetProjection_TestIceChange_ExpectRateTimesToi(
       projection_coordinator.PaceGamesResolver,
       'resolve',
       lambda: games_played )
-   goals = round( 36.0 )
-   assists = round( 48.0 )
+   goals = round( 45.0 )
+   assists = round( 60.0 )
    assert ProjectionCoordinator.get_projection( player_id ) == Projection(
       goals=goals,
       assists=assists,

@@ -61,10 +61,10 @@ class ProjectionCoordinator():
 
       ice = SkaterIceStore.by_player().get( player_id )
 
-      if ice is not None and ice.last_toi is not None:
+      if ice is not None and ice.last_toi is not None and ice.implied:
          scaled = IcePaceScaler.adjust(
             scaled,
-            ice.last_toi,
+            ice.implied,
             ice.projected_toi )
 
       goals = round( scaled.goals )

@@ -19,7 +19,6 @@ import api.ingest.skater_season_ingester as skater_season_ingester
 from api.ingest.skater_season_ingester import SkaterSeasonIngester
 from api.paths import Paths
 from api.projections.current_season_nhl_skater import CurrentSeasonNhlSkater
-from api.projections.previous_season_nhl_skater import PreviousSeasonNhlSkater
 from api.projections.season_pace import SeasonPace
 from api.recency.recency_decay_fitter import RecencyDecayFitter
 from api.recency.recency_weight import RecencyWeight
@@ -251,13 +250,8 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       int,
       list[ LeagueFactor ],
       list[ AgingFactor ] ] ] = []
-   fitted: list[ tuple[
-      int,
-      int,
-      list[ PreviousSeasonNhlSkater ],
-      list[ CurrentSeasonNhlSkater ],
-      object,
-      object ] ] = []
+   fitted: list[ bool ] = []
+   previous_rates: list[ dict ] = []
    monkeypatch.setattr(
       skater_season_ingester.RecencyTargetResolver,
       'prior',
@@ -278,24 +272,21 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       lambda season_id, force=False: [] )
    monkeypatch.setattr(
       skater_season_ingester.TeamFactorFitter,
-      'fit',
-      lambda current, previous, splits, paces, season_length, slots, charts,
-            usages, ice: fitted.append(
-         (
-            current,
-            previous,
-            splits,
-            paces,
-            season_length,
-            slots,
-            charts,
-            usages,
-            ice ) ) or team_factors )
+      'previous',
+      lambda season, splits, slots, usages, season_length: team_factors )
+   monkeypatch.setattr(
+      skater_season_ingester.TeamFactorFitter,
+      'current',
+      lambda season, paces, slots, charts, usages, season_length, ice: (
+         fitted.append( True ) or [] ) )
    recorded: list[ bool ] = []
    monkeypatch.setattr(
       skater_season_ingester.DepthChartRecorder,
       'record',
-      lambda force=False, pace_games=None: recorded.append( force ) or [] )
+      lambda pace_games, team_rates, force=False: (
+         recorded.append( force )
+         or previous_rates.append( team_rates )
+         or [] ) )
    monkeypatch.setattr(
       skater_season_ingester.DepthChartStore,
       'write',
@@ -337,17 +328,9 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
          league_factors,
          aging_factors )
    ]
-   assert fitted == [
-      (
-         current_season,
-         previous_season_id,
-         [],
-         roster_paces,
-         82,
-         [],
-         [],
-         {},
-         {} )
-   ]
+   assert fitted == [ True ]
    assert recorded == [ False ]
+   assert previous_rates == [
+      { list( Team )[ Position.FIRST ]: team_factors[ Position.FIRST ].rate }
+   ]
    assert SlotChosenShareStore.read() == []
