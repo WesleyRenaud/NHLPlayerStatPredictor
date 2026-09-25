@@ -22,3 +22,10 @@ def Test_InsertRows_TestInsertedStatus_ExpectPersistedFlag( tmp_path: Path ) -> 
       DatabaseConnectionProvider.close( conn )
 
    assert stored[ Position.FIRST ]
+
+
+def Test_Read_TestInsertedRows_ExpectAll( tmp_path: Path ) -> None:
+   db_path = str( tmp_path / 'skaters.sqlite' )
+   row = PlayerStatus( player_id=7, is_active=False )
+   PlayerStatusStore.insert_rows( [ row ], db_path=db_path )
+   assert PlayerStatusStore.read( db_path ) == [ row ]

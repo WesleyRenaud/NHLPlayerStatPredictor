@@ -29,6 +29,10 @@ def Test_ExtraPace_TestNamed_ExpectRosterPace() -> None:
    assert TeamFactorFiller.extra_pace( 7, { 7: 18.0 }, [] ) == 18.0
 
 
+def Test_ExtraPace_TestMissingNamed_ExpectZero() -> None:
+   assert TeamFactorFiller.extra_pace( 7, {}, [] ) == 0.0
+
+
 def Test_ExtraPace_TestFiller_ExpectSlotContribution() -> None:
    slots = [ SlotAverage( 7, 15.0, 2.0, 12.0 ) ]
    assert TeamFactorFiller.extra_pace(
