@@ -156,9 +156,7 @@ def _from_lineup(
       season,
       team,
       lineup.total() / league,
-      _skaters(
-         lineup.skaters,
-         prior_availability=GamesShare.FULL ) )
+      _skaters( lineup.skaters ) )
 
 
 def _previous_factor(

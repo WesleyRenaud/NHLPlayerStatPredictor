@@ -3,7 +3,6 @@ from __future__ import annotations
 from ..depth.depth_chart import DepthChart
 from ..depth.depth_group import DepthGroup
 from ..depth.ice_pace_scaler import IcePaceScaler
-from ..depth.ice_usage import IceUsage
 from ..depth.skater_ice import SkaterIce
 from ..depth.slot_average import SlotAverage
 from ..projections.current_season_nhl_skater import CurrentSeasonNhlSkater
@@ -11,7 +10,6 @@ from ..projections.team_lineup import TeamLineup
 from ..skaters.skater_group import SkaterGroup
 from ..skaters.team import Team
 from .team_factor_filler import TeamFactorFiller
-from .team_factor_prior_binder import TeamFactorPriorBinder
 from .team_factor_rows import TeamFactorRows
 from .team_factor_skater import TeamFactorSkater
 from .teammate_skater import TeammateSkater
@@ -24,8 +22,6 @@ class TeamFactorCurrentBuilder():
          lineup: TeamLineup,
          slots: list[ SlotAverage ],
          charts: dict[ tuple[ Team, SkaterGroup ], DepthChart ],
-         usages: dict[ int, IceUsage ],
-         season_length: int,
          ice: dict[ int, SkaterIce ] ) -> list[ TeamFactorSkater ]:
       rows = []
 
@@ -34,8 +30,6 @@ class TeamFactorCurrentBuilder():
             lineup,
             slots,
             charts,
-            usages,
-            season_length,
             ice,
             group )
          rows.extend( TeamFactorRows.group( regulars, extras, group ) )
@@ -49,8 +43,6 @@ class TeamFactorCurrentBuilder():
          lineup: TeamLineup,
          slots: list[ SlotAverage ],
          charts: dict[ tuple[ Team, SkaterGroup ], DepthChart ],
-         usages: dict[ int, IceUsage ],
-         season_length: int,
          ice: dict[ int, SkaterIce ],
          group: DepthGroup ) -> tuple[
             list[ TeammateSkater ],
@@ -68,9 +60,7 @@ class TeamFactorCurrentBuilder():
          charts[ ( lineup.team, group.skater_group ) ],
          paces,
          slots,
-         group,
-         usages,
-         season_length )
+         group )
 
 
    @classmethod
@@ -79,9 +69,7 @@ class TeamFactorCurrentBuilder():
          chart: DepthChart,
          paces: dict[ int, float ],
          slots: list[ SlotAverage ],
-         group: DepthGroup,
-         usages: dict[ int, IceUsage ],
-         season_length: int ) -> tuple[
+         group: DepthGroup ) -> tuple[
             list[ TeammateSkater ],
             list[ TeammateSkater ] ]:
       regulars = [
@@ -100,14 +88,7 @@ class TeamFactorCurrentBuilder():
             None )
          for skater in chart.extras
       ]
-      return (
-         TeamFactorPriorBinder.bind(
-            regulars,
-            chart,
-            usages,
-            season_length,
-            group ),
-         TeamFactorFiller.pad( extras, slots, group.spare_slot ) )
+      return regulars, TeamFactorFiller.pad( extras, slots, group.spare_slot )
 
 
    @classmethod
