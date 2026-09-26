@@ -15,6 +15,14 @@ class PriorSeasonWeightFitter():
       ]
       total = sum( coefficients )
 
+      if not total:
+         return [
+            RecencyWeight(
+               lag=years_ago,
+               weight=1.0 if years_ago == Position.FIRST else 0.0 )
+            for years_ago in range( window )
+         ]
+
       return [
          RecencyWeight( lag=years_ago, weight=coefficients[ years_ago ] / total )
          for years_ago in range( window )

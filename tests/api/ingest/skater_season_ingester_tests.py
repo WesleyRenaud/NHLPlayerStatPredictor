@@ -20,8 +20,8 @@ from api.ingest.skater_season_ingester import SkaterSeasonIngester
 from api.paths import Paths
 from api.projections.current_season_nhl_skater import CurrentSeasonNhlSkater
 from api.projections.season_pace import SeasonPace
+from api.recency.age_recency_weights import AgeRecencyWeights
 from api.recency.recency_decay_fitter import RecencyDecayFitter
-from api.recency.recency_weight import RecencyWeight
 from api.recency.scoring_weight_store import ScoringWeightStore
 from api.season_length import SeasonLength
 from api.shared.enums.position import Position
@@ -125,7 +125,7 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    built: list[ tuple[
       list[ RosterSkater ],
       list[ NhlSkaterSeason ],
-      list[ RecencyWeight ],
+      list[ AgeRecencyWeights ],
       int,
       list[ LeagueFactor ],
       list[ AgingFactor ] ] ] = []
