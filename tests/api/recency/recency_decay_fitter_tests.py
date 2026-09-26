@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
+from api.recency.age_recency_blender import AgeRecencyBlender
 from api.recency.age_recency_weights import AgeRecencyWeights
 from api.recency.recency_decay_fitter import RecencyDecayFitter
 from api.recency.recency_weight import RecencyWeight
@@ -16,7 +17,8 @@ def _season(
       season_id: int,
       g_pace: float,
       a_pace: float,
-      age: float = 28.7 ) -> NhlSkaterSeason:
+      age: float = 28.7,
+      games_played: int = 82 ) -> NhlSkaterSeason:
    return NhlSkaterSeason(
       player_id=player_id,
       season_id=season_id,
@@ -25,12 +27,12 @@ def _season(
       birth_date=date( 1997, 1, 13 ),
       age=age,
       team=list( Team )[ Position.FIRST ],
-      games_played=1,
+      games_played=games_played,
       goals=0,
       assists=0,
       points=0,
-      schedule_games=1,
-      pace_games=1,
+      schedule_games=games_played,
+      pace_games=games_played,
       g_pace=g_pace,
       a_pace=a_pace,
       p_pace=g_pace + a_pace,
@@ -114,3 +116,38 @@ def Test_Fit_TestOnlyOnePriorYear_ExpectLaterLagsZero() -> None:
    weights = RecencyDecayFitter.fit( seasons )
 
    assert weights == [ AgeRecencyWeights( 19, _first_weight_one() ) ]
+
+
+def Test_Fit_TestThinPrior_ExpectDroppedFromWindow() -> None:
+   seasons = [
+      _season( 1, 20182019, 10.0, 10.0 ),
+      _season( 1, 20192020, 10.0, 10.0 ),
+      _season( 1, 20202021, 10.0, 10.0 ),
+      _season( 1, 20212022, 100.0, 100.0, games_played=1 ),
+      _season( 1, 20222023, 10.0, 10.0 ),
+   ]
+
+   weights = RecencyDecayFitter.fit( seasons )
+
+   assert weights == [ AgeRecencyWeights( 28, _first_weight_one() ) ]
+
+
+def Test_Fit_TestPooledAges_ExpectBlendedFromThirtyFour() -> None:
+   seasons: list[ NhlSkaterSeason ] = []
+
+   for index, last_age in enumerate( ( 34.4, 35.4, 36.4, 37.4 ) ):
+      seasons.extend(
+         _season(
+            index + 1,
+            ( 2018 + offset ) * 10000 + ( 2018 + offset + 1 ),
+            10.0,
+            10.0,
+            last_age )
+         for offset in range( RecencyDecayFitter.WINDOW + 1 )
+      )
+
+   weights = RecencyDecayFitter.fit( seasons )
+
+   assert [ row.age for row in weights ] == list(
+      range( AgeRecencyBlender.EARLY_AGE + 1, AgeRecencyBlender.LAST_AGE + 1 ) )
+   assert weights[ Position.LAST ].weights == _first_weight_one()
