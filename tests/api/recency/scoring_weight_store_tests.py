@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from api.paths import Paths
+from api.recency.age_recency_weights import AgeRecencyWeights
 from api.recency.recency_weight import RecencyWeight
 from api.recency.scoring_weight_store import ScoringWeightStore
 
@@ -14,7 +15,9 @@ def Test_Write_TestWeights_ExpectReadable(
       monkeypatch: pytest.MonkeyPatch,
       tmp_path: Path ) -> None:
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
-   weights = [ RecencyWeight( 0, 0.75 ), RecencyWeight( 1, 0.25 ) ]
+   weights = [
+      AgeRecencyWeights( 19, [ RecencyWeight( 0, 1.0 ), RecencyWeight( 1, 0.0 ) ] )
+   ]
    ScoringWeightStore.write( weights )
 
    loaded = ScoringWeightStore.read()

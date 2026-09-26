@@ -67,6 +67,20 @@ def Test_Fit_TestEightPriors_ExpectEqualWeights() -> None:
    ]
 
 
+def Test_Fit_TestAllNegative_ExpectFirstWeightOne() -> None:
+   window = 4
+   samples: list[ list[ float ] ] = []
+
+   for years_ago in range( window ):
+      row = [ 0.0 ] * window
+      row[ years_ago ] = 1.0
+      samples.append( [ -1.0, *row ] )
+
+   weights = PriorSeasonWeightFitter.fit( samples )
+
+   assert weights == _first_weight_one( window )
+
+
 def Test_Fit_TestNegativeCoefficient_ExpectClipped() -> None:
    window = 4
    samples: list[ list[ float ] ] = []

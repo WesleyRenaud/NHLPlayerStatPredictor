@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
+from api.recency.age_recency_weights import AgeRecencyWeights
 from api.recency.recency_decay_fitter import RecencyDecayFitter
 from api.recency.recency_weight import RecencyWeight
 from api.shared.enums.position import Position
@@ -14,14 +15,15 @@ def _season(
       player_id: int,
       season_id: int,
       g_pace: float,
-      a_pace: float ) -> NhlSkaterSeason:
+      a_pace: float,
+      age: float = 28.7 ) -> NhlSkaterSeason:
    return NhlSkaterSeason(
       player_id=player_id,
       season_id=season_id,
       player_name='Stub Skater',
       position=SkaterPosition( 'C' ),
       birth_date=date( 1997, 1, 13 ),
-      age=28.7,
+      age=age,
       team=list( Team )[ Position.FIRST ],
       games_played=1,
       goals=0,
@@ -71,12 +73,20 @@ def _first_weight_one() -> list[ RecencyWeight ]:
    ]
 
 
+def _equal_weights() -> list[ RecencyWeight ]:
+   weight = 1.0 / RecencyDecayFitter.WINDOW
+   return [
+      RecencyWeight( lag, weight )
+      for lag in range( RecencyDecayFitter.WINDOW )
+   ]
+
+
 def Test_Fit_TestLastYearMatches_ExpectFirstWeightOne() -> None:
    seasons = _last_year_seasons()
 
    weights = RecencyDecayFitter.fit( seasons )
 
-   assert weights == _first_weight_one()
+   assert weights == [ AgeRecencyWeights( 28, _first_weight_one() ) ]
 
 
 def Test_Fit_TestMeanOfWindow_ExpectEqualWeights() -> None:
@@ -90,11 +100,17 @@ def Test_Fit_TestMeanOfWindow_ExpectEqualWeights() -> None:
       values[ RecencyDecayFitter.WINDOW - 1 - lag ] = prior_pace
       seasons.extend( _run( lag + 1, values ) )
 
-   weight = 1.0 / RecencyDecayFitter.WINDOW
+   weights = RecencyDecayFitter.fit( seasons )
+
+   assert weights == [ AgeRecencyWeights( 28, _equal_weights() ) ]
+
+
+def Test_Fit_TestOnlyOnePriorYear_ExpectLaterLagsZero() -> None:
+   seasons = [
+      _season( 1, 20182019, 10.0, 10.0, 18.4 ),
+      _season( 1, 20192020, 10.0, 10.0, 19.4 ),
+   ]
 
    weights = RecencyDecayFitter.fit( seasons )
 
-   assert weights == [
-      RecencyWeight( lag, weight )
-      for lag in range( RecencyDecayFitter.WINDOW )
-   ]
+   assert weights == [ AgeRecencyWeights( 19, _first_weight_one() ) ]

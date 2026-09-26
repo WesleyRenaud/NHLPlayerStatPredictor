@@ -9,6 +9,7 @@ from api.aging.league_factor import LeagueFactor
 import api.projections.baseline_pace_resolver as baseline_pace_resolver
 from api.projections.baseline_pace_resolver import BaselinePaceResolver
 from api.projections.season_pace import SeasonPace
+from api.recency.age_recency_weights import AgeRecencyWeights
 from api.recency.recency_weight import RecencyWeight
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
@@ -42,8 +43,9 @@ def _season( age: float, season_id: int = 20232024 ) -> NhlSkaterSeason:
 
 def Test_Resolve_TestSeasons_ExpectAgedPace(
       monkeypatch: pytest.MonkeyPatch ) -> None:
-   seasons = [ _season( 27.2 ), _season( 28.7 ) ]
-   weights = [ RecencyWeight( 0, 1.0 ) ]
+   seasons = [ _season( 27.2, 20222023 ), _season( 28.7, 20232024 ) ]
+   mix = [ RecencyWeight( 0, 1.0 ) ]
+   weights = [ AgeRecencyWeights( 29, mix ) ]
    factors = [ AgingFactor( 28, -0.07, -0.044 ) ]
    target_season_id = 20232024
    pace = SeasonPace( 31.4, 42.1 )
@@ -80,7 +82,7 @@ def Test_Resolve_TestSeasons_ExpectAgedPace(
 
    assert resolved == aged
    assert averaged == [
-      ( seasons, weights, target_season_id, league_factors )
+      ( seasons, mix, target_season_id, league_factors )
    ]
    assert adjusted == [
       ( pace, seasons[ Position.LAST ].completed_age(), factors, seasons )
@@ -104,7 +106,8 @@ def Test_Resolve_TestOtherLeagueOnly_ExpectOtherLeagueAge(
          g_pace=10.0,
          a_pace=20.0 )
    ]
-   weights = [ RecencyWeight( 0, 1.0 ) ]
+   mix = [ RecencyWeight( 0, 1.0 ) ]
+   weights = [ AgeRecencyWeights( 21, mix ) ]
    factors = [ AgingFactor( 20, 0.12, 0.09 ) ]
    target_season_id = 20262027
    pace = SeasonPace( 31.4, 42.1 )
@@ -159,9 +162,9 @@ def Test_Resolve_TestMissingPace_ExpectNone(
    assert adjusted == []
 
 
-def Test_Resolve_TestMixed_ExpectLastNhlAge(
+def Test_Resolve_TestMixed_ExpectLastSeasonAge(
       monkeypatch: pytest.MonkeyPatch ) -> None:
-   nhl = [ _season( 18.4, 20242025 ), _season( 19.4, 20252026 ) ]
+   nhl = [ _season( 18.4, 20232024 ), _season( 19.4, 20242025 ) ]
    other = OtherLeagueSkaterSeason(
       player_id=7,
       season_id=20252026,
@@ -175,8 +178,9 @@ def Test_Resolve_TestMixed_ExpectLastNhlAge(
       g_pace=10.0,
       a_pace=20.0 )
    seasons = [ *nhl, other ]
-   weights = [ RecencyWeight( 0, 1.0 ) ]
-   factors = [ AgingFactor( 19, 0.12, 0.09 ) ]
+   mix = [ RecencyWeight( 0, 1.0 ) ]
+   weights = [ AgeRecencyWeights( 21, mix ) ]
+   factors = [ AgingFactor( 20, 0.12, 0.09 ) ]
    target_season_id = 20262027
    pace = SeasonPace( 31.4, 42.1 )
    aged = SeasonPace( 10.4, 20.6 )
@@ -205,5 +209,5 @@ def Test_Resolve_TestMixed_ExpectLastNhlAge(
 
    assert resolved == aged
    assert adjusted == [
-      ( pace, nhl[ Position.LAST ].completed_age(), factors, nhl )
+      ( pace, other.completed_age(), factors, nhl )
    ]

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections import defaultdict
+
+from .age_recency_weights import AgeRecencyWeights
 from .prior_season_weight_fitter import PriorSeasonWeightFitter
 from .recency_weight import RecencyWeight
 from ..season import Season
@@ -12,40 +15,92 @@ class RecencyDecayFitter():
 
 
    @classmethod
-   def fit( cls, seasons: list[ NhlSkaterSeason ] ) -> list[ RecencyWeight ]:
-      return PriorSeasonWeightFitter.fit( cls._samples( seasons ) )
+   def fit( cls, seasons: list[ NhlSkaterSeason ] ) -> list[ AgeRecencyWeights ]:
+      return [
+         AgeRecencyWeights( age, cls._weights( rows ) )
+         for age, rows in sorted( cls._by_age( seasons ).items() )
+      ]
 
 
    @classmethod
-   def _samples( cls, seasons: list[ NhlSkaterSeason ] ) -> list[ list[ float ] ]:
-      samples: list[ list[ float ] ] = []
+   def _weights(
+         cls,
+         rows: list[ tuple[ NhlSkaterSeason, list[ NhlSkaterSeason ] ] ]
+         ) -> list[ RecencyWeight ]:
+      max_width = max( len( priors ) for _current, priors in rows )
+
+      for width in range( max_width, 0, -1 ):
+         complete = [
+            ( current, priors )
+            for current, priors in rows
+            if len( priors ) >= width
+         ]
+
+         if len( complete ) < width:
+            continue
+
+         samples: list[ list[ float ] ] = []
+
+         for current, priors in complete:
+            used = priors[ :width ]
+            samples.append(
+               [ current.g_pace, *[ prior.g_pace for prior in used ] ] )
+            samples.append(
+               [ current.a_pace, *[ prior.a_pace for prior in used ] ] )
+
+         try:
+            return cls._padded( PriorSeasonWeightFitter.fit( samples ) )
+         except ZeroDivisionError:
+            continue
+
+      return cls._padded( [ RecencyWeight( 0, 1.0 ) ] )
+
+
+   @classmethod
+   def _padded( cls, weights: list[ RecencyWeight ] ) -> list[ RecencyWeight ]:
+      by_lag = { weight.lag: weight.weight for weight in weights }
+      return [
+         RecencyWeight( lag, by_lag.get( lag, 0.0 ) )
+         for lag in range( RecencyDecayFitter.WINDOW )
+      ]
+
+
+   @classmethod
+   def _by_age(
+         cls,
+         seasons: list[ NhlSkaterSeason ]
+         ) -> dict[ int, list[ tuple[ NhlSkaterSeason, list[ NhlSkaterSeason ] ] ] ]:
+      grouped: dict[
+         int,
+         list[ tuple[ NhlSkaterSeason, list[ NhlSkaterSeason ] ] ]
+      ] = defaultdict( list )
 
       for player_seasons in SkaterSeasonYears.by_player( seasons ).values():
          for current in player_seasons:
-            samples.extend( cls._year_samples( player_seasons, current ) )
+            priors = cls._priors( player_seasons, current )
 
-      return samples
+            if not priors:
+               continue
+
+            grouped[ current.completed_age() ].append( ( current, priors ) )
+
+      return grouped
 
 
    @classmethod
-   def _year_samples(
+   def _priors(
          cls,
          seasons: list[ NhlSkaterSeason ],
-         current: NhlSkaterSeason ) -> list[ list[ float ] ]:
-      goals: list[ float ] = []
-      assists: list[ float ] = []
+         current: NhlSkaterSeason ) -> list[ NhlSkaterSeason ]:
+      priors: list[ NhlSkaterSeason ] = []
       year = Season.start_year( current.season_id )
 
       for lag in range( RecencyDecayFitter.WINDOW ):
          prior = SkaterSeasonYears.at_year( seasons, year - lag - 1 )
 
          if prior is None:
-            return []
+            return priors
 
-         goals.append( prior.g_pace )
-         assists.append( prior.a_pace )
+         priors.append( prior )
 
-      return [
-         [ current.g_pace, *goals ],
-         [ current.a_pace, *assists ],
-      ]
+      return priors

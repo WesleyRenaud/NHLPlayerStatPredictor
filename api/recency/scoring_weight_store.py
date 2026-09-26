@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from .age_recency_weights import AgeRecencyWeights
 from ..paths import Paths
-from .recency_weight import RecencyWeight
 
 
 class ScoringWeightStore():
@@ -17,7 +17,7 @@ class ScoringWeightStore():
 
 
    @classmethod
-   def write( cls, weights: list[ RecencyWeight ] ) -> None:
+   def write( cls, weights: list[ AgeRecencyWeights ] ) -> None:
       path = cls.path()
       path.parent.mkdir( parents=True, exist_ok=True )
       path.write_text(
@@ -25,6 +25,6 @@ class ScoringWeightStore():
 
 
    @classmethod
-   def read( cls ) -> list[ RecencyWeight ]:
+   def read( cls ) -> list[ AgeRecencyWeights ]:
       rows = json.loads( cls.path().read_text() )
-      return [ RecencyWeight.from_row( row ) for row in rows ]
+      return [ AgeRecencyWeights.from_row( row ) for row in rows ]
