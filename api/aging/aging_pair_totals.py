@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .aging_season_paces import AgingSeasonPaces
 from ..skaters.skater_season import SkaterSeason
 
 
@@ -23,12 +24,14 @@ class AgingPairTotals():
          self,
          current: SkaterSeason,
          following: SkaterSeason ) -> AgingPairTotals:
+      goal_pace, assist_pace = AgingSeasonPaces.resolve( current, following )
+      next_goals, next_assists = AgingSeasonPaces.resolve( following, current )
       return AgingPairTotals(
          self.pair_count + 1,
-         self.goal_pace + current.g_pace,
-         self.assist_pace + current.a_pace,
-         self.goal_change + following.g_pace - current.g_pace,
-         self.assist_change + following.a_pace - current.a_pace )
+         self.goal_pace + goal_pace,
+         self.assist_pace + assist_pace,
+         self.goal_change + next_goals - goal_pace,
+         self.assist_change + next_assists - assist_pace )
 
 
    def percent( self ) -> tuple[ float, float ] | None:
