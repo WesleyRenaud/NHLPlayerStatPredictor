@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from datetime import date
 
+from api.aging.aging_season_paces import AgingSeasonPaces
+from api.depth.usable_nhl_ice import UsableNhlIce
 from api.projections.player_aging_fitter import PlayerAgingFitter
 from api.projections.player_aging_rate import PlayerAgingRate
 from api.shared.enums.position import Position
@@ -13,7 +15,10 @@ from api.skaters.team import Team
 def _season(
       season_id: int,
       g_pace: float,
-      a_pace: float ) -> NhlSkaterSeason:
+      a_pace: float,
+      games_played: int = 1,
+      goals: int = 0,
+      assists: int = 0 ) -> NhlSkaterSeason:
    return NhlSkaterSeason(
       player_id=1,
       season_id=season_id,
@@ -22,10 +27,10 @@ def _season(
       birth_date=date( 1997, 1, 13 ),
       age=28.0,
       team=list( Team )[ Position.FIRST ],
-      games_played=1,
-      goals=0,
-      assists=0,
-      points=0,
+      games_played=games_played,
+      goals=goals,
+      assists=assists,
+      points=goals + assists,
       schedule_games=1,
       pace_games=1,
       g_pace=g_pace,
@@ -75,6 +80,35 @@ def Test_Fit_TestGapYear_ExpectSkipped() -> None:
    rate = PlayerAgingFitter.fit( seasons )
 
    assert rate is None
+
+
+def Test_Fit_TestOneAssistGame_ExpectBorrowedMixAndBothPairs() -> None:
+   coffee = _season( 20232024, 0.0, 84.0, games_played=1, assists=1 )
+   rookie = _season(
+      20242025,
+      20.0,
+      24.0,
+      games_played=UsableNhlIce.MIN_GAMES,
+      goals=20,
+      assists=24 )
+   jump = _season(
+      20252026,
+      40.0,
+      30.0,
+      games_played=UsableNhlIce.MIN_GAMES,
+      goals=40,
+      assists=30 )
+   seasons = [ coffee, rookie, jump ]
+   coffee_goals, coffee_assists = AgingSeasonPaces.resolve( coffee, rookie )
+
+   rate = PlayerAgingFitter.fit( seasons )
+
+   assert rate == PlayerAgingRate(
+      2,
+      ( ( rookie.g_pace - coffee_goals ) + ( jump.g_pace - rookie.g_pace ) )
+      / ( coffee_goals + rookie.g_pace ),
+      ( ( rookie.a_pace - coffee_assists ) + ( jump.a_pace - rookie.a_pace ) )
+      / ( coffee_assists + rookie.a_pace ) )
 
 
 def Test_Fit_TestOlderThanWindow_ExpectRecentPairsOnly() -> None:
