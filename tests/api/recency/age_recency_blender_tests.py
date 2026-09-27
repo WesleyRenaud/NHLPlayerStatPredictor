@@ -21,29 +21,8 @@ def _equal_weights() -> list[ RecencyWeight ]:
    ]
 
 
-def Test_Blend_TestMidSpan_ExpectHalfway() -> None:
-   early_mix = AgeRecencyWeights( AgeRecencyBlender.EARLY_AGE, _first_weight_one() )
-   pooled_mix = AgeRecencyWeights( 34, _equal_weights() )
-
-   rows = AgeRecencyBlender.blend( [ early_mix, pooled_mix ], 34 )
-
-   mid_age = ( AgeRecencyBlender.EARLY_AGE + AgeRecencyBlender.LAST_AGE ) // 2
-   half = 0.5
-   assert next( row for row in rows if row.age == mid_age ) == AgeRecencyWeights(
-      mid_age,
-      [
-         RecencyWeight(
-            lag,
-            ( 1.0 - half ) * left.weight + half * right.weight )
-         for lag, left, right in zip(
-            range( 4 ),
-            _first_weight_one(),
-            _equal_weights() )
-      ] )
-
-
-def Test_Blend_TestLastAge_ExpectPooledMix() -> None:
-   early_mix = AgeRecencyWeights( AgeRecencyBlender.EARLY_AGE, _first_weight_one() )
+def Test_Blend_TestAfterPooled_ExpectPooledMix() -> None:
+   early_mix = AgeRecencyWeights( 32, _first_weight_one() )
    pooled_mix = AgeRecencyWeights( 34, _equal_weights() )
 
    rows = AgeRecencyBlender.blend( [ early_mix, pooled_mix ], 34 )
@@ -53,32 +32,26 @@ def Test_Blend_TestLastAge_ExpectPooledMix() -> None:
    ) == AgeRecencyWeights( AgeRecencyBlender.LAST_AGE, _equal_weights() )
 
 
-def Test_Blend_TestThirtyThree_ExpectMostlyEarly() -> None:
-   early_mix = AgeRecencyWeights( AgeRecencyBlender.EARLY_AGE, _first_weight_one() )
+def Test_Blend_TestPooledAge_ExpectUnchanged() -> None:
    pooled_mix = AgeRecencyWeights( 34, _equal_weights() )
-   share = 1.0 / ( AgeRecencyBlender.LAST_AGE - AgeRecencyBlender.EARLY_AGE )
 
-   rows = AgeRecencyBlender.blend( [ early_mix, pooled_mix ], 34 )
+   rows = AgeRecencyBlender.blend( [ pooled_mix ], 34 )
 
-   assert next( row for row in rows if row.age == 33 ) == AgeRecencyWeights(
-      33,
-      [
-         RecencyWeight(
-            lag,
-            ( 1.0 - share ) * left.weight + share * right.weight )
-         for lag, left, right in zip(
-            range( 4 ),
-            _first_weight_one(),
-            _equal_weights() )
-      ] )
+   assert next( row for row in rows if row.age == 34 ) == pooled_mix
 
 
-def Test_Blend_TestEarlyAge_ExpectUnchanged() -> None:
-   early_mix = AgeRecencyWeights( AgeRecencyBlender.EARLY_AGE, _first_weight_one() )
+def Test_Blend_TestYoungerAge_ExpectKept() -> None:
+   early_mix = AgeRecencyWeights( 32, _first_weight_one() )
    pooled_mix = AgeRecencyWeights( 34, _equal_weights() )
 
    rows = AgeRecencyBlender.blend( [ early_mix, pooled_mix ], 34 )
 
-   assert next(
-      row for row in rows if row.age == AgeRecencyBlender.EARLY_AGE
-   ) == early_mix
+   assert next( row for row in rows if row.age == 32 ) == early_mix
+
+
+def Test_Blend_TestMissingPooled_ExpectUnchanged() -> None:
+   early_mix = AgeRecencyWeights( 32, _first_weight_one() )
+
+   rows = AgeRecencyBlender.blend( [ early_mix ], 34 )
+
+   assert rows == [ early_mix ]
