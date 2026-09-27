@@ -16,6 +16,7 @@ class PriorYear():
    games: int
    nhl_games: int
    age: float
+   playoff_surplus: SeasonPace
 
 
    def source( self ) -> PriorSource:

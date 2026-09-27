@@ -11,8 +11,13 @@ from api.recency.prior_source import PriorSource
 from api.recency.prior_year import PriorYear
 
 
-def _prior( year: int, goals: float, nhl_games: int = 82, age: float = 25.4 ) -> PriorYear:
-   return PriorYear( year, SeasonPace( goals, goals ), 82, nhl_games, age )
+def _prior(
+      year: int,
+      goals: float,
+      nhl_games: int = 82,
+      age: float = 25.4,
+      surplus: SeasonPace = SeasonPace.zero() ) -> PriorYear:
+   return PriorYear( year, SeasonPace( goals, goals ), 82, nhl_games, age, surplus )
 
 
 def _model() -> PaceRegressionModel:
@@ -23,7 +28,9 @@ def _model() -> PaceRegressionModel:
          PaceRegression( PriorSource.TRANSLATED, AgeBand( 24, 40 ), 3.0, [ 0.8 ], 3.0, [ 0.8 ] ),
       ],
       0.8,
-      0.9 )
+      0.9,
+      1.2,
+      0.7 )
 
 
 def Test_Regressed_TestNoPriors_ExpectNone() -> None:
@@ -81,6 +88,43 @@ def Test_Pace_TestTranslatedGap_ExpectNoDiscount() -> None:
 def Test_Pace_TestNoGap_ExpectRegressed() -> None:
    model = _model()
    priors = [ _prior( 2024, 20.0 ) ]
+
+   paced = PaceRegressionPredictor.pace( model, priors, 2025 )
+
+   assert paced == PaceRegressionPredictor.regressed( model.regressions, priors )
+
+
+def Test_Pace_TestNhlPlayoffSurplus_ExpectWeightedSurplusAdded() -> None:
+   model = _model()
+   surplus = SeasonPace( 4.0, 6.0 )
+   priors = [ _prior( 2024, 20.0, surplus=surplus ) ]
+   regressed = PaceRegressionPredictor.regressed( model.regressions, priors )
+
+   paced = PaceRegressionPredictor.pace( model, priors, 2025 )
+
+   assert regressed is not None
+   assert paced is not None
+   assert paced.goals == pytest.approx( regressed.goals + model.playoff_goal_weight * surplus.goals )
+   assert paced.assists == pytest.approx( regressed.assists + model.playoff_assist_weight * surplus.assists )
+
+
+def Test_Pace_TestPlayoffSurplusAfterGap_ExpectSurplusDiscounted() -> None:
+   model = _model()
+   surplus = SeasonPace( 4.0, 6.0 )
+   priors = [ _prior( 2023, 20.0, surplus=surplus ) ]
+   regressed = PaceRegressionPredictor.regressed( model.regressions, priors )
+
+   paced = PaceRegressionPredictor.pace( model, priors, 2025 )
+
+   assert regressed is not None
+   assert paced is not None
+   assert paced.goals == pytest.approx(
+      ( regressed.goals + model.playoff_goal_weight * surplus.goals ) * model.nhl_gap_goals )
+
+
+def Test_Pace_TestTranslatedPlayoffSurplus_ExpectIgnored() -> None:
+   priors = [ _prior( 2024, 20.0, nhl_games=0, surplus=SeasonPace( 4.0, 6.0 ) ) ]
+   model = _model()
 
    paced = PaceRegressionPredictor.pace( model, priors, 2025 )
 

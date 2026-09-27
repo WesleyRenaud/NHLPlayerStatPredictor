@@ -39,6 +39,7 @@ class PaceRegressionFitter():
       AgeBand( 24, 40 ),
    ]
    NO_DISCOUNT = 1.0
+   NO_PLAYOFF_WEIGHT = 0.0
 
 
    @classmethod
@@ -49,11 +50,9 @@ class PaceRegressionFitter():
          factors: list[ LeagueFactor ] ) -> PaceRegressionModel:
       samples = cls._samples( nhl_seasons, other_seasons, factors )
       regressions = cls._regressions( [ sample for sample in samples if not sample.gap() ] )
-      returning = [
-         sample
-         for sample in samples
-         if sample.gap() and sample.source() == PriorSource.NHL
-      ]
+      nhl = [ sample for sample in samples if sample.source() == PriorSource.NHL ]
+      returning = [ sample for sample in nhl if sample.gap() ]
+      consecutive = [ sample for sample in nhl if not sample.gap() ]
       return PaceRegressionModel(
          regressions,
          cls._gap_scale(
@@ -64,6 +63,16 @@ class PaceRegressionFitter():
          cls._gap_scale(
             regressions,
             returning,
+            lambda pace: pace.assists,
+            lambda season: season.a_pace ),
+         cls._playoff_weight(
+            regressions,
+            consecutive,
+            lambda pace: pace.goals,
+            lambda season: season.g_pace ),
+         cls._playoff_weight(
+            regressions,
+            consecutive,
             lambda pace: pace.assists,
             lambda season: season.a_pace ) )
 
@@ -178,6 +187,33 @@ class PaceRegressionFitter():
 
       constant, *weights = LinearSystem.solve( products, targets )
       return constant, weights
+
+
+   @classmethod
+   def _playoff_weight(
+         cls,
+         regressions: list[ PaceRegression ],
+         samples: list[ PaceSample ],
+         predicted: Callable[ [ SeasonPace ], float ],
+         actual: Callable[ [ NhlSkaterSeason ], float ] ) -> float:
+      surplus_products = 0.0
+      residual_products = 0.0
+
+      for sample in samples:
+         regressed = PaceRegressionPredictor.regressed( regressions, sample.priors )
+
+         if regressed is None:
+            continue
+
+         games = sample.current.games_played
+         surplus = predicted( sample.priors[ Position.FIRST ].playoff_surplus )
+         surplus_products += games * surplus * surplus
+         residual_products += games * surplus * ( actual( sample.current ) - predicted( regressed ) )
+
+      if not surplus_products:
+         return PaceRegressionFitter.NO_PLAYOFF_WEIGHT
+
+      return residual_products / surplus_products
 
 
    @classmethod

@@ -29,7 +29,10 @@ def _nhl() -> NhlSkaterSeason:
       g_pace=20.0,
       a_pace=30.0,
       p_pace=50.0,
-      gp_share=1.0 )
+      gp_share=1.0,
+      playoff_games=0,
+      playoff_goals=0,
+      playoff_assists=0 )
 
 
 def _other() -> OtherLeagueSkaterSeason:

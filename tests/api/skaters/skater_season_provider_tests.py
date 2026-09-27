@@ -29,7 +29,10 @@ def _season( player_id: int, season_id: int ) -> NhlSkaterSeason:
       g_pace=10.0,
       a_pace=20.0,
       p_pace=30.0,
-      gp_share=1.0 )
+      gp_share=1.0,
+      playoff_games=0,
+      playoff_goals=0,
+      playoff_assists=0 )
 
 
 def Test_SeasonsForName_TestInsertedPlayer_ExpectLookupByName( tmp_path: Path ) -> None:
@@ -52,7 +55,10 @@ def Test_SeasonsForName_TestInsertedPlayer_ExpectLookupByName( tmp_path: Path ) 
       g_pace=48.0,
       a_pace=90.0,
       p_pace=138.0,
-      gp_share=1.0 )
+      gp_share=1.0,
+      playoff_games=0,
+      playoff_goals=0,
+      playoff_assists=0 )
    SkaterSeasonStore.insert_rows( [ season ], db_path=db_path )
 
    rows = SkaterSeasonProvider.seasons_for_name( query, db_path=db_path )

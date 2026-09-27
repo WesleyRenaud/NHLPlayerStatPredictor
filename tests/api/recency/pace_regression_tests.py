@@ -10,7 +10,7 @@ from api.recency.prior_year import PriorYear
 
 
 def _prior( year: int, goals: float, assists: float ) -> PriorYear:
-   return PriorYear( year, SeasonPace( goals, assists ), 82, 82, 27.5 )
+   return PriorYear( year, SeasonPace( goals, assists ), 82, 82, 27.5, SeasonPace.zero() )
 
 
 def Test_FromRow_TestDict_ExpectRoundTrip() -> None:

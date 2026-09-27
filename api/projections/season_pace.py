@@ -7,3 +7,8 @@ from dataclasses import dataclass
 class SeasonPace():
    goals: float
    assists: float
+
+
+   @classmethod
+   def zero( cls ) -> SeasonPace:
+      return cls( goals=0.0, assists=0.0 )

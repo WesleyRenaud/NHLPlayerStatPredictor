@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date
 
 import pytest
@@ -7,7 +8,11 @@ import pytest
 from api.aging.league_factor import LeagueFactor
 from api.recency.age_band import AgeBand
 from api.recency.pace_regression_fitter import PaceRegressionFitter
+from api.recency.pace_regression_model import PaceRegressionModel
+from api.recency.pace_regression_predictor import PaceRegressionPredictor
 from api.recency.prior_source import PriorSource
+from api.recency.prior_year_builder import PriorYearBuilder
+from api.season import Season
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
 from api.skaters.other_league_skater_season import OtherLeagueSkaterSeason
@@ -38,7 +43,10 @@ def _nhl(
       g_pace=g_pace,
       a_pace=a_pace,
       p_pace=g_pace + a_pace,
-      gp_share=1.0 )
+      gp_share=1.0,
+      playoff_games=0,
+      playoff_goals=0,
+      playoff_assists=0 )
 
 
 def _other( player_id: int, start_year: int, g_pace: float, a_pace: float ) -> OtherLeagueSkaterSeason:
@@ -85,6 +93,48 @@ def _pairs( count: int, gap: int = 0, scale: float = 1.0, first_id: int = 0 ) ->
    return seasons
 
 
+def _playoff_pairs() -> list[ NhlSkaterSeason ]:
+   seasons: list[ NhlSkaterSeason ] = []
+
+   for player_id in range( _PLAYERS ):
+      goals = _goals( player_id )
+      assists = _assists( player_id )
+      prior = replace(
+         _nhl( player_id, 2020, goals, assists, 25.4 ),
+         playoff_games=20,
+         playoff_goals=player_id % 5,
+         playoff_assists=player_id % 4 )
+      surplus = prior.playoff_surplus()
+      seasons.append( prior )
+      seasons.append(
+         _nhl(
+            player_id,
+            2021,
+            2.0 + 0.5 * goals + 1.5 * surplus.goals,
+            1.0 + 0.25 * assists + 0.8 * surplus.assists,
+            26.4 ) )
+
+   return seasons
+
+
+def _goal_error( model: PaceRegressionModel, seasons: list[ NhlSkaterSeason ] ) -> float:
+   error = 0.0
+
+   for target in seasons:
+      if Season.start_year( target.season_id ) != 2021:
+         continue
+
+      priors = PriorYearBuilder.build(
+         [ season for season in seasons if season.player_id == target.player_id ],
+         [],
+         2021 )
+      pace = PaceRegressionPredictor.pace( model, priors, 2021 )
+      assert pace is not None
+      error += ( pace.goals - target.g_pace ) ** 2
+
+   return error
+
+
 def Test_Fit_TestLinearPairs_ExpectRecoveredBandRegression() -> None:
    seasons = _pairs( _PLAYERS )
 
@@ -98,6 +148,23 @@ def Test_Fit_TestLinearPairs_ExpectRecoveredBandRegression() -> None:
    assert regression.goal_weights == pytest.approx( [ 0.5 ] )
    assert regression.assist_constant == pytest.approx( 1.0 )
    assert regression.assist_weights == pytest.approx( [ 0.25 ] )
+   assert model.playoff_goal_weight == PaceRegressionFitter.NO_PLAYOFF_WEIGHT
+   assert model.playoff_assist_weight == PaceRegressionFitter.NO_PLAYOFF_WEIGHT
+
+
+def Test_Fit_TestPlayoffSurplus_ExpectErrorMinimizingPositiveWeights() -> None:
+   seasons = _playoff_pairs()
+   step = 0.1
+
+   model = PaceRegressionFitter.fit( seasons, [], [] )
+
+   fitted = _goal_error( model, seasons )
+   assert model.playoff_goal_weight > PaceRegressionFitter.NO_PLAYOFF_WEIGHT
+   assert model.playoff_assist_weight > PaceRegressionFitter.NO_PLAYOFF_WEIGHT
+   assert fitted < _goal_error(
+      replace( model, playoff_goal_weight=model.playoff_goal_weight + step ), seasons )
+   assert fitted < _goal_error(
+      replace( model, playoff_goal_weight=model.playoff_goal_weight - step ), seasons )
 
 
 def Test_Fit_TestReturningPlayers_ExpectGapScaleWithoutChangingFit() -> None:

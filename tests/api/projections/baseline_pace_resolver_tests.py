@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date
 
 import pytest
@@ -36,7 +37,10 @@ def _nhl( season_id: int, g_pace: float, a_pace: float, age: float ) -> NhlSkate
       g_pace=g_pace,
       a_pace=a_pace,
       p_pace=g_pace + a_pace,
-      gp_share=1.0 )
+      gp_share=1.0,
+      playoff_games=0,
+      playoff_goals=0,
+      playoff_assists=0 )
 
 
 def _other( season_id: int, g_pace: float, a_pace: float, league: str ) -> OtherLeagueSkaterSeason:
@@ -61,7 +65,9 @@ def _model() -> PaceRegressionModel:
          PaceRegression( PriorSource.TRANSLATED, AgeBand( 17, 19 ), 3.0, [ 0.8 ], 4.0, [ 0.8 ] ),
       ],
       0.8,
-      0.9 )
+      0.9,
+      1.5,
+      0.5 )
 
 
 def Test_Resolve_TestNhlSeason_ExpectRegressedPace() -> None:
@@ -72,6 +78,21 @@ def Test_Resolve_TestNhlSeason_ExpectRegressedPace() -> None:
    assert resolved is not None
    assert resolved.goals == pytest.approx( 1.0 + 0.5 * season.g_pace )
    assert resolved.assists == pytest.approx( 2.0 + 0.5 * season.a_pace )
+
+
+def Test_Resolve_TestPlayoffSurplus_ExpectWeightedSurplusAdded() -> None:
+   regular = _nhl( 20242025, 20.0, 30.0, 27.4 )
+   season = replace( regular, playoff_games=10, playoff_goals=5, playoff_assists=3 )
+   model = _model()
+   surplus = season.playoff_surplus()
+
+   without = BaselinePaceResolver.resolve( Skater( [ regular ] ), 20252026, [], model )
+   resolved = BaselinePaceResolver.resolve( Skater( [ season ] ), 20252026, [], model )
+
+   assert without is not None
+   assert resolved is not None
+   assert resolved.goals == pytest.approx( without.goals + model.playoff_goal_weight * surplus.goals )
+   assert resolved.assists == pytest.approx( without.assists + model.playoff_assist_weight * surplus.assists )
 
 
 def Test_Resolve_TestOtherLeagueOnly_ExpectTranslatedRegression() -> None:

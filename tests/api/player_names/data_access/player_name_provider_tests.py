@@ -38,7 +38,10 @@ def _season(
       g_pace=48.0,
       a_pace=90.0,
       p_pace=138.0,
-      gp_share=1.0 )
+      gp_share=1.0,
+      playoff_games=0,
+      playoff_goals=0,
+      playoff_assists=0 )
 
 
 def _other( player_id: int ) -> OtherLeagueSkaterSeason:

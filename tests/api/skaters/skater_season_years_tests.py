@@ -28,7 +28,10 @@ def _season( player_id: int, season_id: int ) -> NhlSkaterSeason:
       g_pace=0.0,
       a_pace=0.0,
       p_pace=0.0,
-      gp_share=1.0 )
+      gp_share=1.0,
+      playoff_games=0,
+      playoff_goals=0,
+      playoff_assists=0 )
 
 
 def Test_ByPlayer_TestSeasons_ExpectYearsByPlayer() -> None:

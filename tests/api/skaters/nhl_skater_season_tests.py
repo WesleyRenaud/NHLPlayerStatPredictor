@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date
+
+import pytest
 
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
@@ -8,6 +11,30 @@ from api.skaters.skater_position import SkaterPosition
 from api.skaters.skater_season import SkaterSeason
 from api.skaters.skater_season_key import SkaterSeasonKey
 from api.skaters.team import Team
+
+
+def _season( games_played: int, goals: int, assists: int ) -> NhlSkaterSeason:
+   return NhlSkaterSeason(
+      player_id=7,
+      season_id=20252026,
+      player_name='Stub Skater',
+      position=list( SkaterPosition )[ Position.FIRST ],
+      birth_date=date( 1997, 1, 13 ),
+      age=28.7,
+      team=list( Team )[ Position.FIRST ],
+      games_played=games_played,
+      goals=goals,
+      assists=assists,
+      points=goals + assists,
+      schedule_games=82,
+      pace_games=82,
+      g_pace=0.0,
+      a_pace=0.0,
+      p_pace=0.0,
+      gp_share=1.0,
+      playoff_games=0,
+      playoff_goals=0,
+      playoff_assists=0 )
 
 
 def Test_FromRow_TestStoredFields_ExpectValues() -> None:
@@ -30,7 +57,10 @@ def Test_FromRow_TestStoredFields_ExpectValues() -> None:
       g_pace=48.0,
       a_pace=90.0,
       p_pace=138.0,
-      gp_share=1.0 )
+      gp_share=1.0,
+      playoff_games=18,
+      playoff_goals=7,
+      playoff_assists=26 )
 
    loaded = NhlSkaterSeason.from_row( {
       'PLAYER_ID': season.player_id,
@@ -50,6 +80,9 @@ def Test_FromRow_TestStoredFields_ExpectValues() -> None:
       'A_PACE': season.a_pace,
       'P_PACE': season.p_pace,
       'GP_SHARE': season.gp_share,
+      'PLAYOFF_GAMES': season.playoff_games,
+      'PLAYOFF_GOALS': season.playoff_goals,
+      'PLAYOFF_ASSISTS': season.playoff_assists,
    } )
 
    assert loaded == season
@@ -74,8 +107,37 @@ def Test_Key_TestPlayerAndSeason_ExpectKey() -> None:
       g_pace=48.0,
       a_pace=90.0,
       p_pace=138.0,
-      gp_share=1.0 )
+      gp_share=1.0,
+      playoff_games=0,
+      playoff_goals=0,
+      playoff_assists=0 )
 
    key = season.key()
 
    assert key == SkaterSeasonKey( season.player_id, season.season_id )
+
+
+def Test_PlayoffSurplus_TestAboveRegularRate_ExpectExtraScoring() -> None:
+   season = replace( _season( 60, 12, 18 ), playoff_games=20, playoff_goals=10, playoff_assists=9 )
+   share = season.playoff_games / season.games_played
+
+   surplus = season.playoff_surplus()
+
+   assert surplus.goals == pytest.approx( season.playoff_goals - share * season.goals )
+   assert surplus.assists == pytest.approx( season.playoff_assists - share * season.assists )
+
+
+def Test_PlayoffSurplus_TestBelowRegularRate_ExpectNoSurplus() -> None:
+   season = replace( _season( 80, 40, 40 ), playoff_games=10, playoff_goals=1, playoff_assists=2 )
+
+   surplus = season.playoff_surplus()
+
+   assert surplus.goals == 0.0
+   assert surplus.assists == 0.0
+
+
+def Test_PlayoffSurplus_TestNoPlayoffs_ExpectNoSurplus() -> None:
+   surplus = _season( 80, 40, 40 ).playoff_surplus()
+
+   assert surplus.goals == 0.0
+   assert surplus.assists == 0.0

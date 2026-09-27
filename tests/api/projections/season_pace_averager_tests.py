@@ -29,7 +29,10 @@ def _season( g_pace: float, a_pace: float, season_id: int ) -> NhlSkaterSeason:
       g_pace=g_pace,
       a_pace=a_pace,
       p_pace=g_pace + a_pace,
-      gp_share=1.0 )
+      gp_share=1.0,
+      playoff_games=0,
+      playoff_goals=0,
+      playoff_assists=0 )
 
 
 def Test_Average_TestWeightedSeasons_ExpectWeightedGoalsAssistsAndSummedPoints() -> None:

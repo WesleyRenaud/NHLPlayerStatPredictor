@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date
 
 import pytest
 
 from api.aging.league_factor import LeagueFactor
+from api.projections.season_pace import SeasonPace
 from api.recency.prior_year import PriorYear
 from api.recency.prior_year_builder import PriorYearBuilder
 from api.shared.enums.position import Position
@@ -14,7 +16,12 @@ from api.skaters.skater_position import SkaterPosition
 from api.skaters.team import Team
 
 
-def _nhl( start_year: int, games_played: int, age: float = 25.4 ) -> NhlSkaterSeason:
+def _nhl(
+      start_year: int,
+      games_played: int,
+      age: float = 25.4,
+      goals: int = 0,
+      assists: int = 0 ) -> NhlSkaterSeason:
    return NhlSkaterSeason(
       player_id=1,
       season_id=start_year * 10000 + start_year + 1,
@@ -24,15 +31,18 @@ def _nhl( start_year: int, games_played: int, age: float = 25.4 ) -> NhlSkaterSe
       age=age,
       team=list( Team )[ Position.FIRST ],
       games_played=games_played,
-      goals=0,
-      assists=0,
-      points=0,
+      goals=goals,
+      assists=assists,
+      points=goals + assists,
       schedule_games=82,
       pace_games=82,
       g_pace=20.0,
       a_pace=30.0,
       p_pace=50.0,
-      gp_share=1.0 )
+      gp_share=1.0,
+      playoff_games=0,
+      playoff_goals=0,
+      playoff_assists=0 )
 
 
 def _other( start_year: int, games_played: int, league: str = 'AAA' ) -> OtherLeagueSkaterSeason:
@@ -106,3 +116,24 @@ def Test_Build_TestUnknownLeague_ExpectSkipped() -> None:
    priors = PriorYearBuilder.build( seasons, [ LeagueFactor( 'AAA', 0.5 ) ], 2025 )
 
    assert priors == []
+
+
+def Test_Build_TestPlayoffYear_ExpectSeasonSurplus() -> None:
+   season = replace(
+      _nhl( 2024, 80, goals=20, assists=40 ),
+      playoff_games=20,
+      playoff_goals=8,
+      playoff_assists=6 )
+
+   priors = PriorYearBuilder.build( [ season ], [], 2025 )
+
+   assert priors[ Position.FIRST ].playoff_surplus == season.playoff_surplus()
+
+
+def Test_Build_TestOtherLeagueYear_ExpectNoSurplus() -> None:
+   season = _other( 2024, 60 )
+   factor = LeagueFactor( season.league, 0.5 )
+
+   priors = PriorYearBuilder.build( [ season ], [ factor ], 2025 )
+
+   assert priors[ Position.FIRST ].playoff_surplus == SeasonPace.zero()
