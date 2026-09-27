@@ -17,7 +17,8 @@ def _nhl(
       season_id: int,
       age: float,
       g_pace: float,
-      a_pace: float ) -> NhlSkaterSeason:
+      a_pace: float,
+      games_played: int = 1 ) -> NhlSkaterSeason:
    return NhlSkaterSeason(
       player_id=player_id,
       season_id=season_id,
@@ -26,7 +27,7 @@ def _nhl(
       birth_date=date( 1997, 1, 13 ),
       age=age,
       team=list( Team )[ Position.FIRST ],
-      games_played=1,
+      games_played=games_played,
       goals=0,
       assists=0,
       points=0,
@@ -96,6 +97,31 @@ def Test_Fit_TestLowPaceSwing_ExpectRatioOfMeansNotMeanOfPercents() -> None:
          league,
          ( first_nhl.g_pace + first_nhl.a_pace + second_nhl.g_pace + second_nhl.a_pace )
          / ( first_other.g_pace + first_other.a_pace + second_other.g_pace + second_other.a_pace ) )
+   ]
+
+
+def Test_Fit_TestUnevenNhlGames_ExpectGamesWeightedRatio() -> None:
+   league = 'AAA'
+   cameo_nhl = _nhl( 1, 20252026, 20.2, 0.0, 10.0, games_played=2 )
+   regular_nhl = _nhl( 2, 20252026, 21.4, 20.0, 30.0, games_played=80 )
+   cameo_other = _other( 1, 20252026, league, 20.2, 50.0, 50.0 )
+   regular_other = _other( 2, 20252026, league, 21.4, 60.0, 40.0 )
+
+   factors = LeagueFactorFitter.fit(
+      [ cameo_nhl, regular_nhl ],
+      [ cameo_other, regular_other ],
+      [] )
+
+   assert factors == [
+      LeagueFactor(
+         league,
+         (
+            cameo_nhl.games_played * ( cameo_nhl.g_pace + cameo_nhl.a_pace )
+            + regular_nhl.games_played * ( regular_nhl.g_pace + regular_nhl.a_pace ) )
+         / (
+            cameo_nhl.games_played * ( cameo_other.g_pace + cameo_other.a_pace )
+            + regular_nhl.games_played * (
+               regular_other.g_pace + regular_other.a_pace ) ) )
    ]
 
 

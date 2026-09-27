@@ -56,8 +56,11 @@ class LeagueFactorFitter():
             continue
 
          same_age_goals, same_age_assists = same_age_other_pace
-         nhl_points[ other_season.league ] += nhl_season.g_pace + nhl_season.a_pace
-         other_points[ other_season.league ] += same_age_goals + same_age_assists
+         games = nhl_season.games_played
+         nhl_points[ other_season.league ] += games * (
+            nhl_season.g_pace + nhl_season.a_pace )
+         other_points[ other_season.league ] += games * (
+            same_age_goals + same_age_assists )
 
       return nhl_points, other_points
 
