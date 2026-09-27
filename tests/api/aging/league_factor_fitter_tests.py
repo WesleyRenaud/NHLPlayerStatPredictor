@@ -198,18 +198,11 @@ def Test_Fit_TestZeroNhlPace_ExpectSkipped() -> None:
    assert factors == []
 
 
-def Test_Fit_TestReverseYear_ExpectAgeAdjustedBack() -> None:
+def Test_Fit_TestPreviousYearOnly_ExpectSkipped() -> None:
    league = 'AAA'
-   aging = AgingFactor( 24, 0.10, 0.20 )
    nhl = _nhl( 1, 20232024, 24.2, 22.0, 36.0 )
    other = _other( 1, 20242025, league, 25.2, 50.0, 80.0 )
-   aged_goals = other.g_pace / ( 1.0 + aging.goals )
-   aged_assists = other.a_pace / ( 1.0 + aging.assists )
 
-   factors = LeagueFactorFitter.fit( [ nhl ], [ other ], [ aging ] )
+   factors = LeagueFactorFitter.fit( [ nhl ], [ other ], [ AgingFactor( 24, 0.10, 0.20 ) ] )
 
-   assert factors == [
-      LeagueFactor(
-         league,
-         ( nhl.g_pace + nhl.a_pace ) / ( aged_goals + aged_assists ) )
-   ]
+   assert factors == []

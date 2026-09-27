@@ -7,6 +7,7 @@ from ..season import Season
 from ..season_length import SeasonLength
 from ..shared.enums.position import Position
 from ..skaters.club_league import ClubLeague
+from ..skaters.club_league_alias import ClubLeagueAlias
 from ..skaters.other_league_season_key import OtherLeagueSeasonKey
 from ..skaters.other_league_skater_season import OtherLeagueSkaterSeason
 from ..skaters.skater_position import SkaterPosition
@@ -27,8 +28,13 @@ class OtherLeagueSeasonBuilder():
 
       combined: dict[ OtherLeagueSeasonKey, OtherLeagueSkaterSeason ] = {}
       by_season_id = { season.season_id: season for season in seasons }
+      totals = cls._season_totals( landing )
+      preferred = cls._preferred_ranks( totals )
 
-      for raw in cls._season_totals( landing ):
+      for raw in totals:
+         if not cls._is_preferred( raw, preferred ):
+            continue
+
          parsed = cls._parse_total(
             player_id,
             position,
@@ -49,6 +55,47 @@ class OtherLeagueSeasonBuilder():
             key=lambda season: ( season.season_id, season.league ) )
          if season.games_played
       ]
+
+
+   @classmethod
+   def _label_key( cls, raw: Types.JsonObject ) -> tuple[ int, ClubLeague ] | None:
+      league = ClubLeagueAlias.league( str( raw[ 'leagueAbbrev' ] ) )
+
+      if league is None:
+         return None
+
+      return int( raw[ 'season' ] ), league
+
+
+   @classmethod
+   def _preferred_ranks(
+         cls,
+         totals: Types.JsonObjectList ) -> dict[ tuple[ int, ClubLeague ], int ]:
+      preferred: dict[ tuple[ int, ClubLeague ], int ] = {}
+
+      for raw in totals:
+         key = cls._label_key( raw )
+
+         if key is None:
+            continue
+
+         rank = ClubLeagueAlias.rank( str( raw[ 'leagueAbbrev' ] ) )
+         preferred[ key ] = min( preferred.get( key, rank ), rank )
+
+      return preferred
+
+
+   @classmethod
+   def _is_preferred(
+         cls,
+         raw: Types.JsonObject,
+         preferred: dict[ tuple[ int, ClubLeague ], int ] ) -> bool:
+      key = cls._label_key( raw )
+
+      if key is None:
+         return False
+
+      return ClubLeagueAlias.rank( str( raw[ 'leagueAbbrev' ] ) ) == preferred[ key ]
 
 
    @classmethod
@@ -101,9 +148,9 @@ class OtherLeagueSeasonBuilder():
          birth_date: date,
          raw: Types.JsonObject,
          by_season_id: dict[ int, SeasonLength ] ) -> OtherLeagueSkaterSeason | None:
-      league = str( raw[ 'leagueAbbrev' ] )
+      league = ClubLeagueAlias.league( str( raw[ 'leagueAbbrev' ] ) )
 
-      if not ClubLeague.contains( league ):
+      if league is None:
          return None
 
       if not raw.get( 'gamesPlayed' ):
@@ -120,7 +167,7 @@ class OtherLeagueSeasonBuilder():
       return OtherLeagueSkaterSeason(
          player_id=player_id,
          season_id=season_id,
-         league=league,
+         league=league.value,
          position=position,
          age=Season.age_on( birth_date, season.start_date ),
          games_played=games_played,

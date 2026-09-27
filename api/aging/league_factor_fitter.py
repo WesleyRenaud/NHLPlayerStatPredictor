@@ -76,12 +76,7 @@ class LeagueFactorFitter():
       if same_year is not None:
          return same_year
 
-      following = nhl_years.get( year + 1 )
-
-      if following is not None:
-         return following
-
-      return nhl_years.get( year - 1 )
+      return nhl_years.get( year + 1 )
 
 
    @classmethod
@@ -109,25 +104,8 @@ class LeagueFactorFitter():
          from_age: int,
          to_age: int,
          aging_factors: list[ AgingFactor ] ) -> tuple[ float, float ] | None:
-      if from_age == to_age:
-         return goals, assists
-
       by_age = { factor.age: factor for factor in aging_factors }
 
-      if to_age > from_age:
-         return cls._grow( goals, assists, from_age, to_age, by_age )
-
-      return cls._shrink( goals, assists, from_age, to_age, by_age )
-
-
-   @classmethod
-   def _grow(
-         cls,
-         goals: float,
-         assists: float,
-         from_age: int,
-         to_age: int,
-         by_age: dict[ int, AgingFactor ] ) -> tuple[ float, float ] | None:
       for age in range( from_age, to_age ):
          rates = cls._rates( by_age.get( age ) )
 
@@ -137,27 +115,6 @@ class LeagueFactorFitter():
          goal_rate, assist_rate = rates
          goals *= goal_rate
          assists *= assist_rate
-
-      return goals, assists
-
-
-   @classmethod
-   def _shrink(
-         cls,
-         goals: float,
-         assists: float,
-         from_age: int,
-         to_age: int,
-         by_age: dict[ int, AgingFactor ] ) -> tuple[ float, float ] | None:
-      for age in range( to_age, from_age ):
-         rates = cls._rates( by_age.get( age ) )
-
-         if rates is None:
-            return None
-
-         goal_rate, assist_rate = rates
-         goals /= goal_rate
-         assists /= assist_rate
 
       return goals, assists
 
