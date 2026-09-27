@@ -6,8 +6,6 @@ from enum import Enum
 class ClubLeague( str, Enum ):
    AHL = 'AHL'
    ALLSVENSKAN = 'Allsvenskan'
-   CZE = 'CZE'
-   CZECH = 'Czech'
    CZECHIA = 'Czechia'
    DEL = 'DEL'
    KHL = 'KHL'
@@ -15,7 +13,6 @@ class ClubLeague( str, Enum ):
    MESTIS = 'Mestis'
    NCAA = 'NCAA'
    NL = 'NL'
-   NLA = 'NLA'
    OHL = 'OHL'
    QMJHL = 'QMJHL'
    SHL = 'SHL'

@@ -8,12 +8,17 @@ from api.season import Season
 from api.season_length import SeasonLength
 from api.shared.enums.position import Position
 from api.skaters.club_league import ClubLeague
+from api.skaters.club_league_alias import ClubLeagueAlias
 from api.skaters.other_league_skater_season import OtherLeagueSkaterSeason
 from api.skaters.skater_position import SkaterPosition
 
 
 def _league() -> str:
    return list( ClubLeague )[ Position.FIRST ].value
+
+
+def _aliased() -> tuple[ ClubLeague, list[ str ] ]:
+   return list( ClubLeagueAlias.LABELS.items() )[ Position.FIRST ]
 
 
 def _landing(
@@ -81,6 +86,47 @@ def Test_Build_TestClubSeason_ExpectPacedRow() -> None:
          g_pace=Season.pace( float( goals ), float( games_played ), pace_games ),
          a_pace=Season.pace( float( assists ), float( games_played ), pace_games ) )
    ]
+
+
+def Test_Build_TestAliasLabel_ExpectCanonicalLeague() -> None:
+   league, labels = _aliased()
+   season_id = 20252026
+   landing = _landing( 1, labels[ Position.FIRST ], season_id, 46, 6, 13 )
+   seasons = [ SeasonLength( season_id, 82, date( 2025, 10, 8 ), date( 2026, 4, 17 ) ) ]
+
+   rows = OtherLeagueSeasonBuilder.build( landing, seasons, 84 )
+
+   assert [ row.league for row in rows ] == [ league.value ]
+
+
+def Test_Build_TestAliasAndCanonicalLabels_ExpectCanonicalOnly() -> None:
+   league, labels = _aliased()
+   season_id = 20252026
+   games_played = 46
+   landing = _landing(
+      1,
+      labels[ Position.FIRST ],
+      season_id,
+      games_played + 1,
+      6,
+      13,
+      extra_totals=[
+         {
+            'leagueAbbrev': league.value,
+            'season': season_id,
+            'gameTypeId': NhlClient.REGULAR_SEASON_GAME_TYPE_ID,
+            'gamesPlayed': games_played,
+            'goals': 6,
+            'assists': 13,
+            'points': 19,
+         }
+      ] )
+   seasons = [ SeasonLength( season_id, 82, date( 2025, 10, 8 ), date( 2026, 4, 17 ) ) ]
+
+   rows = OtherLeagueSeasonBuilder.build( landing, seasons, 84 )
+
+   assert [ ( row.league, row.games_played ) for row in rows ] == [
+      ( league.value, games_played ) ]
 
 
 def Test_Build_TestUnknownLeague_ExpectEmpty() -> None:
