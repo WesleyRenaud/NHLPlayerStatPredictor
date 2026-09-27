@@ -9,68 +9,38 @@ from ...paths import Paths
 from ..projection import Projection
 from ...recency.pace_regression_store import PaceRegressionStore
 from ...recency_target_resolver import RecencyTargetResolver
-from ...shared.enums.position import Position
 from ...skaters.other_league_season_provider import OtherLeagueSeasonProvider
-from ...skaters.roster_skater_provider import RosterSkaterProvider
 from ...skaters.skater import Skater
 from ...skaters.skater_season_provider import SkaterSeasonProvider
-from ...team_factor.club_games import ClubGames
-from ...team_factor.club_games_provider import ClubGamesProvider
-from ...team_factor.team_factor_store import TeamFactorStore
-from ...team_factor.team_quality_mixer import TeamQualityMixer
-from ..team_pace_adjuster import TeamPaceAdjuster
 
 
 class ProjectionCoordinator():
    @classmethod
    def get_projection( cls, player_id: int ) -> Projection | None:
       db_path = str( Paths.DB_PATH )
-      nhl = SkaterSeasonProvider.seasons_for_player_id( player_id, db_path )
-      target_season_id = RecencyTargetResolver.resolve()
-      baseline = BaselinePaceResolver.resolve(
+      pace = BaselinePaceResolver.resolve(
          Skater(
             [
-               *nhl,
+               *SkaterSeasonProvider.seasons_for_player_id( player_id, db_path ),
                *OtherLeagueSeasonProvider.seasons_for_player_id( player_id, db_path ),
             ] ),
-         target_season_id,
+         RecencyTargetResolver.resolve(),
          LeagueFactorStore.read(),
          PaceRegressionStore.read() )
 
-      if baseline is None:
+      if pace is None:
          return None
-
-      current_team = RosterSkaterProvider.team( player_id, db_path )
-      scaled = baseline
-
-      if current_team is not None and nhl:
-         previous = nhl[ Position.LAST ]
-         factors = TeamFactorStore.read()
-         scaled = TeamPaceAdjuster.adjust(
-            baseline,
-            TeamQualityMixer.resolve(
-               factors,
-               target_season_id,
-               player_id,
-               ClubGamesProvider.resolve( player_id, target_season_id )
-                  or [ ClubGames( current_team, 1 ) ] ),
-            TeamQualityMixer.resolve(
-               factors,
-               previous.season_id,
-               player_id,
-               ClubGamesProvider.resolve( player_id, previous.season_id )
-                  or [ ClubGames( previous.team, previous.games_played ) ] ) )
 
       ice = SkaterIceStore.by_player().get( player_id )
 
       if ice is not None and ice.last_toi:
-         scaled = IcePaceScaler.adjust(
-            scaled,
+         pace = IcePaceScaler.adjust(
+            pace,
             ice.last_toi,
             ice.projected_toi )
 
-      goals = round( scaled.goals )
-      assists = round( scaled.assists )
+      goals = round( pace.goals )
+      assists = round( pace.assists )
       return Projection(
          goals=goals,
          assists=assists,

@@ -52,53 +52,6 @@ class TeamFactor():
             DepthGroup.defense() )
 
 
-   def excluding( self, player_id: int ) -> float:
-      total = self.dressed_total()
-      return self.rate * self._teammates( player_id ) / total
-
-
-   def _teammates( self, player_id: int ) -> float:
-      f_reg, f_ext, d_reg, d_ext = self._groups()
-      forward = TeammateMixer.expected(
-         f_reg,
-         f_ext,
-         [],
-         DepthGroup.forwards() )
-      defense = TeammateMixer.expected(
-         d_reg,
-         d_ext,
-         [],
-         DepthGroup.defense() )
-
-      if self._in( player_id, f_reg, f_ext ):
-         return TeammateMixer.teammates(
-            player_id,
-            f_reg,
-            f_ext,
-            [],
-            DepthGroup.forwards() ) + defense
-
-      if self._in( player_id, d_reg, d_ext ):
-         return forward + TeammateMixer.teammates(
-            player_id,
-            d_reg,
-            d_ext,
-            [],
-            DepthGroup.defense() )
-
-      return forward + defense
-
-
-   @staticmethod
-   def _in(
-         player_id: int,
-         regulars: list[ TeammateSkater ],
-         extras: list[ TeammateSkater ] ) -> bool:
-      return any(
-         skater.player_id == player_id
-         for skater in ( *regulars, *extras ) )
-
-
    def _groups(
          self ) -> tuple[
             list[ TeammateSkater ],
@@ -125,26 +78,3 @@ class TeamFactor():
             regulars.append( teammate )
 
       return f_reg, f_ext, d_reg, d_ext
-
-
-   @classmethod
-   def rate(
-         cls,
-         factors: list[ TeamFactor ],
-         season: int,
-         team: Team ) -> float:
-      for factor in factors:
-         if factor.season == season and factor.team == team:
-            return factor.rate
-
-
-   @classmethod
-   def teammate_rate(
-         cls,
-         factors: list[ TeamFactor ],
-         season: int,
-         team: Team,
-         player_id: int ) -> float:
-      for factor in factors:
-         if factor.season == season and factor.team == team:
-            return factor.excluding( player_id )
