@@ -149,5 +149,5 @@ def Test_Fit_TestPooledAges_ExpectBlendedFromThirtyFour() -> None:
    weights = RecencyDecayFitter.fit( seasons )
 
    assert [ row.age for row in weights ] == list(
-      range( AgeRecencyBlender.EARLY_AGE + 1, AgeRecencyBlender.LAST_AGE + 1 ) )
+      range( RecencyDecayFitter.POOLED_AGE, AgeRecencyBlender.LAST_AGE + 1 ) )
    assert weights[ Position.LAST ].weights == _first_weight_one()

@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections import defaultdict
 
 from .age_recency_blender import AgeRecencyBlender
+from .age_recency_fit import AgeRecencyFit
+from .age_recency_smoother import AgeRecencySmoother
 from .age_recency_weights import AgeRecencyWeights
 from ..depth.usable_nhl_ice import UsableNhlIce
 from .prior_season_weight_fitter import PriorSeasonWeightFitter
@@ -19,19 +21,21 @@ class RecencyDecayFitter():
 
    @classmethod
    def fit( cls, seasons: list[ NhlSkaterSeason ] ) -> list[ AgeRecencyWeights ]:
+      fitted = [
+         cls._row( age, rows )
+         for age, rows in sorted( cls._by_age( seasons ).items() )
+      ]
       return AgeRecencyBlender.blend(
-         [
-            AgeRecencyWeights( age, cls._weights( rows ) )
-            for age, rows in sorted( cls._by_age( seasons ).items() )
-         ],
+         AgeRecencySmoother.smooth( fitted ),
          RecencyDecayFitter.POOLED_AGE )
 
 
    @classmethod
-   def _weights(
+   def _row(
          cls,
+         age: int,
          rows: list[ tuple[ NhlSkaterSeason, list[ NhlSkaterSeason ] ] ]
-         ) -> list[ RecencyWeight ]:
+         ) -> AgeRecencyFit:
       max_width = max( len( priors ) for _current, priors in rows )
 
       for width in range( max_width, 0, -1 ):
@@ -44,21 +48,27 @@ class RecencyDecayFitter():
          if len( complete ) < width:
             continue
 
-         samples: list[ list[ float ] ] = []
+         paces: list[ list[ float ] ] = []
 
          for current, priors in complete:
             used = priors[ :width ]
-            samples.append(
+            paces.append(
                [ current.g_pace, *[ prior.g_pace for prior in used ] ] )
-            samples.append(
+            paces.append(
                [ current.a_pace, *[ prior.a_pace for prior in used ] ] )
 
          try:
-            return cls._padded( PriorSeasonWeightFitter.fit( samples ) )
+            return AgeRecencyFit(
+               age,
+               cls._padded( PriorSeasonWeightFitter.fit( paces ) ),
+               len( complete ) )
          except ZeroDivisionError:
             continue
 
-      return cls._padded( [ RecencyWeight( 0, 1.0 ) ] )
+      return AgeRecencyFit(
+         age,
+         cls._padded( [ RecencyWeight( 0, 1.0 ) ] ),
+         len( rows ) )
 
 
    @classmethod
