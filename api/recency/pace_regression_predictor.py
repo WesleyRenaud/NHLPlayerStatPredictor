@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from .pace_regression import PaceRegression
 from .pace_regression_model import PaceRegressionModel
+from .playoff_pace_adjuster import PlayoffPaceAdjuster
 from .prior_source import PriorSource
 from .prior_year import PriorYear
 from ..projections.season_pace import SeasonPace
@@ -17,12 +18,26 @@ class PaceRegressionPredictor():
          year: int ) -> SeasonPace | None:
       regressed = cls.regressed( model.regressions, priors )
 
-      if regressed is None or not cls._is_returning_nhl_player( priors, year ):
+      if regressed is None:
+         return None
+
+      latest = priors[ Position.FIRST ]
+
+      if latest.source() != PriorSource.NHL:
          return regressed
 
+      adjusted = PlayoffPaceAdjuster.adjust(
+         regressed,
+         latest.playoff_surplus,
+         model.playoff_goal_weight,
+         model.playoff_assist_weight )
+
+      if not latest.gap_before( year ):
+         return adjusted
+
       return SeasonPace(
-         goals=regressed.goals * model.nhl_gap_goals,
-         assists=regressed.assists * model.nhl_gap_assists )
+         goals=adjusted.goals * model.nhl_gap_goals,
+         assists=adjusted.assists * model.nhl_gap_assists )
 
 
    @classmethod
@@ -41,9 +56,3 @@ class PaceRegressionPredictor():
                return regression.pace( priors[ :width ] )
 
       return None
-
-
-   @classmethod
-   def _is_returning_nhl_player( cls, priors: list[ PriorYear ], year: int ) -> bool:
-      latest = priors[ Position.FIRST ]
-      return latest.source() == PriorSource.NHL and latest.gap_before( year ) > 0

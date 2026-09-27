@@ -13,6 +13,7 @@ class NhlClient():
    WEB_BASE = 'https://api-web.nhle.com'
    PAGE_SIZE = 100
    REGULAR_SEASON_GAME_TYPE_ID = 2
+   PLAYOFF_GAME_TYPE_ID = 3
 
    @classmethod
    def seasons( cls, force: bool = False ) -> list[ SeasonLength ]:

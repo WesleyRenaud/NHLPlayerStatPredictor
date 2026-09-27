@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
+from ..projections.season_pace import SeasonPace
 from ..shared.enums.position import Position
 from .skater_position import SkaterPosition
 from .skater_season import SkaterSeason
@@ -20,6 +21,9 @@ class NhlSkaterSeason( SkaterSeason ):
    pace_games: int
    p_pace: float
    gp_share: float | None
+   playoff_games: int
+   playoff_goals: int
+   playoff_assists: int
 
 
    @classmethod
@@ -43,8 +47,18 @@ class NhlSkaterSeason( SkaterSeason ):
          schedule_games=int( row[ 'SCHEDULE_GAMES' ] ),
          pace_games=int( row[ 'PACE_GAMES' ] ),
          p_pace=float( row[ 'P_PACE' ] ),
-         gp_share=None if gp_share is None else float( gp_share ) )
+         gp_share=None if gp_share is None else float( gp_share ),
+         playoff_games=int( row[ 'PLAYOFF_GAMES' ] ),
+         playoff_goals=int( row[ 'PLAYOFF_GOALS' ] ),
+         playoff_assists=int( row[ 'PLAYOFF_ASSISTS' ] ) )
 
 
    def key( self ) -> SkaterSeasonKey:
       return SkaterSeasonKey( self.player_id, self.season_id )
+
+
+   def playoff_surplus( self ) -> SeasonPace:
+      share = self.playoff_games / self.games_played
+      return SeasonPace(
+         goals=max( self.playoff_goals - share * self.goals, 0.0 ),
+         assists=max( self.playoff_assists - share * self.assists, 0.0 ) )

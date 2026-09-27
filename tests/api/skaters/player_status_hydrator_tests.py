@@ -34,7 +34,10 @@ def _season( player_id: int ) -> NhlSkaterSeason:
       g_pace=48.0,
       a_pace=90.0,
       p_pace=138.0,
-      gp_share=1.0 )
+      gp_share=1.0,
+      playoff_games=0,
+      playoff_goals=0,
+      playoff_assists=0 )
 
 
 def Test_Hydrate_TestCachedLandings_ExpectStatusInserted(

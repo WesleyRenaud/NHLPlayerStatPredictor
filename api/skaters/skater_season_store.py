@@ -26,11 +26,11 @@ class SkaterSeasonStore():
                INSERT INTO SkaterSeason (
                   PLAYER_ID, SEASON_ID, PLAYER_NAME, POSITION, BIRTH_DATE, AGE, TEAM,
                   GAMES_PLAYED, GOALS, ASSISTS, POINTS, SCHEDULE_GAMES, PACE_GAMES,
-                  G_PACE, A_PACE, P_PACE, GP_SHARE
+                  G_PACE, A_PACE, P_PACE, GP_SHARE, PLAYOFF_GAMES, PLAYOFF_GOALS, PLAYOFF_ASSISTS
                ) VALUES (
                   :player_id, :season_id, :player_name, :position, :birth_date, :age, :team,
                   :games_played, :goals, :assists, :points, :schedule_games, :pace_games,
-                  :g_pace, :a_pace, :p_pace, :gp_share
+                  :g_pace, :a_pace, :p_pace, :gp_share, :playoff_games, :playoff_goals, :playoff_assists
                )
                ''',
                [ asdict( row ) for row in rows ] )

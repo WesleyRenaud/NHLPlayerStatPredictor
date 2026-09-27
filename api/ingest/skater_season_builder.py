@@ -76,7 +76,10 @@ class SkaterSeasonBuilder():
             g_pace=Season.pace( goals, games_played, pace_games ),
             a_pace=Season.pace( assists, games_played, pace_games ),
             p_pace=Season.pace( points, games_played, pace_games ),
-            gp_share=gp_share ) )
+            gp_share=gp_share,
+            playoff_games=0,
+            playoff_goals=0,
+            playoff_assists=0 ) )
 
       return rows
 

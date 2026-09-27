@@ -32,7 +32,10 @@ def _season(
       g_pace=0.0,
       a_pace=0.0,
       p_pace=0.0,
-      gp_share=gp_share )
+      gp_share=gp_share,
+      playoff_games=0,
+      playoff_goals=0,
+      playoff_assists=0 )
 
 
 def Test_Resolve_TestWeightedShares_ExpectAverage() -> None:

@@ -20,6 +20,7 @@ from .nhl_client import NhlClient
 from .other_league_season_ingester import OtherLeagueSeasonIngester
 from ..paths import Paths
 from .player_landing_fetcher import PlayerLandingFetcher
+from .playoff_totals_merger import PlayoffTotalsMerger
 from .previous_team_factor_builder import PreviousTeamFactorBuilder
 from ..projections.season_pace import SeasonPace
 from ..recency.pace_regression_fitter import PaceRegressionFitter
@@ -41,14 +42,15 @@ from ..team_factor.team_factor_store import TeamFactorStore
 class SkaterSeasonIngester():
    @classmethod
    def main( cls, force: bool = False ) -> None:
-      rows = SkaterSeasonBuilder.build_all( force=force )
-      SkaterSeasonStore.insert_rows( rows, str( Paths.DB_PATH ) )
+      regular_rows = SkaterSeasonBuilder.build_all( force=force )
       roster_rows = RosterSkater.with_last_played(
          RosterSkaterIngester.build_rows( force=force ),
-         rows )
+         regular_rows )
       RosterSkaterStore.insert_rows( roster_rows, str( Paths.DB_PATH ) )
-      player_ids = cls._player_ids( rows, roster_rows )
+      player_ids = cls._player_ids( regular_rows, roster_rows )
       landings = PlayerLandingFetcher.fetch( player_ids, force=force )
+      rows = PlayoffTotalsMerger.merge( regular_rows, landings )
+      SkaterSeasonStore.insert_rows( rows, str( Paths.DB_PATH ) )
       other_rows = OtherLeagueSeasonIngester.build_rows(
          player_ids,
          landings,

@@ -46,7 +46,10 @@ def _season( age: float ) -> NhlSkaterSeason:
       g_pace=0.0,
       a_pace=0.0,
       p_pace=0.0,
-      gp_share=1.0 )
+      gp_share=1.0,
+      playoff_games=0,
+      playoff_goals=0,
+      playoff_assists=0 )
 
 
 def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
@@ -66,7 +69,7 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
       PaceRegressionModel ] ] = []
    other_seasons: list[ OtherLeagueSkaterSeason ] = []
    league_factors: list[ LeagueFactor ] = []
-   model = PaceRegressionModel( [], 0.8, 0.85 )
+   model = PaceRegressionModel( [], 0.8, 0.85, 0.8, 0.85 )
 
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
    _stub_ice( monkeypatch )
@@ -148,7 +151,7 @@ def Test_GetProjection_TestMissingPace_ExpectNone(
    monkeypatch.setattr(
       projection_coordinator.PaceRegressionStore,
       'read',
-      lambda: PaceRegressionModel( [], 0.8, 0.85 ) )
+      lambda: PaceRegressionModel( [], 0.8, 0.85, 0.8, 0.85 ) )
 
    projection = ProjectionCoordinator.get_projection( player_id )
 
@@ -196,7 +199,7 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
    monkeypatch.setattr(
       projection_coordinator.PaceRegressionStore,
       'read',
-      lambda: PaceRegressionModel( [], 0.8, 0.85 ) )
+      lambda: PaceRegressionModel( [], 0.8, 0.85, 0.8, 0.85 ) )
    monkeypatch.setattr(
       projection_coordinator.PaceGamesResolver,
       'resolve',

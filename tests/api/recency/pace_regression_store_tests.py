@@ -23,7 +23,9 @@ def Test_Write_TestModel_ExpectReadable(
          PaceRegression( PriorSource.TRANSLATED, AgeBand( 20, 21 ), 4.8, [ 0.6, 0.21 ], 4.2, [ 0.61, 0.2 ] ),
       ],
       0.785,
-      0.835 )
+      0.835,
+      0.79,
+      0.85 )
    PaceRegressionStore.write( model )
 
    loaded = PaceRegressionStore.read()

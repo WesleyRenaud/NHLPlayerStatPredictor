@@ -13,7 +13,9 @@ def Test_FromRow_TestDict_ExpectRoundTrip() -> None:
          PaceRegression( PriorSource.TRANSLATED, AgeBand( 24, 40 ), 3.0, [ 0.8, 0.1 ], 3.0, [ 0.8, 0.1 ] ),
       ],
       0.8,
-      0.9 )
+      0.9,
+      1.1,
+      0.7 )
 
    loaded = PaceRegressionModel.from_row( model.to_dict() )
 

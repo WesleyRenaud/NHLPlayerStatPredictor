@@ -27,7 +27,10 @@ def _season( season_id: int, player_id: int ) -> NhlSkaterSeason:
       g_pace=0.0,
       a_pace=0.0,
       p_pace=0.0,
-      gp_share=1.0 )
+      gp_share=1.0,
+      playoff_games=0,
+      playoff_goals=0,
+      playoff_assists=0 )
 
 
 def Test_FromRow_TestStoredFields_ExpectValues() -> None:

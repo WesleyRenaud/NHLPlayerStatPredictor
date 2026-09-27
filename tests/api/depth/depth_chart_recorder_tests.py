@@ -174,7 +174,10 @@ def Test_Availabilities_TestNhlGames_ExpectShare(
             g_pace=0.0,
             a_pace=0.0,
             p_pace=0.0,
-            gp_share=share )
+            gp_share=share,
+            playoff_games=0,
+            playoff_goals=0,
+            playoff_assists=0 )
       ] )
    monkeypatch.setattr(
       'api.depth.depth_chart_recorder.OtherLeagueSeasonProvider.seasons_for_player_ids',
@@ -214,7 +217,10 @@ def Test_Availabilities_TestMixedYear_ExpectFull(
             g_pace=0.0,
             a_pace=0.0,
             p_pace=0.0,
-            gp_share=0.11 )
+            gp_share=0.11,
+            playoff_games=0,
+            playoff_goals=0,
+            playoff_assists=0 )
       ] )
    monkeypatch.setattr(
       'api.depth.depth_chart_recorder.OtherLeagueSeasonProvider.seasons_for_player_ids',

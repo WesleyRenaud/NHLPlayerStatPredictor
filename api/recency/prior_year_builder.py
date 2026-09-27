@@ -4,6 +4,7 @@ from collections import defaultdict
 
 from ..aging.league_factor import LeagueFactor
 from .prior_year import PriorYear
+from ..projections.season_pace import SeasonPace
 from ..projections.translated_pace_averager import TranslatedPaceAverager
 from ..season import Season
 from ..shared.enums.position import Position
@@ -67,6 +68,16 @@ class PriorYearBuilder():
                   season.games_played
                   for season in year_seasons
                   if isinstance( season, NhlSkaterSeason ) ),
-               max( season.age for season in year_seasons ) ) )
+               max( season.age for season in year_seasons ),
+               cls._playoff_surplus( year_seasons ) ) )
 
       return qualified
+
+
+   @classmethod
+   def _playoff_surplus( cls, year_seasons: list[ SkaterSeason ] ) -> SeasonPace:
+      for season in year_seasons:
+         if isinstance( season, NhlSkaterSeason ):
+            return season.playoff_surplus()
+
+      return SeasonPace.zero()

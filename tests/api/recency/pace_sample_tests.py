@@ -30,11 +30,14 @@ def _current( season_id: int ) -> NhlSkaterSeason:
       g_pace=20.0,
       a_pace=30.0,
       p_pace=50.0,
-      gp_share=1.0 )
+      gp_share=1.0,
+      playoff_games=0,
+      playoff_goals=0,
+      playoff_assists=0 )
 
 
 def _prior( year: int, nhl_games: int = 82 ) -> PriorYear:
-   return PriorYear( year, SeasonPace( 10.0, 20.0 ), 82, nhl_games, 25.4 )
+   return PriorYear( year, SeasonPace( 10.0, 20.0 ), 82, nhl_games, 25.4, SeasonPace.zero() )
 
 
 def Test_Source_TestLatestPrior_ExpectLatestSource() -> None:
