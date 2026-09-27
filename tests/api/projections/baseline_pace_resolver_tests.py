@@ -4,23 +4,21 @@ from datetime import date
 
 import pytest
 
-from api.aging.aging_factor import AgingFactor
 from api.aging.league_factor import LeagueFactor
-import api.projections.baseline_pace_resolver as baseline_pace_resolver
 from api.projections.baseline_pace_resolver import BaselinePaceResolver
-from api.projections.season_pace import SeasonPace
-from api.recency.age_recency_weights import AgeRecencyWeights
-from api.recency.recency_weight import RecencyWeight
+from api.recency.age_band import AgeBand
+from api.recency.pace_regression import PaceRegression
+from api.recency.pace_regression_model import PaceRegressionModel
+from api.recency.prior_source import PriorSource
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
 from api.skaters.other_league_skater_season import OtherLeagueSkaterSeason
 from api.skaters.skater import Skater
 from api.skaters.skater_position import SkaterPosition
-from api.skaters.skater_season import SkaterSeason
 from api.skaters.team import Team
 
 
-def _season( age: float, season_id: int = 20232024 ) -> NhlSkaterSeason:
+def _nhl( season_id: int, g_pace: float, a_pace: float, age: float ) -> NhlSkaterSeason:
    return NhlSkaterSeason(
       player_id=1,
       season_id=season_id,
@@ -29,185 +27,81 @@ def _season( age: float, season_id: int = 20232024 ) -> NhlSkaterSeason:
       birth_date=date( 1997, 1, 13 ),
       age=age,
       team=list( Team )[ Position.FIRST ],
-      games_played=1,
+      games_played=82,
       goals=0,
       assists=0,
       points=0,
-      schedule_games=1,
-      pace_games=1,
-      g_pace=0.0,
-      a_pace=0.0,
-      p_pace=0.0,
+      schedule_games=82,
+      pace_games=82,
+      g_pace=g_pace,
+      a_pace=a_pace,
+      p_pace=g_pace + a_pace,
       gp_share=1.0 )
 
 
-def Test_Resolve_TestSeasons_ExpectAgedPace(
-      monkeypatch: pytest.MonkeyPatch ) -> None:
-   seasons = [ _season( 27.2, 20222023 ), _season( 28.7, 20232024 ) ]
-   mix = [ RecencyWeight( 0, 1.0 ) ]
-   weights = [ AgeRecencyWeights( 29, mix ) ]
-   factors = [ AgingFactor( 28, -0.07, -0.044 ) ]
-   target_season_id = 20232024
-   pace = SeasonPace( 31.4, 42.1 )
-   aged = SeasonPace( 10.4, 20.6 )
-   league_factors: list[ LeagueFactor ] = []
-   averaged: list[ tuple[
-      list[ SkaterSeason ],
-      list[ RecencyWeight ],
-      int,
-      list[ LeagueFactor ] ] ] = []
-   adjusted: list[ tuple[
-      SeasonPace,
-      int,
-      list[ AgingFactor ],
-      list[ NhlSkaterSeason ] ] ] = []
-
-   monkeypatch.setattr(
-      baseline_pace_resolver.TranslatedPaceAverager,
-      'average',
-      lambda rows, recency_weights, target, leagues: averaged.append(
-         ( rows, recency_weights, target, leagues ) ) or pace )
-   monkeypatch.setattr(
-      baseline_pace_resolver.AgingPaceAdjuster,
-      'adjust',
-      lambda recency_pace, completed_age, aging_factors, player_seasons: adjusted.append(
-         ( recency_pace, completed_age, aging_factors, player_seasons ) ) or aged )
-
-   resolved = BaselinePaceResolver.resolve(
-      Skater( seasons ),
-      weights,
-      target_season_id,
-      league_factors,
-      factors )
-
-   assert resolved == aged
-   assert averaged == [
-      ( seasons, mix, target_season_id, league_factors )
-   ]
-   assert adjusted == [
-      ( pace, seasons[ Position.LAST ].completed_age(), factors, seasons )
-   ]
+def _other( season_id: int, g_pace: float, a_pace: float, league: str ) -> OtherLeagueSkaterSeason:
+   return OtherLeagueSkaterSeason(
+      player_id=1,
+      season_id=season_id,
+      league=league,
+      position=SkaterPosition( 'C' ),
+      age=18.4,
+      games_played=52,
+      goals=0,
+      assists=0,
+      points=0,
+      g_pace=g_pace,
+      a_pace=a_pace )
 
 
-def Test_Resolve_TestOtherLeagueOnly_ExpectOtherLeagueAge(
-      monkeypatch: pytest.MonkeyPatch ) -> None:
-   other_age = 20.8
-   seasons = [
-      OtherLeagueSkaterSeason(
-         player_id=7,
-         season_id=20252026,
-         league='AAA',
-         position=SkaterPosition( 'C' ),
-         age=other_age,
-         games_played=46,
-         goals=6,
-         assists=13,
-         points=19,
-         g_pace=10.0,
-         a_pace=20.0 )
-   ]
-   mix = [ RecencyWeight( 0, 1.0 ) ]
-   weights = [ AgeRecencyWeights( 21, mix ) ]
-   factors = [ AgingFactor( 20, 0.12, 0.09 ) ]
-   target_season_id = 20262027
-   pace = SeasonPace( 31.4, 42.1 )
-   aged = SeasonPace( 10.4, 20.6 )
-   adjusted: list[ tuple[
-      SeasonPace,
-      int,
-      list[ AgingFactor ],
-      list[ NhlSkaterSeason ] ] ] = []
+def _model() -> PaceRegressionModel:
+   return PaceRegressionModel(
+      [
+         PaceRegression( PriorSource.NHL, AgeBand( 27, 28 ), 1.0, [ 0.5 ], 2.0, [ 0.5 ] ),
+         PaceRegression( PriorSource.TRANSLATED, AgeBand( 17, 19 ), 3.0, [ 0.8 ], 4.0, [ 0.8 ] ),
+      ],
+      0.8,
+      0.9 )
 
-   monkeypatch.setattr(
-      baseline_pace_resolver.TranslatedPaceAverager,
-      'average',
-      lambda rows, recency_weights, target, leagues: pace )
-   monkeypatch.setattr(
-      baseline_pace_resolver.AgingPaceAdjuster,
-      'adjust',
-      lambda recency_pace, completed_age, aging_factors, player_seasons: adjusted.append(
-         ( recency_pace, completed_age, aging_factors, player_seasons ) ) or aged )
+
+def Test_Resolve_TestNhlSeason_ExpectRegressedPace() -> None:
+   season = _nhl( 20242025, 20.0, 30.0, 27.4 )
+
+   resolved = BaselinePaceResolver.resolve( Skater( [ season ] ), 20252026, [], _model() )
+
+   assert resolved is not None
+   assert resolved.goals == pytest.approx( 1.0 + 0.5 * season.g_pace )
+   assert resolved.assists == pytest.approx( 2.0 + 0.5 * season.a_pace )
+
+
+def Test_Resolve_TestOtherLeagueOnly_ExpectTranslatedRegression() -> None:
+   factor = LeagueFactor( 'AAA', 0.4 )
+   season = _other( 20242025, 30.0, 50.0, factor.league )
 
    resolved = BaselinePaceResolver.resolve(
-      Skater( seasons ),
-      weights,
-      target_season_id,
-      [],
-      factors )
+      Skater( [ season ] ),
+      20252026,
+      [ factor ],
+      _model() )
 
-   assert resolved == aged
-   assert adjusted == [
-      ( pace, int( other_age ), factors, [] )
-   ]
+   assert resolved is not None
+   assert resolved.goals == pytest.approx( 3.0 + 0.8 * season.g_pace * factor.rate )
+   assert resolved.assists == pytest.approx( 4.0 + 0.8 * season.a_pace * factor.rate )
 
 
-def Test_Resolve_TestMissingPace_ExpectNone(
-      monkeypatch: pytest.MonkeyPatch ) -> None:
-   adjusted: list[ SeasonPace ] = []
-   monkeypatch.setattr(
-      baseline_pace_resolver.TranslatedPaceAverager,
-      'average',
-      lambda rows, recency_weights, target, leagues: None )
-   monkeypatch.setattr(
-      baseline_pace_resolver.AgingPaceAdjuster,
-      'adjust',
-      lambda recency_pace, completed_age, aging_factors, player_seasons: adjusted.append(
-         recency_pace ) )
-   skater = Skater( [] )
-   target_season_id = 20262027
+def Test_Resolve_TestMissedSeason_ExpectGapDiscount() -> None:
+   season = _nhl( 20232024, 20.0, 30.0, 27.4 )
+   model = _model()
 
-   resolved = BaselinePaceResolver.resolve( skater, [], target_season_id, [], [] )
+   resolved = BaselinePaceResolver.resolve( Skater( [ season ] ), 20252026, [], model )
+
+   assert resolved is not None
+   assert resolved.goals == pytest.approx( ( 1.0 + 0.5 * season.g_pace ) * model.nhl_gap_goals )
+   assert resolved.assists == pytest.approx(
+      ( 2.0 + 0.5 * season.a_pace ) * model.nhl_gap_assists )
+
+
+def Test_Resolve_TestNoSeasons_ExpectNone() -> None:
+   resolved = BaselinePaceResolver.resolve( Skater( [] ), 20252026, [], _model() )
 
    assert resolved is None
-   assert adjusted == []
-
-
-def Test_Resolve_TestMixed_ExpectLastSeasonAge(
-      monkeypatch: pytest.MonkeyPatch ) -> None:
-   nhl = [ _season( 18.4, 20232024 ), _season( 19.4, 20242025 ) ]
-   other = OtherLeagueSkaterSeason(
-      player_id=7,
-      season_id=20252026,
-      league='AAA',
-      position=SkaterPosition( 'C' ),
-      age=20.4,
-      games_played=46,
-      goals=6,
-      assists=13,
-      points=19,
-      g_pace=10.0,
-      a_pace=20.0 )
-   seasons = [ *nhl, other ]
-   mix = [ RecencyWeight( 0, 1.0 ) ]
-   weights = [ AgeRecencyWeights( 21, mix ) ]
-   factors = [ AgingFactor( 20, 0.12, 0.09 ) ]
-   target_season_id = 20262027
-   pace = SeasonPace( 31.4, 42.1 )
-   aged = SeasonPace( 10.4, 20.6 )
-   adjusted: list[ tuple[
-      SeasonPace,
-      int,
-      list[ AgingFactor ],
-      list[ NhlSkaterSeason ] ] ] = []
-
-   monkeypatch.setattr(
-      baseline_pace_resolver.TranslatedPaceAverager,
-      'average',
-      lambda rows, recency_weights, target, leagues: pace )
-   monkeypatch.setattr(
-      baseline_pace_resolver.AgingPaceAdjuster,
-      'adjust',
-      lambda recency_pace, completed_age, aging_factors, player_seasons: adjusted.append(
-         ( recency_pace, completed_age, aging_factors, player_seasons ) ) or aged )
-
-   resolved = BaselinePaceResolver.resolve(
-      Skater( seasons ),
-      weights,
-      target_season_id,
-      [],
-      factors )
-
-   assert resolved == aged
-   assert adjusted == [
-      ( pace, other.completed_age(), factors, nhl )
-   ]

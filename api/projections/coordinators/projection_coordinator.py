@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from ...aging.aging_factor_store import AgingFactorStore
 from ...aging.league_factor_store import LeagueFactorStore
 from ..baseline_pace_resolver import BaselinePaceResolver
 from ...depth.ice_pace_scaler import IcePaceScaler
@@ -8,7 +7,7 @@ from ...depth.skater_ice_store import SkaterIceStore
 from ...pace_games_resolver import PaceGamesResolver
 from ...paths import Paths
 from ..projection import Projection
-from ...recency.scoring_weight_store import ScoringWeightStore
+from ...recency.pace_regression_store import PaceRegressionStore
 from ...recency_target_resolver import RecencyTargetResolver
 from ...shared.enums.position import Position
 from ...skaters.other_league_season_provider import OtherLeagueSeasonProvider
@@ -28,28 +27,27 @@ class ProjectionCoordinator():
       db_path = str( Paths.DB_PATH )
       nhl = SkaterSeasonProvider.seasons_for_player_id( player_id, db_path )
       target_season_id = RecencyTargetResolver.resolve()
-      aged = BaselinePaceResolver.resolve(
+      baseline = BaselinePaceResolver.resolve(
          Skater(
             [
                *nhl,
                *OtherLeagueSeasonProvider.seasons_for_player_id( player_id, db_path ),
             ] ),
-         ScoringWeightStore.read(),
          target_season_id,
          LeagueFactorStore.read(),
-         AgingFactorStore.read() )
+         PaceRegressionStore.read() )
 
-      if aged is None:
+      if baseline is None:
          return None
 
       current_team = RosterSkaterProvider.team( player_id, db_path )
-      scaled = aged
+      scaled = baseline
 
       if current_team is not None and nhl:
          previous = nhl[ Position.LAST ]
          factors = TeamFactorStore.read()
          scaled = TeamPaceAdjuster.adjust(
-            aged,
+            baseline,
             TeamQualityMixer.resolve(
                factors,
                target_season_id,

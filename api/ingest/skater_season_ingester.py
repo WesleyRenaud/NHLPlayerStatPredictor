@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from ..aging.aging_curve_fitter import AgingCurveFitter
-from ..aging.aging_factor_store import AgingFactorStore
 from ..aging.league_factor_fitter import LeagueFactorFitter
 from ..aging.league_factor_store import LeagueFactorStore
 from ..availability.availability_decay_fitter import AvailabilityDecayFitter
@@ -24,8 +23,8 @@ from .player_landing_fetcher import PlayerLandingFetcher
 from .previous_team_factor_builder import PreviousTeamFactorBuilder
 from ..projections.baseline_roster_pace_builder import BaselineRosterPaceBuilder
 from ..projections.season_pace import SeasonPace
-from ..recency.recency_decay_fitter import RecencyDecayFitter
-from ..recency.scoring_weight_store import ScoringWeightStore
+from ..recency.pace_regression_fitter import PaceRegressionFitter
+from ..recency.pace_regression_store import PaceRegressionStore
 from ..recency_target_resolver import RecencyTargetResolver
 from .roster_skater_ingester import RosterSkaterIngester
 from ..season import Season
@@ -61,15 +60,16 @@ class SkaterSeasonIngester():
       PlayerStatusStore.insert_rows(
          PlayerStatusBuilder.build_all( player_ids, landings ),
          str( Paths.DB_PATH ) )
-      weights = RecencyDecayFitter.fit( rows )
-      ScoringWeightStore.write( weights )
       AvailabilityWeightStore.write(
          AvailabilityDecayFitter.fit(
             MixedSeasonShareBinder.bind( rows, other_rows ) ) )
-      aging_factors = AgingCurveFitter.fit( rows, other_rows )
-      AgingFactorStore.write( aging_factors )
-      league_factors = LeagueFactorFitter.fit( rows, other_rows, aging_factors )
+      league_factors = LeagueFactorFitter.fit(
+         rows,
+         other_rows,
+         AgingCurveFitter.fit( rows, other_rows ) )
       LeagueFactorStore.write( league_factors )
+      model = PaceRegressionFitter.fit( rows, other_rows, league_factors )
+      PaceRegressionStore.write( model )
       previous_season_id = RecencyTargetResolver.prior()
       current_season = RecencyTargetResolver.resolve()
       seasons = NhlClient.seasons( force=force )
@@ -145,10 +145,9 @@ class SkaterSeasonIngester():
                   BaselineRosterPaceBuilder.build(
                      roster_rows,
                      rows + other_rows,
-                     weights,
                      current_season,
                      league_factors,
-                     aging_factors ),
+                     model ),
                   slots,
                   charts,
                   { row.player_id: row for row in ice_rows } )

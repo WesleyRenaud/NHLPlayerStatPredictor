@@ -1,0 +1,205 @@
+from __future__ import annotations
+
+from collections import defaultdict
+from collections.abc import Callable
+
+from .age_band import AgeBand
+from ..aging.league_factor import LeagueFactor
+from .linear_system import LinearSystem
+from .pace_regression import PaceRegression
+from .pace_regression_model import PaceRegressionModel
+from .pace_regression_predictor import PaceRegressionPredictor
+from .pace_sample import PaceSample
+from .prior_source import PriorSource
+from .prior_year import PriorYear
+from .prior_year_builder import PriorYearBuilder
+from ..projections.season_pace import SeasonPace
+from ..season import Season
+from ..shared.enums.position import Position
+from ..skaters.nhl_skater_season import NhlSkaterSeason
+from ..skaters.other_league_skater_season import OtherLeagueSkaterSeason
+from ..skaters.skater_season import SkaterSeason
+
+
+class PaceRegressionFitter():
+   NHL_AGE_BANDS = [
+      AgeBand( 18, 22 ),
+      AgeBand( 23, 24 ),
+      AgeBand( 25, 26 ),
+      AgeBand( 27, 28 ),
+      AgeBand( 29, 30 ),
+      AgeBand( 31, 32 ),
+      AgeBand( 33, 34 ),
+      AgeBand( 35, 45 ),
+   ]
+   TRANSLATED_AGE_BANDS = [
+      AgeBand( 17, 19 ),
+      AgeBand( 20, 21 ),
+      AgeBand( 22, 23 ),
+      AgeBand( 24, 40 ),
+   ]
+   NO_DISCOUNT = 1.0
+
+
+   @classmethod
+   def fit(
+         cls,
+         nhl_seasons: list[ NhlSkaterSeason ],
+         other_seasons: list[ OtherLeagueSkaterSeason ],
+         factors: list[ LeagueFactor ] ) -> PaceRegressionModel:
+      samples = cls._samples( nhl_seasons, other_seasons, factors )
+      regressions = cls._regressions( [ sample for sample in samples if not sample.gap() ] )
+      returning = [
+         sample
+         for sample in samples
+         if sample.gap() and sample.source() == PriorSource.NHL
+      ]
+      return PaceRegressionModel(
+         regressions,
+         cls._gap_scale(
+            regressions,
+            returning,
+            lambda pace: pace.goals,
+            lambda season: season.g_pace ),
+         cls._gap_scale(
+            regressions,
+            returning,
+            lambda pace: pace.assists,
+            lambda season: season.a_pace ) )
+
+
+   @classmethod
+   def _samples(
+         cls,
+         nhl_seasons: list[ NhlSkaterSeason ],
+         other_seasons: list[ OtherLeagueSkaterSeason ],
+         factors: list[ LeagueFactor ] ) -> list[ PaceSample ]:
+      by_player: dict[ int, list[ SkaterSeason ] ] = defaultdict( list )
+
+      for season in [ *nhl_seasons, *other_seasons ]:
+         by_player[ season.player_id ].append( season )
+
+      samples: list[ PaceSample ] = []
+
+      for current in nhl_seasons:
+         if current.games_played < PriorYear.MIN_GAMES:
+            continue
+
+         priors = PriorYearBuilder.build(
+            by_player[ current.player_id ],
+            factors,
+            Season.start_year( current.season_id ) )
+
+         if priors:
+            samples.append( PaceSample( current, priors ) )
+
+      return samples
+
+
+   @classmethod
+   def _regressions( cls, samples: list[ PaceSample ] ) -> list[ PaceRegression ]:
+      regressions: list[ PaceRegression ] = []
+
+      for source in PriorSource:
+         sourced = [ sample for sample in samples if sample.source() == source ]
+
+         for band in cls._age_bands( source ):
+            banded = [ sample for sample in sourced if band.contains( sample.target_age() ) ]
+
+            for width in range( 1, PriorYearBuilder.WIDTH + 1 ):
+               regression = cls._fit_width( banded, source, band, width )
+
+               if regression is not None:
+                  regressions.append( regression )
+
+      return regressions
+
+
+   @classmethod
+   def _age_bands( cls, source: PriorSource ) -> list[ AgeBand ]:
+      if source == PriorSource.NHL:
+         return PaceRegressionFitter.NHL_AGE_BANDS
+
+      return PaceRegressionFitter.TRANSLATED_AGE_BANDS
+
+
+   @classmethod
+   def _fit_width(
+         cls,
+         banded: list[ PaceSample ],
+         source: PriorSource,
+         band: AgeBand,
+         width: int ) -> PaceRegression | None:
+      complete = [
+         sample.truncated( width )
+         for sample in banded
+         if len( sample.priors ) >= width
+      ]
+
+      if not complete:
+         return None
+
+      goal_constant, goal_weights = cls._solve(
+         complete,
+         lambda pace: pace.goals,
+         lambda season: season.g_pace )
+      assist_constant, assist_weights = cls._solve(
+         complete,
+         lambda pace: pace.assists,
+         lambda season: season.a_pace )
+      return PaceRegression(
+         source,
+         band,
+         goal_constant,
+         goal_weights,
+         assist_constant,
+         assist_weights )
+
+
+   @classmethod
+   def _solve(
+         cls,
+         samples: list[ PaceSample ],
+         prior_pace: Callable[ [ SeasonPace ], float ],
+         actual: Callable[ [ NhlSkaterSeason ], float ] ) -> tuple[ float, list[ float ] ]:
+      size = len( samples[ Position.FIRST ].priors ) + 1
+      products = [ [ 0.0 ] * size for _ in range( size ) ]
+      targets = [ 0.0 ] * size
+
+      for sample in samples:
+         features = [ 1.0, *[ prior_pace( prior.pace ) for prior in sample.priors ] ]
+         games = float( sample.current.games_played )
+
+         for row in range( size ):
+            targets[ row ] += games * features[ row ] * actual( sample.current )
+
+            for column in range( size ):
+               products[ row ][ column ] += games * features[ row ] * features[ column ]
+
+      constant, *weights = LinearSystem.solve( products, targets )
+      return constant, weights
+
+
+   @classmethod
+   def _gap_scale(
+         cls,
+         regressions: list[ PaceRegression ],
+         samples: list[ PaceSample ],
+         predicted: Callable[ [ SeasonPace ], float ],
+         actual: Callable[ [ NhlSkaterSeason ], float ] ) -> float:
+      actual_total = 0.0
+      predicted_total = 0.0
+
+      for sample in samples:
+         regressed = PaceRegressionPredictor.regressed( regressions, sample.priors )
+
+         if regressed is None:
+            continue
+
+         actual_total += sample.current.games_played * actual( sample.current )
+         predicted_total += sample.current.games_played * predicted( regressed )
+
+      if not predicted_total:
+         return PaceRegressionFitter.NO_DISCOUNT
+
+      return actual_total / predicted_total
