@@ -21,7 +21,6 @@ from .other_league_season_ingester import OtherLeagueSeasonIngester
 from ..paths import Paths
 from .player_landing_fetcher import PlayerLandingFetcher
 from .previous_team_factor_builder import PreviousTeamFactorBuilder
-from ..projections.baseline_roster_pace_builder import BaselineRosterPaceBuilder
 from ..projections.season_pace import SeasonPace
 from ..recency.pace_regression_fitter import PaceRegressionFitter
 from ..recency.pace_regression_store import PaceRegressionStore
@@ -36,7 +35,6 @@ from ..skaters.player_status_store import PlayerStatusStore
 from ..skaters.roster_skater import RosterSkater
 from ..skaters.roster_skater_store import RosterSkaterStore
 from ..skaters.skater_season_store import SkaterSeasonStore
-from ..team_factor.team_factor_fitter import TeamFactorFitter
 from ..team_factor.team_factor_store import TeamFactorStore
 
 
@@ -68,10 +66,8 @@ class SkaterSeasonIngester():
          other_rows,
          AgingCurveFitter.fit( rows, other_rows ) )
       LeagueFactorStore.write( league_factors )
-      model = PaceRegressionFitter.fit( rows, other_rows, league_factors )
-      PaceRegressionStore.write( model )
+      PaceRegressionStore.write( PaceRegressionFitter.fit( rows, other_rows, league_factors ) )
       previous_season_id = RecencyTargetResolver.prior()
-      current_season = RecencyTargetResolver.resolve()
       seasons = NhlClient.seasons( force=force )
       last_played_ids = sorted( {
          previous_season_id,
@@ -134,25 +130,8 @@ class SkaterSeasonIngester():
          },
          force=force )
       DepthChartStore.write( charts )
-      ice_rows = SkaterIceRecorder.record( charts )
-      SkaterIceStore.write( ice_rows )
-      TeamFactorStore.write(
-         sorted(
-            [
-               *previous_factors,
-               *TeamFactorFitter.current(
-                  current_season,
-                  BaselineRosterPaceBuilder.build(
-                     roster_rows,
-                     rows + other_rows,
-                     current_season,
-                     league_factors,
-                     model ),
-                  slots,
-                  charts,
-                  { row.player_id: row for row in ice_rows } )
-            ],
-            key=lambda factor: ( factor.season, factor.team.value ) ) )
+      SkaterIceStore.write( SkaterIceRecorder.record( charts ) )
+      TeamFactorStore.write( previous_factors )
       print( f'Ingested { len( rows ) } skater-seasons.', flush=True )
 
 
