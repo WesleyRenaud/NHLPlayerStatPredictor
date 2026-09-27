@@ -4,14 +4,12 @@ from datetime import date
 
 import pytest
 
-from api.aging.aging_factor import AgingFactor
 from api.aging.league_factor import LeagueFactor
 import api.projections.baseline_roster_pace_builder as baseline_roster_pace_builder
 from api.projections.baseline_roster_pace_builder import BaselineRosterPaceBuilder
 from api.projections.current_season_nhl_skater import CurrentSeasonNhlSkater
 from api.projections.season_pace import SeasonPace
-from api.recency.age_recency_weights import AgeRecencyWeights
-from api.recency.recency_weight import RecencyWeight
+from api.recency.pace_regression_model import PaceRegressionModel
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
 from api.skaters.other_league_skater_season import OtherLeagueSkaterSeason
@@ -76,20 +74,18 @@ def Test_Build_TestRoster_ExpectEqualWeightPaces(
    rookie_id = 2
    veteran_pace = SeasonPace( 40.0, 50.0 )
    rookie_pace = SeasonPace( 10.0, 24.0 )
-   weights = [ AgeRecencyWeights( 29, [ RecencyWeight( 0, 1.0 ) ] ) ]
    target_season_id = 20262027
    league_factors = [ LeagueFactor( 'AAA', 0.28 ) ]
-   aging_factors = [ AgingFactor( 18, 0.12, 0.09 ) ]
+   model = PaceRegressionModel( [], 0.8, 0.85 )
    nhl_seasons = [ _nhl( veteran_id, previous ) ]
    other_seasons = [ _other( rookie_id ) ]
    roster = [ _roster( veteran_id, now ), _roster( rookie_id, now ) ]
    seasons = nhl_seasons + other_seasons
    resolved: list[ tuple[
       Skater,
-      list[ AgeRecencyWeights ],
       int,
       list[ LeagueFactor ],
-      list[ AgingFactor ] ] ] = []
+      PaceRegressionModel ] ] = []
    paces = {
       veteran_id: veteran_pace,
       rookie_id: rookie_pace,
@@ -97,12 +93,10 @@ def Test_Build_TestRoster_ExpectEqualWeightPaces(
 
    def resolve(
          skater: Skater,
-         recency_weights: list[ AgeRecencyWeights ],
          target: int,
          leagues: list[ LeagueFactor ],
-         aging: list[ AgingFactor ] ) -> SeasonPace | None:
-      resolved.append(
-         ( skater, recency_weights, target, leagues, aging ) )
+         pace_model: PaceRegressionModel ) -> SeasonPace | None:
+      resolved.append( ( skater, target, leagues, pace_model ) )
       return paces[ skater.seasons[ Position.FIRST ].player_id ]
 
    monkeypatch.setattr(
@@ -113,10 +107,9 @@ def Test_Build_TestRoster_ExpectEqualWeightPaces(
    built = BaselineRosterPaceBuilder.build(
       roster,
       seasons,
-      weights,
       target_season_id,
       league_factors,
-      aging_factors )
+      model )
 
    assert built == [
       CurrentSeasonNhlSkater(
@@ -131,8 +124,8 @@ def Test_Build_TestRoster_ExpectEqualWeightPaces(
          SkaterPosition( 'C' ) ),
    ]
    assert resolved == [
-      ( Skater( nhl_seasons ), weights, target_season_id, league_factors, aging_factors ),
-      ( Skater( other_seasons ), weights, target_season_id, league_factors, aging_factors ),
+      ( Skater( nhl_seasons ), target_season_id, league_factors, model ),
+      ( Skater( other_seasons ), target_season_id, league_factors, model ),
    ]
 
 
@@ -148,15 +141,14 @@ def Test_Build_TestMissingPace_ExpectSkipped(
    monkeypatch.setattr(
       baseline_roster_pace_builder.BaselinePaceResolver,
       'resolve',
-      lambda seasons, weights, target, leagues, aging: returns.pop( 0 ) )
+      lambda seasons, target, leagues, pace_model: returns.pop( 0 ) )
 
    built = BaselineRosterPaceBuilder.build(
       roster,
       [],
-      [],
       target_season_id,
       [],
-      [] )
+      PaceRegressionModel( [], 0.8, 0.85 ) )
 
    assert built == [
       CurrentSeasonNhlSkater( first_id, pace, team, SkaterPosition( 'C' ) ),
@@ -176,15 +168,14 @@ def Test_Build_TestExcessForwards_ExpectAllPaces(
    monkeypatch.setattr(
       baseline_roster_pace_builder.BaselinePaceResolver,
       'resolve',
-      lambda seasons, weights, target, leagues, aging: next( remaining ) )
+      lambda seasons, target, leagues, pace_model: next( remaining ) )
 
    built = BaselineRosterPaceBuilder.build(
       roster,
       [],
-      [],
       target_season_id,
       [],
-      [] )
+      PaceRegressionModel( [], 0.8, 0.85 ) )
 
    assert built == [
       CurrentSeasonNhlSkater(

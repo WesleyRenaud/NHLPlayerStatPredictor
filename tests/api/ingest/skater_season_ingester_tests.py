@@ -6,8 +6,6 @@ from pathlib import Path
 import pytest
 
 from api.aging.aging_curve_fitter import AgingCurveFitter
-from api.aging.aging_factor import AgingFactor
-from api.aging.aging_factor_store import AgingFactorStore
 from api.aging.league_factor import LeagueFactor
 from api.aging.league_factor_fitter import LeagueFactorFitter
 from api.aging.league_factor_store import LeagueFactorStore
@@ -20,9 +18,9 @@ from api.ingest.skater_season_ingester import SkaterSeasonIngester
 from api.paths import Paths
 from api.projections.current_season_nhl_skater import CurrentSeasonNhlSkater
 from api.projections.season_pace import SeasonPace
-from api.recency.age_recency_weights import AgeRecencyWeights
-from api.recency.recency_decay_fitter import RecencyDecayFitter
-from api.recency.scoring_weight_store import ScoringWeightStore
+from api.recency.pace_regression_fitter import PaceRegressionFitter
+from api.recency.pace_regression_model import PaceRegressionModel
+from api.recency.pace_regression_store import PaceRegressionStore
 from api.season_length import SeasonLength
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
@@ -125,10 +123,9 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    built: list[ tuple[
       list[ RosterSkater ],
       list[ NhlSkaterSeason ],
-      list[ AgeRecencyWeights ],
       int,
       list[ LeagueFactor ],
-      list[ AgingFactor ] ] ] = []
+      PaceRegressionModel ] ] = []
    fitted: list[ bool ] = []
    previous_rates: list[ dict ] = []
    previous_seasons: list[ int ] = []
@@ -211,8 +208,8 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    monkeypatch.setattr(
       skater_season_ingester.BaselineRosterPaceBuilder,
       'build',
-      lambda roster, seasons, recency_weights, target, leagues, aging: built.append(
-         ( roster, seasons, recency_weights, target, leagues, aging ) )
+      lambda roster, seasons, target, leagues, model: built.append(
+         ( roster, seasons, target, leagues, model ) )
       or roster_paces )
    monkeypatch.setattr(
       skater_season_ingester.NhlClient,
@@ -249,9 +246,8 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       lambda rows: None )
 
    SkaterSeasonIngester.main()
-   stored_weights = ScoringWeightStore.read()
+   stored_model = PaceRegressionStore.read()
    stored_availability = AvailabilityWeightStore.read()
-   stored_aging = AgingFactorStore.read()
    stored_leagues = LeagueFactorStore.read()
    stored_teams = TeamFactorStore.read()
    stored_ice_shares = IceChosenShareStore.read()
@@ -267,24 +263,22 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
          ],
          str( db_path ) )
    ]
-   assert stored_weights == RecencyDecayFitter.fit( rows )
    assert stored_availability == AvailabilityDecayFitter.fit(
       MixedSeasonShareBinder.bind( rows, other_rows ) )
-   assert stored_aging == AgingCurveFitter.fit( rows, other_rows )
    assert stored_leagues == LeagueFactorFitter.fit(
       rows,
       other_rows,
-      stored_aging )
+      AgingCurveFitter.fit( rows, other_rows ) )
+   assert stored_model == PaceRegressionFitter.fit( rows, other_rows, stored_leagues )
    assert stored_teams == team_factors
    assert previous_seasons == last_played_ids
    assert built == [
       (
          roster_rows,
          rows,
-         stored_weights,
          current_season,
          stored_leagues,
-         stored_aging )
+         stored_model )
    ]
    assert fitted == [ True ]
    assert recorded == [ False ]

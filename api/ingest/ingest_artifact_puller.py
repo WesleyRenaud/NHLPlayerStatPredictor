@@ -5,7 +5,6 @@ from pathlib import Path
 import shutil
 import tempfile
 
-from ..aging.aging_factor_store import AgingFactorStore
 from ..aging.league_factor_store import LeagueFactorStore
 from ..availability.availability_weight_store import AvailabilityWeightStore
 from ..depth.depth_chart_store import DepthChartStore
@@ -14,7 +13,7 @@ from ..depth.skater_ice_store import SkaterIceStore
 from ..depth.slot_average_store import SlotAverageStore
 from .github_cli import GithubCli
 from ..paths import Paths
-from ..recency.scoring_weight_store import ScoringWeightStore
+from ..recency.pace_regression_store import PaceRegressionStore
 from ..shared.enums.position import Position
 from ..team_factor.team_factor_store import TeamFactorStore
 
@@ -47,11 +46,10 @@ class IngestArtifactPuller():
    def install( cls, artifact_root: Path ) -> None:
       Paths.PROCESSED_DIR.mkdir( parents=True, exist_ok=True )
       shutil.copy2( cls._source_db( artifact_root ), Paths.DB_PATH )
-      shutil.copy2( cls._source_scoring( artifact_root ), ScoringWeightStore.path() )
+      shutil.copy2( cls._source_regressions( artifact_root ), PaceRegressionStore.path() )
       shutil.copy2(
          cls._source_availability( artifact_root ),
          AvailabilityWeightStore.path() )
-      shutil.copy2( cls._source_aging( artifact_root ), AgingFactorStore.path() )
       shutil.copy2( cls._source_leagues( artifact_root ), LeagueFactorStore.path() )
       shutil.copy2( cls._source_teams( artifact_root ), TeamFactorStore.path() )
       shutil.copy2( cls._source_charts( artifact_root ), DepthChartStore.path() )
@@ -79,9 +77,8 @@ class IngestArtifactPuller():
          if (
                not cls._source_db( artifact_root ).is_file()
                or not cls._source_raw( artifact_root ).is_dir()
-               or not cls._source_scoring( artifact_root ).is_file()
+               or not cls._source_regressions( artifact_root ).is_file()
                or not cls._source_availability( artifact_root ).is_file()
-               or not cls._source_aging( artifact_root ).is_file()
                or not cls._source_leagues( artifact_root ).is_file()
                or not cls._source_teams( artifact_root ).is_file()
                or not cls._source_charts( artifact_root ).is_file()
@@ -191,18 +188,13 @@ class IngestArtifactPuller():
 
 
    @classmethod
-   def _source_scoring( cls, artifact_root: Path ) -> Path:
-      return artifact_root / ScoringWeightStore.path().relative_to( Paths.ROOT )
+   def _source_regressions( cls, artifact_root: Path ) -> Path:
+      return artifact_root / PaceRegressionStore.path().relative_to( Paths.ROOT )
 
 
    @classmethod
    def _source_availability( cls, artifact_root: Path ) -> Path:
       return artifact_root / AvailabilityWeightStore.path().relative_to( Paths.ROOT )
-
-
-   @classmethod
-   def _source_aging( cls, artifact_root: Path ) -> Path:
-      return artifact_root / AgingFactorStore.path().relative_to( Paths.ROOT )
 
 
    @classmethod

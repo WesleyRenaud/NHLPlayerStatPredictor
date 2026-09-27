@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 
-from api.aging.aging_factor_store import AgingFactorStore
 from api.aging.league_factor_store import LeagueFactorStore
 from api.availability.availability_weight_store import AvailabilityWeightStore
 from api.depth.depth_chart_store import DepthChartStore
@@ -15,7 +14,7 @@ from api.depth.slot_average_store import SlotAverageStore
 from api.ingest.github_cli_result import GithubCliResult
 import api.ingest.ingest_artifact_puller as ingest_artifact_puller
 from api.ingest.ingest_artifact_puller import IngestArtifactPuller
-from api.recency.scoring_weight_store import ScoringWeightStore
+from api.recency.pace_regression_store import PaceRegressionStore
 from api.shared.enums.position import Position
 from api.team_factor.team_factor_store import TeamFactorStore
 
@@ -49,18 +48,14 @@ def _write_artifact( root: Path ) -> None:
    db_path.write_bytes( _SQLITE_BYTES )
    raw_path.mkdir( parents=True, exist_ok=True )
    ( raw_path / 'seasons.json' ).write_text( _EMPTY_JSON )
-   weights_path = root / ScoringWeightStore.path().relative_to(
+   regressions_path = root / PaceRegressionStore.path().relative_to(
       ingest_artifact_puller.Paths.ROOT )
-   weights_path.parent.mkdir( parents=True, exist_ok=True )
-   weights_path.write_text( _EMPTY_JSON )
+   regressions_path.parent.mkdir( parents=True, exist_ok=True )
+   regressions_path.write_text( _EMPTY_JSON )
    availability_path = root / AvailabilityWeightStore.path().relative_to(
       ingest_artifact_puller.Paths.ROOT )
    availability_path.parent.mkdir( parents=True, exist_ok=True )
    availability_path.write_text( _EMPTY_JSON )
-   aging_path = root / AgingFactorStore.path().relative_to(
-      ingest_artifact_puller.Paths.ROOT )
-   aging_path.parent.mkdir( parents=True, exist_ok=True )
-   aging_path.write_text( _EMPTY_JSON )
    leagues_path = root / LeagueFactorStore.path().relative_to(
       ingest_artifact_puller.Paths.ROOT )
    leagues_path.parent.mkdir( parents=True, exist_ok=True )
@@ -137,9 +132,8 @@ def Test_Install_TestArtifactTree_ExpectCopiedDbAndRaw(
    IngestArtifactPuller.install( artifact_root )
    stored_db = ingest_artifact_puller.Paths.DB_PATH.read_bytes()
    stored_seasons = ( ingest_artifact_puller.Paths.RAW_DIR / 'seasons.json' ).read_text()
-   stored_weights = ScoringWeightStore.path().read_text()
+   stored_regressions = PaceRegressionStore.path().read_text()
    stored_availability = AvailabilityWeightStore.path().read_text()
-   stored_aging = AgingFactorStore.path().read_text()
    stored_leagues = LeagueFactorStore.path().read_text()
    stored_teams = TeamFactorStore.path().read_text()
    stored_charts = DepthChartStore.path().read_text()
@@ -148,9 +142,8 @@ def Test_Install_TestArtifactTree_ExpectCopiedDbAndRaw(
 
    assert stored_db == _SQLITE_BYTES
    assert stored_seasons == _EMPTY_JSON
-   assert stored_weights == _EMPTY_JSON
+   assert stored_regressions == _EMPTY_JSON
    assert stored_availability == _EMPTY_JSON
-   assert stored_aging == _EMPTY_JSON
    assert stored_leagues == _EMPTY_JSON
    assert stored_teams == _EMPTY_JSON
    assert stored_charts == _EMPTY_JSON
