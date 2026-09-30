@@ -34,7 +34,9 @@ def _season( games_played: int, goals: int, assists: int ) -> NhlSkaterSeason:
       gp_share=1.0,
       playoff_games=0,
       playoff_goals=0,
-      playoff_assists=0 )
+      playoff_assists=0,
+      power_play_goals=0,
+      power_play_points=0 )
 
 
 def Test_FromRow_TestStoredFields_ExpectValues() -> None:
@@ -60,7 +62,9 @@ def Test_FromRow_TestStoredFields_ExpectValues() -> None:
       gp_share=1.0,
       playoff_games=18,
       playoff_goals=7,
-      playoff_assists=26 )
+      playoff_assists=26,
+      power_play_goals=20,
+      power_play_points=35 )
 
    loaded = NhlSkaterSeason.from_row( {
       'PLAYER_ID': season.player_id,
@@ -83,6 +87,8 @@ def Test_FromRow_TestStoredFields_ExpectValues() -> None:
       'PLAYOFF_GAMES': season.playoff_games,
       'PLAYOFF_GOALS': season.playoff_goals,
       'PLAYOFF_ASSISTS': season.playoff_assists,
+      'PP_GOALS': season.power_play_goals,
+      'PP_POINTS': season.power_play_points,
    } )
 
    assert loaded == season
@@ -110,7 +116,9 @@ def Test_Key_TestPlayerAndSeason_ExpectKey() -> None:
       gp_share=1.0,
       playoff_games=0,
       playoff_goals=0,
-      playoff_assists=0 )
+      playoff_assists=0,
+      power_play_goals=0,
+      power_play_points=0 )
 
    key = season.key()
 

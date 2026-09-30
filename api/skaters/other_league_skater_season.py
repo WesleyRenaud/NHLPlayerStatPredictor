@@ -41,4 +41,6 @@ class OtherLeagueSkaterSeason( SkaterSeason ):
       if rate is None:
          return None
 
-      return SeasonPace( self.g_pace * rate, self.a_pace * rate )
+      return SeasonPace(
+         self.g_pace * rate,
+         self.a_pace * rate )

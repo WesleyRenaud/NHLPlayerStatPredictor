@@ -9,6 +9,8 @@ export class ProjectionSummary {
          assists: ValueNormalizer.asFiniteNumber(row.assists),
          points: ValueNormalizer.asFiniteNumber(row.points),
          gamesPlayed: ValueNormalizer.asFiniteNumber(row.gamesPlayed),
+         powerPlayGoals: ValueNormalizer.asFiniteNumber(row.powerPlayGoals),
+         powerPlayPoints: ValueNormalizer.asFiniteNumber(row.powerPlayPoints),
          projectedToi: ValueNormalizer.asTrimmedString(row.projectedToi),
       };
    }

@@ -2,9 +2,13 @@ from __future__ import annotations
 
 from datetime import date
 
+import pytest
+
 from api.aging.league_factor import LeagueFactor
+from api.projections.power_play_pace import PowerPlayPace
 from api.projections.season_pace import SeasonPace
 from api.projections.translated_pace_averager import TranslatedPaceAverager
+from api.season import Season
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
 from api.skaters.other_league_skater_season import OtherLeagueSkaterSeason
@@ -16,7 +20,9 @@ def _nhl(
       g_pace: float,
       a_pace: float,
       season_id: int,
-      games_played: int = 82 ) -> NhlSkaterSeason:
+   games_played: int = 82,
+   power_play_goals: int = 0,
+   power_play_points: int = 0 ) -> NhlSkaterSeason:
    return NhlSkaterSeason(
       player_id=1,
       season_id=season_id,
@@ -37,7 +43,9 @@ def _nhl(
       gp_share=1.0,
       playoff_games=0,
       playoff_goals=0,
-      playoff_assists=0 )
+      playoff_assists=0,
+      power_play_goals=power_play_goals,
+      power_play_points=power_play_points )
 
 
 def _other(
@@ -72,11 +80,40 @@ def Test_Year_TestMixedNhlAndOther_ExpectGamesWeightedBlend() -> None:
    year = TranslatedPaceAverager.year( [ nhl, other ], [ factor ] )
 
    assert year.games == total_games
-   assert year.pace == SeasonPace(
+   assert year.goals == pytest.approx(
       ( nhl_games * nhl.g_pace + other_games * other.g_pace * factor.rate )
-      / total_games,
+      / total_games )
+   assert year.assists == pytest.approx(
       ( nhl_games * nhl.a_pace + other_games * other.a_pace * factor.rate )
       / total_games )
+   assert year.power_play_goals == 0.0
+   assert year.power_play_assists == 0.0
+
+
+def Test_Year_TestNhlPowerPlayTotals_ExpectSeparatePowerPlayPace() -> None:
+   games_played = 10
+   power_play_goals = 4
+   power_play_points = 10
+   nhl = _nhl(
+      20.0,
+      30.0,
+      20252026,
+      games_played,
+      power_play_goals=power_play_goals,
+      power_play_points=power_play_points )
+   expected_power_play_goals = Season.pace(
+      float( power_play_goals ),
+      float( games_played ),
+      nhl.pace_games )
+   expected_power_play_assists = Season.pace(
+      float( power_play_points - power_play_goals ),
+      float( games_played ),
+      nhl.pace_games )
+
+   year = TranslatedPaceAverager.year( [ nhl ], [] )
+
+   assert year.power_play_goals == pytest.approx( expected_power_play_goals )
+   assert year.power_play_assists == pytest.approx( expected_power_play_assists )
 
 
 def Test_Year_TestNoGames_ExpectNone() -> None:
@@ -92,4 +129,5 @@ def Test_Year_TestMissingLeague_ExpectNhlOnly() -> None:
    year = TranslatedPaceAverager.year( [ nhl, other ], [] )
 
    assert year.games == nhl.games_played
-   assert year.pace == SeasonPace( nhl.g_pace, nhl.a_pace )
+   assert year.goals == nhl.g_pace
+   assert year.assists == nhl.a_pace

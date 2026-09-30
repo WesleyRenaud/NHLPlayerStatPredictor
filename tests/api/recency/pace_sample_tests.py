@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
+from api.projections.power_play_pace import PowerPlayPace
 from api.projections.season_pace import SeasonPace
 from api.recency.pace_sample import PaceSample
 from api.recency.prior_source import PriorSource
@@ -33,11 +34,20 @@ def _current( season_id: int ) -> NhlSkaterSeason:
       gp_share=1.0,
       playoff_games=0,
       playoff_goals=0,
-      playoff_assists=0 )
+      playoff_assists=0,
+      power_play_goals=0,
+      power_play_points=0 )
 
 
 def _prior( year: int, nhl_games: int = 82 ) -> PriorYear:
-   return PriorYear( year, SeasonPace( 10.0, 20.0 ), 82, nhl_games, 25.4, SeasonPace.zero() )
+   return PriorYear(
+      year,
+      SeasonPace( 10.0, 20.0 ),
+      PowerPlayPace.zero(),
+      82,
+      nhl_games,
+      25.4,
+      SeasonPace.zero() )
 
 
 def Test_Source_TestLatestPrior_ExpectLatestSource() -> None:

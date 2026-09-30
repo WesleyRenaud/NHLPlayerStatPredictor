@@ -3,7 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
+from ..projections.power_play_pace import PowerPlayPace
 from ..projections.season_pace import SeasonPace
+from ..season import Season
 from ..shared.enums.position import Position
 from .skater_position import SkaterPosition
 from .skater_season import SkaterSeason
@@ -24,6 +26,8 @@ class NhlSkaterSeason( SkaterSeason ):
    playoff_games: int
    playoff_goals: int
    playoff_assists: int
+   power_play_goals: int
+   power_play_points: int
 
 
    @classmethod
@@ -50,11 +54,25 @@ class NhlSkaterSeason( SkaterSeason ):
          gp_share=None if gp_share is None else float( gp_share ),
          playoff_games=int( row[ 'PLAYOFF_GAMES' ] ),
          playoff_goals=int( row[ 'PLAYOFF_GOALS' ] ),
-         playoff_assists=int( row[ 'PLAYOFF_ASSISTS' ] ) )
+         playoff_assists=int( row[ 'PLAYOFF_ASSISTS' ] ),
+         power_play_goals=int( row[ 'PP_GOALS' ] ),
+         power_play_points=int( row[ 'PP_POINTS' ] ) )
 
 
    def key( self ) -> SkaterSeasonKey:
       return SkaterSeasonKey( self.player_id, self.season_id )
+
+
+   def power_play_pace( self ) -> PowerPlayPace:
+      return PowerPlayPace(
+         goals=Season.pace(
+            self.power_play_goals,
+            self.games_played,
+            self.pace_games ),
+         assists=Season.pace(
+            self.power_play_points - self.power_play_goals,
+            self.games_played,
+            self.pace_games ) )
 
 
    def playoff_surplus( self ) -> SeasonPace:

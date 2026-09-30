@@ -13,6 +13,8 @@ class PaceRegressionModel():
    nhl_gap_assists: float
    playoff_goal_weight: float
    playoff_assist_weight: float
+   nhl_gap_power_play_goals: float
+   nhl_gap_power_play_assists: float
 
 
    @classmethod
@@ -22,7 +24,9 @@ class PaceRegressionModel():
          nhl_gap_goals=float( row[ 'nhl_gap_goals' ] ),
          nhl_gap_assists=float( row[ 'nhl_gap_assists' ] ),
          playoff_goal_weight=float( row[ 'playoff_goal_weight' ] ),
-         playoff_assist_weight=float( row[ 'playoff_assist_weight' ] ) )
+         playoff_assist_weight=float( row[ 'playoff_assist_weight' ] ),
+         nhl_gap_power_play_goals=float( row[ 'nhl_gap_power_play_goals' ] ),
+         nhl_gap_power_play_assists=float( row[ 'nhl_gap_power_play_assists' ] ) )
 
 
    def to_dict( self ) -> dict[ str, float | list[ dict[ str, str | int | float | list[ float ] ] ] ]:
@@ -32,4 +36,6 @@ class PaceRegressionModel():
          'nhl_gap_assists': self.nhl_gap_assists,
          'playoff_goal_weight': self.playoff_goal_weight,
          'playoff_assist_weight': self.playoff_assist_weight,
+         'nhl_gap_power_play_goals': self.nhl_gap_power_play_goals,
+         'nhl_gap_power_play_assists': self.nhl_gap_power_play_assists,
       }

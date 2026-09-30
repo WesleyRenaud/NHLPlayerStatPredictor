@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from api.depth.ice_pace_scaler import IcePaceScaler
+from api.projections.power_play_pace import PowerPlayPace
 from api.projections.season_pace import SeasonPace
 
 
@@ -32,3 +33,15 @@ def Test_Adjust_TestSameIce_ExpectUnchanged() -> None:
    scaled = IcePaceScaler.adjust( pace, last, last )
 
    assert scaled == pace
+
+
+def Test_Adjust_TestPowerPlayPace_ExpectSameIceScaling() -> None:
+   last = 20.0
+   projected = 24.0
+   pace = PowerPlayPace( 5.0, 8.0 )
+
+   scaled = IcePaceScaler.adjust( pace, last, projected )
+
+   assert scaled == PowerPlayPace(
+      pace.goals * projected / last,
+      pace.assists * projected / last )

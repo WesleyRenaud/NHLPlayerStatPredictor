@@ -70,6 +70,8 @@ export class LookupFormController {
       result.querySelector('[data-assists]').textContent = projection.assists;
       result.querySelector('[data-points]').textContent = projection.points;
       result.querySelector('[data-games-played]').textContent = projection.gamesPlayed;
+      result.querySelector('[data-power-play-goals]').textContent = projection.powerPlayGoals;
+      result.querySelector('[data-power-play-points]').textContent = projection.powerPlayPoints;
       result.querySelector('[data-projected-toi]').textContent =
          projection.projectedToi || '—';
       result.hidden = false;

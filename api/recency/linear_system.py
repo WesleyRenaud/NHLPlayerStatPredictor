@@ -12,51 +12,77 @@ class LinearSystem():
          [ *products[ row ], targets[ row ] ]
          for row in range( size )
       ]
-      cls._reduce( matrix, size )
-      return [ matrix[ row ][ size ] for row in range( size ) ]
+      return cls._reduce( matrix, size )
 
 
    @classmethod
-   def _reduce( cls, matrix: list[ list[ float ] ], size: int ) -> None:
+   def _reduce( cls, matrix: list[ list[ float ] ], size: int ) -> list[ float ]:
+      pivot_row = 0
+      pivot_columns: list[ int ] = []
+
       for column in range( size ):
-         cls._pivot( matrix, column, size )
-         cls._scale( matrix, column )
-         cls._eliminate( matrix, column, size )
+         selected_row = cls._pivot( matrix, pivot_row, column, size )
+
+         if matrix[ selected_row ][ column ] == 0.0:
+            continue
+
+         matrix[ pivot_row ], matrix[ selected_row ] = (
+            matrix[ selected_row ], matrix[ pivot_row ] )
+         cls._scale( matrix, pivot_row, column )
+         cls._eliminate( matrix, pivot_row, column, size )
+         pivot_columns.append( column )
+         pivot_row += 1
+
+         if pivot_row == size:
+            break
+
+      solution = [ 0.0 ] * size
+
+      for row, column in enumerate( pivot_columns ):
+         solution[ column ] = matrix[ row ][ size ]
+
+      return solution
 
 
    @classmethod
    def _pivot(
          cls,
          matrix: list[ list[ float ] ],
+         pivot_row: int,
          column: int,
-         size: int ) -> None:
-      pivot_row = column
+         size: int ) -> int:
+      selected_row = pivot_row
 
-      for row in range( column + 1, size ):
-         if abs( matrix[ row ][ column ] ) > abs( matrix[ pivot_row ][ column ] ):
-            pivot_row = row
+      for row in range( pivot_row + 1, size ):
+         if abs( matrix[ row ][ column ] ) > abs( matrix[ selected_row ][ column ] ):
+            selected_row = row
 
-      matrix[ column ], matrix[ pivot_row ] = matrix[ pivot_row ], matrix[ column ]
+      return selected_row
 
 
    @classmethod
-   def _scale( cls, matrix: list[ list[ float ] ], column: int ) -> None:
-      pivot = matrix[ column ][ column ]
-      matrix[ column ] = [ value / pivot for value in matrix[ column ] ]
+   def _scale(
+         cls,
+         matrix: list[ list[ float ] ],
+         pivot_row: int,
+         column: int ) -> None:
+      pivot = matrix[ pivot_row ][ column ]
+      matrix[ pivot_row ] = [ value / pivot for value in matrix[ pivot_row ] ]
 
 
    @classmethod
    def _eliminate(
          cls,
          matrix: list[ list[ float ] ],
+         pivot_row: int,
          column: int,
          size: int ) -> None:
       for row in range( size ):
-         if row == column:
+         if row == pivot_row:
             continue
 
          factor = matrix[ row ][ column ]
          matrix[ row ] = [
-            value - factor * matrix[ column ][ offset ]
+            value - factor * matrix[ pivot_row ][ offset ]
             for offset, value in enumerate( matrix[ row ] )
          ]

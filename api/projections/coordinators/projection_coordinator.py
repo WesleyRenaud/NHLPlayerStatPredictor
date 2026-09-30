@@ -18,18 +18,25 @@ class ProjectionCoordinator():
    @classmethod
    def get_projection( cls, player_id: int ) -> Projection | None:
       db_path = str( Paths.DB_PATH )
-      pace = BaselinePaceResolver.resolve(
-         Skater(
-            [
-               *SkaterSeasonProvider.seasons_for_player_id( player_id, db_path ),
-               *OtherLeagueSeasonProvider.seasons_for_player_id( player_id, db_path ),
-            ] ),
-         RecencyTargetResolver.resolve(),
-         LeagueFactorStore.read(),
-         PaceRegressionStore.read() )
+      seasons = [
+         *SkaterSeasonProvider.seasons_for_player_id( player_id, db_path ),
+         *OtherLeagueSeasonProvider.seasons_for_player_id( player_id, db_path ),
+      ]
+      skater = Skater( seasons )
+      target_season = RecencyTargetResolver.resolve()
+      league_factors = LeagueFactorStore.read()
+      model = PaceRegressionStore.read()
+      paces = BaselinePaceResolver.resolve(
+         skater,
+         target_season,
+         league_factors,
+         model )
 
-      if pace is None:
+      if paces is None:
          return None
+
+      pace = paces.season_pace()
+      power_play_pace = paces.power_play_pace()
 
       ice = SkaterIceStore.by_player().get( player_id )
 
@@ -38,12 +45,21 @@ class ProjectionCoordinator():
             pace,
             ice.last_toi,
             ice.projected_toi )
+         power_play_pace = IcePaceScaler.adjust(
+            power_play_pace,
+            ice.last_toi,
+            ice.projected_toi )
 
       goals = round( pace.goals )
       assists = round( pace.assists )
+      points = goals + assists
+      power_play_goals = round( power_play_pace.goals )
+      power_play_assists = round( power_play_pace.assists )
       return Projection(
          goals=goals,
          assists=assists,
-         points=goals + assists,
+         points=points,
          games_played=PaceGamesResolver.resolve(),
-         projected_toi=None if ice is None else ice.projected_toi )
+         projected_toi=None if ice is None else ice.projected_toi,
+         power_play_goals=power_play_goals,
+         power_play_points=power_play_goals + power_play_assists )

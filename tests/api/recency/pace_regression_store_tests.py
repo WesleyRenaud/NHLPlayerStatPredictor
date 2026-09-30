@@ -19,13 +19,35 @@ def Test_Write_TestModel_ExpectReadable(
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
    model = PaceRegressionModel(
       [
-         PaceRegression( PriorSource.NHL, AgeBand( 18, 22 ), 7.4, [ 0.68 ], 6.1, [ 0.7 ] ),
-         PaceRegression( PriorSource.TRANSLATED, AgeBand( 20, 21 ), 4.8, [ 0.6, 0.21 ], 4.2, [ 0.61, 0.2 ] ),
+         PaceRegression(
+            source=PriorSource.NHL,
+            band=AgeBand( 18, 22 ),
+            goal_constant=7.4,
+            goal_weights=[ 0.68 ],
+            assist_constant=6.1,
+            assist_weights=[ 0.7 ],
+            power_play_goal_constant=0.0,
+            power_play_goal_weights=[ 0.0 ],
+            power_play_assist_constant=0.0,
+            power_play_assist_weights=[ 0.0 ] ),
+         PaceRegression(
+            source=PriorSource.TRANSLATED,
+            band=AgeBand( 20, 21 ),
+            goal_constant=4.8,
+            goal_weights=[ 0.6, 0.21 ],
+            assist_constant=4.2,
+            assist_weights=[ 0.61, 0.2 ],
+            power_play_goal_constant=0.0,
+            power_play_goal_weights=[ 0.0, 0.0 ],
+            power_play_assist_constant=0.0,
+            power_play_assist_weights=[ 0.0, 0.0 ] ),
       ],
       0.785,
       0.835,
       0.79,
-      0.85 )
+      0.85,
+      0.91,
+      1.04 )
    PaceRegressionStore.write( model )
 
    loaded = PaceRegressionStore.read()

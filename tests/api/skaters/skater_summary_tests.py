@@ -17,7 +17,9 @@ def Test_FromRow_TestSummaryJson_ExpectFields() -> None:
       82,
       44,
       79,
-      123 )
+      123,
+      20,
+      60 )
 
    loaded = SkaterSummary.from_row( {
       'playerId': summary.player_id,
@@ -28,6 +30,8 @@ def Test_FromRow_TestSummaryJson_ExpectFields() -> None:
       'goals': summary.goals,
       'assists': summary.assists,
       'points': summary.points,
+      'ppGoals': summary.power_play_goals,
+      'ppPoints': summary.power_play_points,
    } )
 
    assert loaded == summary
@@ -46,7 +50,9 @@ def Test_FromRow_TestTradedPlayer_ExpectTeams() -> None:
       82,
       10,
       20,
-      30 )
+      30,
+      2,
+      8 )
 
    loaded = SkaterSummary.from_row( {
       'playerId': summary.player_id,
@@ -57,6 +63,8 @@ def Test_FromRow_TestTradedPlayer_ExpectTeams() -> None:
       'goals': summary.goals,
       'assists': summary.assists,
       'points': summary.points,
+      'ppGoals': summary.power_play_goals,
+      'ppPoints': summary.power_play_points,
    } )
 
    assert loaded == summary

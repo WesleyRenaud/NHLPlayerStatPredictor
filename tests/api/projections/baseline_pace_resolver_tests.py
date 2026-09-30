@@ -7,6 +7,7 @@ import pytest
 
 from api.aging.league_factor import LeagueFactor
 from api.projections.baseline_pace_resolver import BaselinePaceResolver
+from api.projections.power_play_pace import PowerPlayPace
 from api.recency.age_band import AgeBand
 from api.recency.pace_regression import PaceRegression
 from api.recency.pace_regression_model import PaceRegressionModel
@@ -40,7 +41,9 @@ def _nhl( season_id: int, g_pace: float, a_pace: float, age: float ) -> NhlSkate
       gp_share=1.0,
       playoff_games=0,
       playoff_goals=0,
-      playoff_assists=0 )
+      playoff_assists=0,
+      power_play_goals=0,
+      power_play_points=0 )
 
 
 def _other( season_id: int, g_pace: float, a_pace: float, league: str ) -> OtherLeagueSkaterSeason:
@@ -61,13 +64,35 @@ def _other( season_id: int, g_pace: float, a_pace: float, league: str ) -> Other
 def _model() -> PaceRegressionModel:
    return PaceRegressionModel(
       [
-         PaceRegression( PriorSource.NHL, AgeBand( 27, 28 ), 1.0, [ 0.5 ], 2.0, [ 0.5 ] ),
-         PaceRegression( PriorSource.TRANSLATED, AgeBand( 17, 19 ), 3.0, [ 0.8 ], 4.0, [ 0.8 ] ),
+         PaceRegression(
+            source=PriorSource.NHL,
+            band=AgeBand( 27, 28 ),
+            goal_constant=1.0,
+            goal_weights=[ 0.5 ],
+            assist_constant=2.0,
+            assist_weights=[ 0.5 ],
+            power_play_goal_constant=0.0,
+            power_play_goal_weights=[ 0.0 ],
+            power_play_assist_constant=0.0,
+            power_play_assist_weights=[ 0.0 ] ),
+         PaceRegression(
+            source=PriorSource.TRANSLATED,
+            band=AgeBand( 17, 19 ),
+            goal_constant=3.0,
+            goal_weights=[ 0.8 ],
+            assist_constant=4.0,
+            assist_weights=[ 0.8 ],
+            power_play_goal_constant=0.0,
+            power_play_goal_weights=[ 0.0 ],
+            power_play_assist_constant=0.0,
+            power_play_assist_weights=[ 0.0 ] ),
       ],
       0.8,
       0.9,
       1.5,
-      0.5 )
+      0.5,
+      1.0,
+      1.0 )
 
 
 def Test_Resolve_TestNhlSeason_ExpectRegressedPace() -> None:
@@ -91,8 +116,10 @@ def Test_Resolve_TestPlayoffSurplus_ExpectWeightedSurplusAdded() -> None:
 
    assert without is not None
    assert resolved is not None
-   assert resolved.goals == pytest.approx( without.goals + model.playoff_goal_weight * surplus.goals )
-   assert resolved.assists == pytest.approx( without.assists + model.playoff_assist_weight * surplus.assists )
+   assert resolved.goals == pytest.approx(
+      without.goals + model.playoff_goal_weight * surplus.goals )
+   assert resolved.assists == pytest.approx(
+      without.assists + model.playoff_assist_weight * surplus.assists )
 
 
 def Test_Resolve_TestOtherLeagueOnly_ExpectTranslatedRegression() -> None:
@@ -108,6 +135,8 @@ def Test_Resolve_TestOtherLeagueOnly_ExpectTranslatedRegression() -> None:
    assert resolved is not None
    assert resolved.goals == pytest.approx( 3.0 + 0.8 * season.g_pace * factor.rate )
    assert resolved.assists == pytest.approx( 4.0 + 0.8 * season.a_pace * factor.rate )
+   assert resolved.power_play_goals == 0.0
+   assert resolved.power_play_assists == 0.0
 
 
 def Test_Resolve_TestMissedSeason_ExpectGapDiscount() -> None:
@@ -120,6 +149,8 @@ def Test_Resolve_TestMissedSeason_ExpectGapDiscount() -> None:
    assert resolved.goals == pytest.approx( ( 1.0 + 0.5 * season.g_pace ) * model.nhl_gap_goals )
    assert resolved.assists == pytest.approx(
       ( 2.0 + 0.5 * season.a_pace ) * model.nhl_gap_assists )
+   assert resolved.power_play_goals == 0.0
+   assert resolved.power_play_assists == 0.0
 
 
 def Test_Resolve_TestNoSeasons_ExpectNone() -> None:
