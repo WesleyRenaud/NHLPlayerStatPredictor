@@ -13,4 +13,5 @@ def Test_ToDict_TestProjection_ExpectMappedFields() -> None:
       'assists': projection.assists,
       'points': projection.points,
       'gamesPlayed': projection.games_played,
+      'projectedToi': None,
    }

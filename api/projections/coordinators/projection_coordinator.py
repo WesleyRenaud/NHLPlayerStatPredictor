@@ -45,4 +45,5 @@ class ProjectionCoordinator():
          goals=goals,
          assists=assists,
          points=goals + assists,
-         games_played=PaceGamesResolver.resolve() )
+         games_played=PaceGamesResolver.resolve(),
+         projected_toi=None if ice is None else ice.projected_toi )
