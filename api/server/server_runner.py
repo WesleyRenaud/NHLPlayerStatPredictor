@@ -5,7 +5,7 @@ from .threaded_http_server import ThreadedHttpServer
 
 
 class ServerRunner():
-   DEFAULT_PORT = 9000
+   DEFAULT_PORT = 9005
 
    @classmethod
    def run( cls, port: int = DEFAULT_PORT ) -> None:
