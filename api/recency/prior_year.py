@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from .prior_source import PriorSource
+from ..projections.power_play_pace import PowerPlayPace
 from ..projections.season_pace import SeasonPace
 
 
@@ -13,6 +14,7 @@ class PriorYear():
 
    year: int
    pace: SeasonPace
+   power_play_pace: PowerPlayPace
    games: int
    nhl_games: int
    age: float

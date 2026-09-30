@@ -17,6 +17,8 @@ class SkaterSummary():
    goals: int
    assists: int
    points: int
+   power_play_goals: int
+   power_play_points: int
 
 
    @classmethod
@@ -34,4 +36,6 @@ class SkaterSummary():
          int( raw[ 'gamesPlayed' ] ),
          int( raw[ 'goals' ] ),
          int( raw[ 'assists' ] ),
-         int( raw[ 'points' ] ) )
+         int( raw[ 'points' ] ),
+         int( raw[ 'ppGoals' ] ),
+         int( raw[ 'ppPoints' ] ) )

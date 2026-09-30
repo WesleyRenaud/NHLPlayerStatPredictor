@@ -25,7 +25,9 @@ def _nhl(
       start_year: int,
       g_pace: float,
       a_pace: float,
-      age: float ) -> NhlSkaterSeason:
+   age: float,
+   power_play_goals: int = 0,
+   power_play_points: int = 0 ) -> NhlSkaterSeason:
    return NhlSkaterSeason(
       player_id=player_id,
       season_id=start_year * 10000 + start_year + 1,
@@ -46,7 +48,9 @@ def _nhl(
       gp_share=1.0,
       playoff_games=0,
       playoff_goals=0,
-      playoff_assists=0 )
+      playoff_assists=0,
+      power_play_goals=power_play_goals,
+      power_play_points=power_play_points )
 
 
 def _other( player_id: int, start_year: int, g_pace: float, a_pace: float ) -> OtherLeagueSkaterSeason:
@@ -128,8 +132,9 @@ def _goal_error( model: PaceRegressionModel, seasons: list[ NhlSkaterSeason ] ) 
          [ season for season in seasons if season.player_id == target.player_id ],
          [],
          2021 )
-      pace = PaceRegressionPredictor.pace( model, priors, 2021 )
-      assert pace is not None
+      paces = PaceRegressionPredictor.paces( model, priors, 2021 )
+      assert paces is not None
+      pace = paces.season_pace()
       error += ( pace.goals - target.g_pace ) ** 2
 
    return error
@@ -150,6 +155,94 @@ def Test_Fit_TestLinearPairs_ExpectRecoveredBandRegression() -> None:
    assert regression.assist_weights == pytest.approx( [ 0.25 ] )
    assert model.playoff_goal_weight == PaceRegressionFitter.NO_PLAYOFF_WEIGHT
    assert model.playoff_assist_weight == PaceRegressionFitter.NO_PLAYOFF_WEIGHT
+
+
+def Test_Fit_TestPowerPlayPairs_ExpectRecoveredBandRegression() -> None:
+   seasons: list[ NhlSkaterSeason ] = []
+   power_play_goal_constant = 2.0
+   power_play_goal_weight = 0.5
+   power_play_assist_constant = 1.0
+   power_play_assist_weight = 0.25
+
+   for player_id in range( _PLAYERS ):
+      prior_goals = _goals( player_id )
+      prior_assists = _assists( player_id )
+      prior_pp_goals = 1.0 + 0.5 * prior_goals
+      prior_pp_assists = 0.5 + 0.25 * prior_assists
+      seasons.append(
+         _nhl(
+            player_id,
+            2020,
+            prior_goals,
+            prior_assists,
+            25.4,
+            prior_pp_goals,
+            prior_pp_goals + prior_pp_assists ) )
+      current_pp_goals = (
+         power_play_goal_constant + power_play_goal_weight * prior_pp_goals )
+      current_pp_assists = (
+         power_play_assist_constant + power_play_assist_weight * prior_pp_assists )
+      seasons.append(
+         _nhl(
+            player_id,
+            2021,
+            2.0 + 0.5 * prior_goals,
+            1.0 + 0.25 * prior_assists,
+            26.4,
+            current_pp_goals,
+            current_pp_goals + current_pp_assists ) )
+
+   model = PaceRegressionFitter.fit( seasons, [], [] )
+   regression = model.regressions[ Position.FIRST ]
+
+   assert regression.power_play_goal_constant == pytest.approx( power_play_goal_constant )
+   assert regression.power_play_goal_weights == pytest.approx( [ power_play_goal_weight ] )
+   assert regression.power_play_assist_constant == pytest.approx( power_play_assist_constant )
+   assert regression.power_play_assist_weights == pytest.approx( [ power_play_assist_weight ] )
+
+
+def Test_Fit_TestConstantPriorValues_ExpectWeightedTargetIntercept() -> None:
+   seasons: list[ NhlSkaterSeason ] = []
+   prior_power_play_goals = 0
+   prior_power_play_points = 0
+   current_power_play_goals = 3
+   current_power_play_points = 5
+   expected_power_play_goal_pace = Season.pace(
+      float( current_power_play_goals ),
+      82.0,
+      82 )
+   expected_power_play_assist_pace = Season.pace(
+      float( current_power_play_points - current_power_play_goals ),
+      82.0,
+      82 )
+
+   for player_id in range( _PLAYERS ):
+      seasons.append(
+         _nhl(
+            player_id,
+            2020,
+            _goals( player_id ),
+            _assists( player_id ),
+            25.4,
+            power_play_goals=prior_power_play_goals,
+            power_play_points=prior_power_play_points ) )
+      seasons.append(
+         _nhl(
+            player_id,
+            2021,
+            2.0 + 0.5 * _goals( player_id ),
+            1.0 + 0.25 * _assists( player_id ),
+            26.4,
+            power_play_goals=current_power_play_goals,
+            power_play_points=current_power_play_points ) )
+
+   model = PaceRegressionFitter.fit( seasons, [], [] )
+   regression = model.regressions[ Position.FIRST ]
+
+   assert regression.power_play_goal_constant == pytest.approx( expected_power_play_goal_pace )
+   assert regression.power_play_goal_weights == [ 0.0 ]
+   assert regression.power_play_assist_constant == pytest.approx( expected_power_play_assist_pace )
+   assert regression.power_play_assist_weights == [ 0.0 ]
 
 
 def Test_Fit_TestPlayoffSurplus_ExpectErrorMinimizingPositiveWeights() -> None:

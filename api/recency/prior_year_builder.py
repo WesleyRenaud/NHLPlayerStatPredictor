@@ -4,6 +4,7 @@ from collections import defaultdict
 
 from ..aging.league_factor import LeagueFactor
 from .prior_year import PriorYear
+from ..projections.power_play_pace import PowerPlayPace
 from ..projections.season_pace import SeasonPace
 from ..projections.translated_pace_averager import TranslatedPaceAverager
 from ..season import Season
@@ -62,14 +63,17 @@ class PriorYearBuilder():
          qualified.append(
             PriorYear(
                start_year,
-               combined.pace,
-               combined.games,
-               sum(
+               pace=SeasonPace( combined.goals, combined.assists ),
+               power_play_pace=PowerPlayPace(
+                  combined.power_play_goals,
+                  combined.power_play_assists ),
+               games=combined.games,
+               nhl_games=sum(
                   season.games_played
                   for season in year_seasons
                   if isinstance( season, NhlSkaterSeason ) ),
-               max( season.age for season in year_seasons ),
-               cls._playoff_surplus( year_seasons ) ) )
+               age=max( season.age for season in year_seasons ),
+               playoff_surplus=cls._playoff_surplus( year_seasons ) ) )
 
       return qualified
 

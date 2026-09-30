@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .season_pace import SeasonPace
-
+from .pace_values import PaceValues
 
 @dataclass( frozen=True )
-class YearPace():
-   pace: SeasonPace
+class YearPace( PaceValues ):
    games: int

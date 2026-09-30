@@ -38,6 +38,8 @@ function resultElement() {
       '[data-assists]': { textContent: '' },
       '[data-points]': { textContent: '' },
       '[data-games-played]': { textContent: '' },
+      '[data-power-play-goals]': { textContent: '' },
+      '[data-power-play-points]': { textContent: '' },
       '[data-projected-toi]': { textContent: '' },
    };
    return {
@@ -121,6 +123,8 @@ test('Test_Render_TestPlayerAndProjection_ExpectNameMetaAndStats', () => {
       assists: 34,
       points: 46,
       gamesPlayed: 70,
+      powerPlayGoals: 5,
+      powerPlayPoints: 12,
       projectedToi: '18:30',
    };
    const result = resultElement();
@@ -136,6 +140,14 @@ test('Test_Render_TestPlayerAndProjection_ExpectNameMetaAndStats', () => {
    assert.equal(result.nodes['[data-assists]'].textContent, projection.assists);
    assert.equal(result.nodes['[data-points]'].textContent, projection.points);
    assert.equal(result.nodes['[data-games-played]'].textContent, projection.gamesPlayed);
+   assert.equal(
+      result.nodes['[data-power-play-goals]'].textContent,
+      projection.powerPlayGoals
+   );
+   assert.equal(
+      result.nodes['[data-power-play-points]'].textContent,
+      projection.powerPlayPoints
+   );
    assert.equal(result.nodes['[data-projected-toi]'].textContent, '18:30');
    assert.equal(result.hidden, false);
 });

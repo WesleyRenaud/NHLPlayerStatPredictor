@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from .age_band import AgeBand
 from .prior_source import PriorSource
 from .prior_year import PriorYear
-from ..projections.season_pace import SeasonPace
+from ..projections.pace_values import PaceValues
 from ..types import Types
 
 
@@ -17,6 +17,10 @@ class PaceRegression():
    goal_weights: list[ float ]
    assist_constant: float
    assist_weights: list[ float ]
+   power_play_goal_constant: float
+   power_play_goal_weights: list[ float ]
+   power_play_assist_constant: float
+   power_play_assist_weights: list[ float ]
 
 
    @classmethod
@@ -27,7 +31,11 @@ class PaceRegression():
          goal_constant=float( row[ 'goal_constant' ] ),
          goal_weights=[ float( weight ) for weight in row[ 'goal_weights' ] ],
          assist_constant=float( row[ 'assist_constant' ] ),
-         assist_weights=[ float( weight ) for weight in row[ 'assist_weights' ] ] )
+         assist_weights=[ float( weight ) for weight in row[ 'assist_weights' ] ],
+         power_play_goal_constant=float( row[ 'power_play_goal_constant' ] ),
+         power_play_goal_weights=[ float( weight ) for weight in row[ 'power_play_goal_weights' ] ],
+         power_play_assist_constant=float( row[ 'power_play_assist_constant' ] ),
+         power_play_assist_weights=[ float( weight ) for weight in row[ 'power_play_assist_weights' ] ] )
 
 
    def covers( self, source: PriorSource, age: int, width: int ) -> bool:
@@ -37,14 +45,24 @@ class PaceRegression():
          and len( self.goal_weights ) == width )
 
 
-   def pace( self, priors: list[ PriorYear ] ) -> SeasonPace:
+   def paces( self, priors: list[ PriorYear ] ) -> PaceValues:
       goals = self.goal_constant + sum(
          weight * prior.pace.goals
          for weight, prior in zip( self.goal_weights, priors ) )
       assists = self.assist_constant + sum(
          weight * prior.pace.assists
          for weight, prior in zip( self.assist_weights, priors ) )
-      return SeasonPace( goals=goals, assists=assists )
+      power_play_goals = self.power_play_goal_constant + sum(
+         weight * prior.power_play_pace.goals
+         for weight, prior in zip( self.power_play_goal_weights, priors ) )
+      power_play_assists = self.power_play_assist_constant + sum(
+         weight * prior.power_play_pace.assists
+         for weight, prior in zip( self.power_play_assist_weights, priors ) )
+      return PaceValues(
+         goals=goals,
+         assists=assists,
+         power_play_goals=power_play_goals,
+         power_play_assists=power_play_assists )
 
 
    def to_dict( self ) -> dict[ str, str | int | float | list[ float ] ]:
@@ -56,4 +74,8 @@ class PaceRegression():
          'goal_weights': self.goal_weights,
          'assist_constant': self.assist_constant,
          'assist_weights': self.assist_weights,
+         'power_play_goal_constant': self.power_play_goal_constant,
+         'power_play_goal_weights': self.power_play_goal_weights,
+         'power_play_assist_constant': self.power_play_assist_constant,
+         'power_play_assist_weights': self.power_play_assist_weights,
       }

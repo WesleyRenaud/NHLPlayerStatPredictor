@@ -33,7 +33,9 @@ def _season( player_id: int, season_id: int ) -> NhlSkaterSeason:
       gp_share=0.7,
       playoff_games=0,
       playoff_goals=0,
-      playoff_assists=0 )
+      playoff_assists=0,
+      power_play_goals=0,
+      power_play_points=0 )
 
 
 def _total(

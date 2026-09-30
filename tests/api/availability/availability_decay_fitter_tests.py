@@ -34,7 +34,9 @@ def _season(
       gp_share=gp_share,
       playoff_games=0,
       playoff_goals=0,
-      playoff_assists=0 )
+      playoff_assists=0,
+      power_play_goals=0,
+      power_play_points=0 )
 
 
 def _run( player_id: int, values: list[ float | None ] ) -> list[ NhlSkaterSeason ]:

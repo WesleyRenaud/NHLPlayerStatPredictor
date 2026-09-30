@@ -13,6 +13,7 @@ from .pace_sample import PaceSample
 from .prior_source import PriorSource
 from .prior_year import PriorYear
 from .prior_year_builder import PriorYearBuilder
+from ..projections.pace_values import PaceValues
 from ..projections.season_pace import SeasonPace
 from ..season import Season
 from ..shared.enums.position import Position
@@ -54,27 +55,38 @@ class PaceRegressionFitter():
       returning = [ sample for sample in nhl if sample.gap() ]
       consecutive = [ sample for sample in nhl if not sample.gap() ]
       return PaceRegressionModel(
-         regressions,
-         cls._gap_scale(
+         regressions=regressions,
+         nhl_gap_goals=cls._gap_scale(
             regressions,
             returning,
             lambda pace: pace.goals,
             lambda season: season.g_pace ),
-         cls._gap_scale(
+         nhl_gap_assists=cls._gap_scale(
             regressions,
             returning,
             lambda pace: pace.assists,
             lambda season: season.a_pace ),
-         cls._playoff_weight(
+         nhl_gap_power_play_goals=cls._gap_scale(
+            regressions,
+            returning,
+            lambda pace: pace.power_play_goals,
+            lambda season: season.power_play_pace().goals ),
+         nhl_gap_power_play_assists=cls._gap_scale(
+            regressions,
+            returning,
+            lambda pace: pace.power_play_assists,
+            lambda season: season.power_play_pace().assists ),
+         playoff_goal_weight=cls._playoff_weight(
             regressions,
             consecutive,
             lambda pace: pace.goals,
             lambda season: season.g_pace ),
-         cls._playoff_weight(
+         playoff_assist_weight=cls._playoff_weight(
             regressions,
             consecutive,
             lambda pace: pace.assists,
-            lambda season: season.a_pace ) )
+            lambda season: season.a_pace ),
+         )
 
 
    @classmethod
@@ -150,33 +162,45 @@ class PaceRegressionFitter():
 
       goal_constant, goal_weights = cls._solve(
          complete,
-         lambda pace: pace.goals,
+         lambda prior: prior.pace.goals,
          lambda season: season.g_pace )
       assist_constant, assist_weights = cls._solve(
          complete,
-         lambda pace: pace.assists,
+         lambda prior: prior.pace.assists,
          lambda season: season.a_pace )
+      power_play_goal_constant, power_play_goal_weights = cls._solve(
+         complete,
+         lambda prior: prior.power_play_pace.goals,
+         lambda season: season.power_play_pace().goals )
+      power_play_assist_constant, power_play_assist_weights = cls._solve(
+         complete,
+         lambda prior: prior.power_play_pace.assists,
+         lambda season: season.power_play_pace().assists )
       return PaceRegression(
-         source,
-         band,
-         goal_constant,
-         goal_weights,
-         assist_constant,
-         assist_weights )
+         source=source,
+         band=band,
+         goal_constant=goal_constant,
+         goal_weights=goal_weights,
+         assist_constant=assist_constant,
+         assist_weights=assist_weights,
+         power_play_goal_constant=power_play_goal_constant,
+         power_play_goal_weights=power_play_goal_weights,
+         power_play_assist_constant=power_play_assist_constant,
+         power_play_assist_weights=power_play_assist_weights )
 
 
    @classmethod
    def _solve(
          cls,
          samples: list[ PaceSample ],
-         prior_pace: Callable[ [ SeasonPace ], float ],
+         prior_value: Callable[ [ PriorYear ], float ],
          actual: Callable[ [ NhlSkaterSeason ], float ] ) -> tuple[ float, list[ float ] ]:
       size = len( samples[ Position.FIRST ].priors ) + 1
       products = [ [ 0.0 ] * size for _ in range( size ) ]
       targets = [ 0.0 ] * size
 
       for sample in samples:
-         features = [ 1.0, *[ prior_pace( prior.pace ) for prior in sample.priors ] ]
+         features = [ 1.0, *[ prior_value( prior ) for prior in sample.priors ] ]
          games = float( sample.current.games_played )
 
          for row in range( size ):
@@ -200,15 +224,19 @@ class PaceRegressionFitter():
       residual_products = 0.0
 
       for sample in samples:
-         regressed = PaceRegressionPredictor.regressed( regressions, sample.priors )
+         regressed_paces = PaceRegressionPredictor.regressed_paces(
+            regressions,
+            sample.priors )
 
-         if regressed is None:
+         if regressed_paces is None:
             continue
 
          games = sample.current.games_played
          surplus = predicted( sample.priors[ Position.FIRST ].playoff_surplus )
          surplus_products += games * surplus * surplus
-         residual_products += games * surplus * ( actual( sample.current ) - predicted( regressed ) )
+         residual_products += games * surplus * (
+            actual( sample.current )
+            - predicted( regressed_paces.season_pace() ) )
 
       if not surplus_products:
          return PaceRegressionFitter.NO_PLAYOFF_WEIGHT
@@ -221,19 +249,21 @@ class PaceRegressionFitter():
          cls,
          regressions: list[ PaceRegression ],
          samples: list[ PaceSample ],
-         predicted: Callable[ [ SeasonPace ], float ],
+         predicted: Callable[ [ PaceValues ], float ],
          actual: Callable[ [ NhlSkaterSeason ], float ] ) -> float:
       actual_total = 0.0
       predicted_total = 0.0
 
       for sample in samples:
-         regressed = PaceRegressionPredictor.regressed( regressions, sample.priors )
+         regressed_paces = PaceRegressionPredictor.regressed_paces(
+            regressions,
+            sample.priors )
 
-         if regressed is None:
+         if regressed_paces is None:
             continue
 
          actual_total += sample.current.games_played * actual( sample.current )
-         predicted_total += sample.current.games_played * predicted( regressed )
+         predicted_total += sample.current.games_played * predicted( regressed_paces )
 
       if not predicted_total:
          return PaceRegressionFitter.NO_DISCOUNT

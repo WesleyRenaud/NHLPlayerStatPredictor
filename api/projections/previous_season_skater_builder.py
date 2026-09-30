@@ -4,6 +4,7 @@ from ..aging.league_factor import LeagueFactor
 from .previous_season_group import PreviousSeasonGroup
 from .previous_season_nhl_skater import PreviousSeasonNhlSkater
 from .previous_season_skater import PreviousSeasonSkater
+from .season_pace import SeasonPace
 from ..shared.enums.position import Position
 from ..skaters.nhl_skater_season import NhlSkaterSeason
 from ..skaters.other_league_skater_season import OtherLeagueSkaterSeason
@@ -60,7 +61,7 @@ class PreviousSeasonSkaterBuilder():
       return PreviousSeasonNhlSkater(
          nhl.player_id,
          year.games,
-         year.pace,
+         SeasonPace( year.goals, year.assists ),
          nhl.position,
          nhl.team )
 
@@ -72,4 +73,8 @@ class PreviousSeasonSkaterBuilder():
          factors: list[ LeagueFactor ] ) -> PreviousSeasonSkater:
       year = TranslatedPaceAverager.year( others, factors )
       first = others[ Position.FIRST ]
-      return PreviousSeasonSkater( first.player_id, year.games, year.pace, first.position )
+      return PreviousSeasonSkater(
+         first.player_id,
+         year.games,
+         SeasonPace( year.goals, year.assists ),
+         first.position )

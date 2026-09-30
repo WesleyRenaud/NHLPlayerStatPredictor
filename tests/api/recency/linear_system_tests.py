@@ -33,3 +33,12 @@ def Test_Solve_TestOffDiagonal_ExpectUniqueSolution() -> None:
    solution = LinearSystem.solve( products, targets )
 
    assert solution == [ x, y ]
+
+
+def Test_Solve_TestZeroColumn_ExpectZeroFreeVariable() -> None:
+   products = [ [ 3.0, 0.0 ], [ 0.0, 0.0 ] ]
+   targets = [ 12.0, 0.0 ]
+
+   solution = LinearSystem.solve( products, targets )
+
+   assert solution == [ 4.0, 0.0 ]

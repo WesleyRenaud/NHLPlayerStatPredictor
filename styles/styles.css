@@ -32,7 +32,7 @@ body {
 }
 
 main {
-   width: min(36rem, calc(100% - 3rem));
+   width: min(48rem, calc(100% - 2rem));
    margin-top: 10vh;
 }
 
@@ -213,7 +213,7 @@ h2 {
 
 .statline {
    display: grid;
-   grid-template-columns: repeat(5, 1fr);
+   grid-template-columns: repeat(6, minmax(0, 1fr)) minmax(0, 1.5fr);
    gap: 0.65rem;
 }
 
@@ -222,6 +222,10 @@ h2 {
    border-radius: 0.9rem;
    background: #0b1a2a;
    text-align: center;
+}
+
+.statline div:last-child .value {
+   white-space: nowrap;
 }
 
 .label {
@@ -304,5 +308,16 @@ h2 {
 @media (max-width: 900px) {
    .lookup-row {
       flex-direction: column;
+   }
+}
+
+@media (max-width: 700px) {
+   .statline {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.4rem;
+   }
+
+   .value {
+      font-size: 1.6rem;
    }
 }
