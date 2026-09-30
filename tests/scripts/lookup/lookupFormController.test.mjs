@@ -38,6 +38,7 @@ function resultElement() {
       '[data-assists]': { textContent: '' },
       '[data-points]': { textContent: '' },
       '[data-games-played]': { textContent: '' },
+      '[data-projected-toi]': { textContent: '' },
    };
    return {
       hidden: true,
@@ -120,6 +121,7 @@ test('Test_Render_TestPlayerAndProjection_ExpectNameMetaAndStats', () => {
       assists: 34,
       points: 46,
       gamesPlayed: 70,
+      projectedToi: '18:30',
    };
    const result = resultElement();
 
@@ -134,6 +136,7 @@ test('Test_Render_TestPlayerAndProjection_ExpectNameMetaAndStats', () => {
    assert.equal(result.nodes['[data-assists]'].textContent, projection.assists);
    assert.equal(result.nodes['[data-points]'].textContent, projection.points);
    assert.equal(result.nodes['[data-games-played]'].textContent, projection.gamesPlayed);
+   assert.equal(result.nodes['[data-projected-toi]'].textContent, '18:30');
    assert.equal(result.hidden, false);
 });
 
@@ -164,6 +167,7 @@ test('Test_Bind_TestPlayer_ExpectErrorClearedAndRendered', async t => {
       assists: 34,
       points: 46,
       gamesPlayed: 70,
+      projectedToi: '18:30',
    };
    const original = ProjectionClient.get;
    ProjectionClient.get = async () => projection;
@@ -216,6 +220,7 @@ test('Test_Bind_TestPendingProjection_ExpectBusyButton', async t => {
       assists: 34,
       points: 46,
       gamesPlayed: 70,
+      projectedToi: '18:30',
    };
    let resolveGet;
    const original = ProjectionClient.get;

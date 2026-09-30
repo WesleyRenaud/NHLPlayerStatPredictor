@@ -213,4 +213,5 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
       points=(
          round( aged.goals * projected / last )
          + round( aged.assists * projected / last ) ),
-      games_played=games_played )
+      games_played=games_played,
+      projected_toi=projected )

@@ -19,3 +19,11 @@ def Test_Clock_TestMinutesAndSeconds_ExpectMinutes() -> None:
    value = Time.clock( clock )
 
    assert value == minutes + seconds / Time.SECONDS_PER_MINUTE
+
+
+def Test_ClockString_TestDecimalMinutes_ExpectMinutesAndSeconds() -> None:
+   assert Time.clock_string( 18.5 ) == '18:30'
+
+
+def Test_ClockString_TestRoundingSeconds_ExpectMinuteCarry() -> None:
+   assert Time.clock_string( 18.999 ) == '19:00'
