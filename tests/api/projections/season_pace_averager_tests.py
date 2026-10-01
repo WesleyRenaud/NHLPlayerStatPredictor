@@ -34,7 +34,8 @@ def _season( g_pace: float, a_pace: float, season_id: int ) -> NhlSkaterSeason:
       playoff_goals=0,
       playoff_assists=0,
       power_play_goals=0,
-      power_play_points=0 )
+      power_play_points=0,
+      penalty_minutes=0 )
 
 
 def Test_Average_TestWeightedSeasons_ExpectWeightedGoalsAssistsAndSummedPoints() -> None:

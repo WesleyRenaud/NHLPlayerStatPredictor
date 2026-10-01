@@ -19,6 +19,8 @@ class TranslatedPaceAverager():
       assists = 0.0
       power_play_goals = 0.0
       power_play_assists = 0.0
+      nhl_games = 0
+      penalty_minutes = 0.0
 
       for season in seasons:
          pace = cls._nhl_pace( season, factors )
@@ -30,6 +32,8 @@ class TranslatedPaceAverager():
          goals += season.games_played * pace.goals
          assists += season.games_played * pace.assists
          if isinstance( season, NhlSkaterSeason ):
+            nhl_games += season.games_played
+            penalty_minutes += season.games_played * season.penalty_minutes_pace()
             power_play_pace = season.power_play_pace()
             power_play_goals += season.games_played * power_play_pace.goals
             power_play_assists += season.games_played * power_play_pace.assists
@@ -42,6 +46,7 @@ class TranslatedPaceAverager():
          assists=assists / games,
          power_play_goals=power_play_goals / games,
          power_play_assists=power_play_assists / games,
+         penalty_minutes=None if not nhl_games else penalty_minutes / nhl_games,
          games=games )
 
 

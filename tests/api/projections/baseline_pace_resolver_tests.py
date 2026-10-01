@@ -11,6 +11,8 @@ from api.projections.power_play_pace import PowerPlayPace
 from api.recency.age_band import AgeBand
 from api.recency.pace_regression import PaceRegression
 from api.recency.pace_regression_model import PaceRegressionModel
+from api.recency.pim_regression import PimRegression
+from api.recency.pim_regression_model import PimRegressionModel
 from api.recency.prior_source import PriorSource
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
@@ -43,7 +45,8 @@ def _nhl( season_id: int, g_pace: float, a_pace: float, age: float ) -> NhlSkate
       playoff_goals=0,
       playoff_assists=0,
       power_play_goals=0,
-      power_play_points=0 )
+      power_play_points=0,
+      penalty_minutes=0 )
 
 
 def _other( season_id: int, g_pace: float, a_pace: float, league: str ) -> OtherLeagueSkaterSeason:
@@ -95,14 +98,28 @@ def _model() -> PaceRegressionModel:
       1.0 )
 
 
+def _pim_model() -> PimRegressionModel:
+   return PimRegressionModel(
+      regressions=[ PimRegression( constant=4.0, weights=[ 0.5 ] ) ],
+      nhl_gap_scale=0.8 )
+
+
 def Test_Resolve_TestNhlSeason_ExpectRegressedPace() -> None:
    season = _nhl( 20242025, 20.0, 30.0, 27.4 )
+   model = _model()
+   pim_model = _pim_model()
+   regression = model.regressions[ Position.FIRST ]
+   pim_regression = pim_model.regressions[ Position.FIRST ]
 
-   resolved = BaselinePaceResolver.resolve( Skater( [ season ] ), 20252026, [], _model() )
+   resolved = BaselinePaceResolver.resolve( Skater( [ season ] ), 20252026, [], model, pim_model )
 
    assert resolved is not None
-   assert resolved.goals == pytest.approx( 1.0 + 0.5 * season.g_pace )
-   assert resolved.assists == pytest.approx( 2.0 + 0.5 * season.a_pace )
+   assert resolved.goals == pytest.approx(
+      regression.goal_constant + regression.goal_weights[ Position.FIRST ] * season.g_pace )
+   assert resolved.assists == pytest.approx(
+      regression.assist_constant + regression.assist_weights[ Position.FIRST ] * season.a_pace )
+   assert resolved.penalty_minutes == pytest.approx(
+      pim_regression.constant + pim_regression.weights[ Position.FIRST ] * season.penalty_minutes_pace() )
 
 
 def Test_Resolve_TestPlayoffSurplus_ExpectWeightedSurplusAdded() -> None:
@@ -111,8 +128,8 @@ def Test_Resolve_TestPlayoffSurplus_ExpectWeightedSurplusAdded() -> None:
    model = _model()
    surplus = season.playoff_surplus()
 
-   without = BaselinePaceResolver.resolve( Skater( [ regular ] ), 20252026, [], model )
-   resolved = BaselinePaceResolver.resolve( Skater( [ season ] ), 20252026, [], model )
+   without = BaselinePaceResolver.resolve( Skater( [ regular ] ), 20252026, [], model, _pim_model() )
+   resolved = BaselinePaceResolver.resolve( Skater( [ season ] ), 20252026, [], model, _pim_model() )
 
    assert without is not None
    assert resolved is not None
@@ -125,35 +142,77 @@ def Test_Resolve_TestPlayoffSurplus_ExpectWeightedSurplusAdded() -> None:
 def Test_Resolve_TestOtherLeagueOnly_ExpectTranslatedRegression() -> None:
    factor = LeagueFactor( 'AAA', 0.4 )
    season = _other( 20242025, 30.0, 50.0, factor.league )
+   model = _model()
+   regression = model.regressions[ Position.LAST ]
 
    resolved = BaselinePaceResolver.resolve(
       Skater( [ season ] ),
       20252026,
       [ factor ],
-      _model() )
+      model,
+      _pim_model() )
 
    assert resolved is not None
-   assert resolved.goals == pytest.approx( 3.0 + 0.8 * season.g_pace * factor.rate )
-   assert resolved.assists == pytest.approx( 4.0 + 0.8 * season.a_pace * factor.rate )
+   assert resolved.goals == pytest.approx(
+      regression.goal_constant + regression.goal_weights[ Position.FIRST ] * season.g_pace * factor.rate )
+   assert resolved.assists == pytest.approx(
+      regression.assist_constant + regression.assist_weights[ Position.FIRST ] * season.a_pace * factor.rate )
    assert resolved.power_play_goals == 0.0
    assert resolved.power_play_assists == 0.0
+   assert resolved.penalty_minutes is None
+
+
+def Test_Resolve_TestLatestOtherLeague_ExpectIndependentNhlPim() -> None:
+   factor = LeagueFactor( 'AAA', 0.4 )
+   nhl = replace( _nhl( 20222023, 20.0, 30.0, 27.4 ), penalty_minutes=20 )
+   other = _other( 20242025, 30.0, 50.0, factor.league )
+   model = _model()
+   pim_model = _pim_model()
+   scoring_regression = model.regressions[ Position.LAST ]
+   pim_regression = pim_model.regressions[ Position.FIRST ]
+
+   resolved = BaselinePaceResolver.resolve(
+      Skater( [ nhl, other ] ),
+      20252026,
+      [ factor ],
+      model,
+      pim_model )
+
+   assert resolved is not None
+   assert resolved.goals == pytest.approx(
+      scoring_regression.goal_constant
+      + scoring_regression.goal_weights[ Position.FIRST ] * other.g_pace * factor.rate )
+   assert resolved.penalty_minutes == pytest.approx(
+      ( pim_regression.constant
+        + pim_regression.weights[ Position.FIRST ] * nhl.penalty_minutes_pace() )
+      * pim_model.nhl_gap_scale )
 
 
 def Test_Resolve_TestMissedSeason_ExpectGapDiscount() -> None:
    season = _nhl( 20232024, 20.0, 30.0, 27.4 )
    model = _model()
+   pim_model = _pim_model()
+   regression = model.regressions[ Position.FIRST ]
+   pim_regression = pim_model.regressions[ Position.FIRST ]
 
-   resolved = BaselinePaceResolver.resolve( Skater( [ season ] ), 20252026, [], model )
+   resolved = BaselinePaceResolver.resolve( Skater( [ season ] ), 20252026, [], model, pim_model )
 
    assert resolved is not None
-   assert resolved.goals == pytest.approx( ( 1.0 + 0.5 * season.g_pace ) * model.nhl_gap_goals )
+   assert resolved.goals == pytest.approx(
+      ( regression.goal_constant + regression.goal_weights[ Position.FIRST ] * season.g_pace )
+      * model.nhl_gap_goals )
    assert resolved.assists == pytest.approx(
-      ( 2.0 + 0.5 * season.a_pace ) * model.nhl_gap_assists )
+      ( regression.assist_constant + regression.assist_weights[ Position.FIRST ] * season.a_pace )
+      * model.nhl_gap_assists )
    assert resolved.power_play_goals == 0.0
    assert resolved.power_play_assists == 0.0
+   assert resolved.penalty_minutes == pytest.approx(
+      ( pim_regression.constant
+        + pim_regression.weights[ Position.FIRST ] * season.penalty_minutes_pace() )
+      * pim_model.nhl_gap_scale )
 
 
 def Test_Resolve_TestNoSeasons_ExpectNone() -> None:
-   resolved = BaselinePaceResolver.resolve( Skater( [] ), 20252026, [], _model() )
+   resolved = BaselinePaceResolver.resolve( Skater( [] ), 20252026, [], _model(), _pim_model() )
 
    assert resolved is None

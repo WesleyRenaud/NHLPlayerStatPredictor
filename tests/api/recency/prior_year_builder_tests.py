@@ -7,6 +7,8 @@ import pytest
 
 from api.aging.league_factor import LeagueFactor
 from api.projections.season_pace import SeasonPace
+from api.recency.pim_regression import PimRegression
+from api.recency.prior_source import PriorSource
 from api.recency.prior_year import PriorYear
 from api.recency.prior_year_builder import PriorYearBuilder
 from api.shared.enums.position import Position
@@ -44,7 +46,8 @@ def _nhl(
       playoff_goals=0,
       playoff_assists=0,
       power_play_goals=0,
-      power_play_points=0 )
+      power_play_points=0,
+      penalty_minutes=0 )
 
 
 def _other( start_year: int, games_played: int, league: str = 'AAA' ) -> OtherLeagueSkaterSeason:
@@ -96,7 +99,7 @@ def Test_Build_TestGapInsideRun_ExpectStopAtGap() -> None:
 
 def Test_Build_TestMixedYear_ExpectCombinedTranslatedPace() -> None:
    factor = LeagueFactor( 'AAA', 0.5 )
-   nhl = _nhl( 2024, 10, 20.8 )
+   nhl = replace( _nhl( 2024, 10, 20.8 ), penalty_minutes=6 )
    other = _other( 2024, 40 )
    games = nhl.games_played + other.games_played
 
@@ -106,10 +109,12 @@ def Test_Build_TestMixedYear_ExpectCombinedTranslatedPace() -> None:
    prior = priors[ Position.FIRST ]
    assert prior.games == games
    assert prior.nhl_games == nhl.games_played
+   assert prior.source() == PriorSource.TRANSLATED
    assert prior.age == other.age
    assert prior.pace.goals == pytest.approx(
       ( nhl.games_played * nhl.g_pace + other.games_played * other.g_pace * factor.rate )
       / games )
+   assert prior.pim_pace == pytest.approx( nhl.penalty_minutes_pace() )
 
 
 def Test_Build_TestUnknownLeague_ExpectSkipped() -> None:
@@ -139,3 +144,6 @@ def Test_Build_TestOtherLeagueYear_ExpectNoSurplus() -> None:
    priors = PriorYearBuilder.build( [ season ], [ factor ], 2025 )
 
    assert priors[ Position.FIRST ].playoff_surplus == SeasonPace.zero()
+   assert priors[ Position.FIRST ].pim_pace is None
+   with pytest.raises( ValueError, match='Penalty-minute pace is unavailable' ):
+      PimRegression( constant=0.0, weights=[ 1.0 ] ).pace( priors )

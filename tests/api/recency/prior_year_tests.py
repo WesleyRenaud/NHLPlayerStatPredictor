@@ -11,6 +11,7 @@ def _prior( year: int, nhl_games: int, age: float ) -> PriorYear:
       year,
       SeasonPace( 10.0, 20.0 ),
       PowerPlayPace.zero(),
+      0.0,
       60,
       nhl_games,
       age,

@@ -1,0 +1,24 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from .power_play_pace import PowerPlayPace
+from .season_pace import SeasonPace
+
+
+@dataclass( frozen=True )
+class ScoringPaces():
+   goals: float
+   assists: float
+   power_play_goals: float
+   power_play_assists: float
+
+
+   def season_pace( self ) -> SeasonPace:
+      return SeasonPace( goals=self.goals, assists=self.assists )
+
+
+   def power_play_pace( self ) -> PowerPlayPace:
+      return PowerPlayPace(
+         goals=self.power_play_goals,
+         assists=self.power_play_assists )

@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import pytest
 
+from api.projections.pace_values import PaceValues
 from api.projections.power_play_pace import PowerPlayPace
 from api.projections.season_pace import SeasonPace
 from api.recency.age_band import AgeBand
 from api.recency.pace_regression import PaceRegression
 from api.recency.pace_regression_model import PaceRegressionModel
 from api.recency.pace_regression_predictor import PaceRegressionPredictor
+from api.recency.pim_regression_model import PimRegressionModel
 from api.recency.prior_source import PriorSource
 from api.recency.prior_year import PriorYear
 from api.shared.enums.position import Position
@@ -25,6 +27,7 @@ def _prior(
       year,
       SeasonPace( goals, goals ),
       PowerPlayPace( power_play_goals, power_play_assists ),
+      0.0,
       82,
       nhl_games,
       age,
@@ -76,6 +79,15 @@ def _model() -> PaceRegressionModel:
       0.6 )
 
 
+def _paces( model: PaceRegressionModel, priors: list[ PriorYear ], year: int ) -> PaceValues | None:
+   return PaceRegressionPredictor.paces(
+      model,
+      priors,
+      year * 10000 + year + 1,
+      PimRegressionModel( [], 1.0 ),
+      [] )
+
+
 def Test_Regressed_TestNoPriors_ExpectNone() -> None:
    regressed = PaceRegressionPredictor.regressed_paces( _model().regressions, [] )
 
@@ -99,7 +111,9 @@ def Test_Regressed_TestWidestMatch_ExpectWiderRegression() -> None:
    regressed = PaceRegressionPredictor.regressed_paces( model.regressions, priors )
 
    assert regressed is not None
-   assert regressed.goals == pytest.approx( 9.0 + 0.1 * 20.0 + 0.1 * 10.0 )
+   assert regressed.goals == pytest.approx(
+      wide_regression.goal_constant
+      + sum( weight * prior.pace.goals for weight, prior in zip( wide_regression.goal_weights, priors ) ) )
    assert regressed.power_play_goals == pytest.approx( expected_power_play_goals )
 
 
@@ -125,37 +139,52 @@ def Test_Regressed_TestTranslatedLatest_ExpectTranslatedRegression() -> None:
    regressed = PaceRegressionPredictor.regressed_paces( model.regressions, priors )
 
    assert regressed is not None
-   assert regressed.goals == pytest.approx( 3.0 + 0.8 * 20.0 )
+   assert regressed.goals == pytest.approx(
+      translated_regression.goal_constant
+      + sum( weight * prior.pace.goals for weight, prior in zip( translated_regression.goal_weights, priors ) ) )
    assert regressed.power_play_goals == pytest.approx( expected_power_play_goals )
 
 
 def Test_Pace_TestNhlGap_ExpectDiscount() -> None:
    model = _model()
    priors = [ _prior( 2023, 20.0 ) ]
+   regression = model.regressions[ Position.FIRST ]
 
-   paced = PaceRegressionPredictor.paces( model, priors, 2025 )
+   paced = _paces( model, priors, 2025 )
 
    assert paced is not None
-   assert paced.goals == pytest.approx( ( 1.0 + 0.5 * 20.0 ) * model.nhl_gap_goals )
-   assert paced.assists == pytest.approx( ( 1.0 + 0.5 * 20.0 ) * model.nhl_gap_assists )
+   assert paced.goals == pytest.approx(
+      ( regression.goal_constant + regression.goal_weights[ Position.FIRST ] * priors[ Position.FIRST ].pace.goals )
+      * model.nhl_gap_goals )
+   assert paced.assists == pytest.approx(
+      ( regression.assist_constant + regression.assist_weights[ Position.FIRST ] * priors[ Position.FIRST ].pace.assists )
+      * model.nhl_gap_assists )
 
 
 def Test_Pace_TestTranslatedGap_ExpectNoDiscount() -> None:
    priors = [ _prior( 2023, 20.0, nhl_games=0 ) ]
+   model = _model()
+   regression = model.regressions[ Position.LAST ]
 
-   paced = PaceRegressionPredictor.paces( _model(), priors, 2025 )
+   paced = _paces( model, priors, 2025 )
 
    assert paced is not None
-   assert paced.goals == pytest.approx( 3.0 + 0.8 * 20.0 )
+   assert paced.goals == pytest.approx(
+      regression.goal_constant + regression.goal_weights[ Position.FIRST ] * priors[ Position.FIRST ].pace.goals )
 
 
 def Test_Pace_TestNoGap_ExpectRegressed() -> None:
    model = _model()
    priors = [ _prior( 2024, 20.0 ) ]
 
-   paced = PaceRegressionPredictor.paces( model, priors, 2025 )
+   paced = _paces( model, priors, 2025 )
+   regressed = PaceRegressionPredictor.regressed_paces( model.regressions, priors )
 
-   assert paced == PaceRegressionPredictor.regressed_paces( model.regressions, priors )
+   assert paced is not None
+   assert regressed is not None
+   assert paced.season_pace() == regressed.season_pace()
+   assert paced.power_play_pace() == regressed.power_play_pace()
+   assert paced.penalty_minutes is None
 
 
 def Test_Pace_TestNhlPlayoffSurplus_ExpectWeightedSurplusAdded() -> None:
@@ -164,7 +193,7 @@ def Test_Pace_TestNhlPlayoffSurplus_ExpectWeightedSurplusAdded() -> None:
    priors = [ _prior( 2024, 20.0, surplus=surplus ) ]
    regressed = PaceRegressionPredictor.regressed_paces( model.regressions, priors )
 
-   paced = PaceRegressionPredictor.paces( model, priors, 2025 )
+   paced = _paces( model, priors, 2025 )
 
    assert regressed is not None
    assert paced is not None
@@ -180,7 +209,7 @@ def Test_Pace_TestPlayoffSurplusAfterGap_ExpectSurplusDiscounted() -> None:
    priors = [ _prior( 2023, 20.0, surplus=surplus ) ]
    regressed = PaceRegressionPredictor.regressed_paces( model.regressions, priors )
 
-   paced = PaceRegressionPredictor.paces( model, priors, 2025 )
+   paced = _paces( model, priors, 2025 )
 
    assert regressed is not None
    assert paced is not None
@@ -192,9 +221,14 @@ def Test_Pace_TestTranslatedPlayoffSurplus_ExpectIgnored() -> None:
    priors = [ _prior( 2024, 20.0, nhl_games=0, surplus=SeasonPace( 4.0, 6.0 ) ) ]
    model = _model()
 
-   paced = PaceRegressionPredictor.paces( model, priors, 2025 )
+   paced = _paces( model, priors, 2025 )
+   regressed = PaceRegressionPredictor.regressed_paces( model.regressions, priors )
 
-   assert paced == PaceRegressionPredictor.regressed_paces( model.regressions, priors )
+   assert paced is not None
+   assert regressed is not None
+   assert paced.season_pace() == regressed.season_pace()
+   assert paced.power_play_pace() == regressed.power_play_pace()
+   assert paced.penalty_minutes is None
 
 
 def Test_Paces_TestNhlGap_ExpectRegularAndPowerPlayScales() -> None:
@@ -215,7 +249,7 @@ def Test_Paces_TestNhlGap_ExpectRegularAndPowerPlayScales() -> None:
          for weight, prior in zip( regression.power_play_assist_weights, priors ) )
    ) * model.nhl_gap_power_play_assists
 
-   paced = PaceRegressionPredictor.paces( model, priors, 2025 )
+   paced = _paces( model, priors, 2025 )
 
    assert paced is not None
    assert paced.power_play_goals == pytest.approx( expected_power_play_goals )

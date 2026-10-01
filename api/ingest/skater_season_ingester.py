@@ -25,6 +25,8 @@ from .previous_team_factor_builder import PreviousTeamFactorBuilder
 from ..projections.season_pace import SeasonPace
 from ..recency.pace_regression_fitter import PaceRegressionFitter
 from ..recency.pace_regression_store import PaceRegressionStore
+from ..recency.pim_regression_fitter import PimRegressionFitter
+from ..recency.pim_regression_store import PimRegressionStore
 from ..recency_target_resolver import RecencyTargetResolver
 from .roster_skater_ingester import RosterSkaterIngester
 from ..season import Season
@@ -69,6 +71,7 @@ class SkaterSeasonIngester():
          AgingCurveFitter.fit( rows, other_rows ) )
       LeagueFactorStore.write( league_factors )
       PaceRegressionStore.write( PaceRegressionFitter.fit( rows, other_rows, league_factors ) )
+      PimRegressionStore.write( PimRegressionFitter.fit( rows ) )
       previous_season_id = RecencyTargetResolver.prior()
       seasons = NhlClient.seasons( force=force )
       last_played_ids = sorted( {
