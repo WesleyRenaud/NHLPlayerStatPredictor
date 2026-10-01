@@ -15,6 +15,7 @@ class PriorYear():
    year: int
    pace: SeasonPace
    power_play_pace: PowerPlayPace
+   pim_pace: float | None
    games: int
    nhl_games: int
    age: float

@@ -67,6 +67,7 @@ class PriorYearBuilder():
                power_play_pace=PowerPlayPace(
                   combined.power_play_goals,
                   combined.power_play_assists ),
+               pim_pace=combined.penalty_minutes,
                games=combined.games,
                nhl_games=sum(
                   season.games_played

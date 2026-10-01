@@ -16,24 +16,23 @@
 
 html {
    height: 100%;
-   font-size: 14px;
+   font-size: 36px;
 }
 
 body {
    display: flex;
    align-items: flex-start;
    justify-content: center;
-   min-height: 100vh;
+   min-height: 100%;
    margin: 0;
-   padding: 0 0 2rem;
+   padding: 9rem 0 3rem;
    background: radial-gradient(circle at top, #14304a 0%, var(--color-bg) 55%);
    color: var(--color-text);
    font-family: "Avenir Next", "Segoe UI", sans-serif;
 }
 
 main {
-   width: min(48rem, calc(100% - 2rem));
-   margin-top: 10vh;
+   width: min(70rem, calc(100% - 4rem));
 }
 
 .eyebrow {
@@ -46,8 +45,8 @@ main {
 }
 
 h1 {
-   margin: 0 0 0.65rem;
-   font-size: 1.75rem;
+   margin: 0 0 0.85rem;
+   font-size: 4.5rem;
    line-height: 1.02;
 }
 
@@ -56,13 +55,13 @@ h1 {
 }
 
 .lede {
-   margin: 0 0 1.25rem;
-   font-size: 1rem;
+   margin: 0 0 2.25rem;
+   font-size: 1.35rem;
    line-height: 1.4;
 }
 
 form {
-   padding: 1rem;
+   padding: 1.6rem;
    border: 1px solid var(--color-border);
    border-radius: 1.15rem;
    background: var(--color-surface);
@@ -71,8 +70,8 @@ form {
 
 label {
    display: block;
-   margin-bottom: 0.5rem;
-   font-size: 1rem;
+   margin-bottom: 0.7rem;
+   font-size: 1.45rem;
    font-weight: 600;
 }
 
@@ -89,13 +88,13 @@ label {
 
 input[type="search"] {
    width: 100%;
-   padding: 0.8rem 1rem;
+   padding: 1.05rem 1.15rem;
    border: 1px solid var(--color-border);
    border-radius: 0.85rem;
    background: #0b1a2a;
    color: var(--color-text);
    font: inherit;
-   font-size: 1rem;
+   font-size: 1.2rem;
 }
 
 input[type="search"]::placeholder {
@@ -103,13 +102,13 @@ input[type="search"]::placeholder {
 }
 
 button {
-   padding: 0.8rem 1.2rem;
+   padding: 1.05rem 1.5rem;
    border: 0;
    border-radius: 0.85rem;
    background: var(--color-accent);
    color: white;
    font: inherit;
-   font-size: 1rem;
+   font-size: 1.2rem;
    font-weight: 700;
    cursor: pointer;
 }
@@ -178,12 +177,16 @@ button.is-invalid {
 }
 
 #projection {
-   margin-top: 1.25rem;
-   padding: 1.25rem;
+   position: relative;
+   left: 50%;
+   width: min(80rem, calc(100vw - 2rem));
+   margin-top: 1.75rem;
+   padding: 1.6rem 1.7rem 1.75rem;
    border: 1px solid var(--color-border);
    border-radius: 1.15rem;
    background: var(--color-surface);
    box-shadow: var(--shadow);
+   transform: translateX(-50%);
 }
 
 #projection[hidden] {
@@ -196,29 +199,29 @@ button.is-invalid {
 
 h2 {
    margin: 0;
-   font-size: 1.5rem;
+   font-size: 2.1rem;
 }
 
 .player-meta {
-   margin: 0.15rem 0 0.65rem;
+   margin: 0.15rem 0 0.85rem;
    color: var(--color-muted);
-   font-size: 1rem;
+   font-size: 1.15rem;
    font-weight: 600;
 }
 
 .season {
-   margin: 0 0 1rem;
-   font-size: 1rem;
+   margin: 0 0 1.35rem;
+   font-size: 1.15rem;
 }
 
 .statline {
    display: grid;
-   grid-template-columns: repeat(6, minmax(0, 1fr)) minmax(0, 1.5fr);
-   gap: 0.65rem;
+   grid-template-columns: repeat(3, minmax(0, 1fr)) repeat(2, minmax(0, 1.2fr)) repeat(2, minmax(0, 1fr)) minmax(0, 1.7fr);
+   gap: 0.4rem;
 }
 
 .statline div {
-   padding: 0.85rem 0.5rem;
+   padding: 0.75rem 0.35rem;
    border-radius: 0.9rem;
    background: #0b1a2a;
    text-align: center;
@@ -232,14 +235,14 @@ h2 {
    display: block;
    margin-bottom: 0.3rem;
    color: var(--color-muted);
-   font-size: 0.9rem;
+   font-size: 0.8rem;
    font-weight: 700;
    letter-spacing: 0.08em;
 }
 
 .value {
    color: var(--color-stat);
-   font-size: 2rem;
+   font-size: 1.35rem;
    font-weight: 700;
 }
 
@@ -272,12 +275,12 @@ h2 {
    flex-direction: column;
    gap: 0.15rem;
    width: 100%;
-   padding: 0.7rem 1rem;
+   padding: 0.85rem 1.15rem;
    border: 0;
    background: transparent;
    color: var(--color-text);
    font: inherit;
-   font-size: 1rem;
+   font-size: 1.1rem;
    font-weight: 600;
    text-align: left;
    cursor: pointer;
@@ -299,13 +302,44 @@ h2 {
 }
 
 .player-name-autocomplete-empty {
-   padding: 0.7rem 1rem;
+   padding: 0.85rem 1.15rem;
    color: var(--color-muted);
-   font-size: 1rem;
+   font-size: 1.05rem;
    font-weight: 600;
 }
 
+@media (max-width: 1200px) {
+   .statline {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.9rem;
+   }
+
+   .statline div {
+      padding: 1.15rem 0.6rem;
+   }
+
+   .label {
+      font-size: 0.9rem;
+   }
+
+   .value {
+      font-size: 2.6rem;
+   }
+}
+
 @media (max-width: 900px) {
+   html {
+      font-size: 22px;
+   }
+
+   body {
+      padding-top: 2.5rem;
+   }
+
+   h1 {
+      font-size: 3rem;
+   }
+
    .lookup-row {
       flex-direction: column;
    }
@@ -313,11 +347,33 @@ h2 {
 
 @media (max-width: 700px) {
    .statline {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0.4rem;
+   }
+
+   .statline div:last-child {
+      grid-column: span 2;
    }
 
    .value {
       font-size: 1.6rem;
+   }
+}
+
+@media (max-width: 360px) {
+   h1 {
+      font-size: 2rem;
+   }
+
+   h2 {
+      font-size: 1.4rem;
+   }
+
+   .statline {
+      grid-template-columns: minmax(0, 1fr);
+   }
+
+   .statline div:last-child {
+      grid-column: auto;
    }
 }

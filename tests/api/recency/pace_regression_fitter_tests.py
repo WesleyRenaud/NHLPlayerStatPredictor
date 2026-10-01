@@ -10,6 +10,7 @@ from api.recency.age_band import AgeBand
 from api.recency.pace_regression_fitter import PaceRegressionFitter
 from api.recency.pace_regression_model import PaceRegressionModel
 from api.recency.pace_regression_predictor import PaceRegressionPredictor
+from api.recency.pim_regression_model import PimRegressionModel
 from api.recency.prior_source import PriorSource
 from api.recency.prior_year_builder import PriorYearBuilder
 from api.season import Season
@@ -50,7 +51,8 @@ def _nhl(
       playoff_goals=0,
       playoff_assists=0,
       power_play_goals=power_play_goals,
-      power_play_points=power_play_points )
+      power_play_points=power_play_points,
+      penalty_minutes=0 )
 
 
 def _other( player_id: int, start_year: int, g_pace: float, a_pace: float ) -> OtherLeagueSkaterSeason:
@@ -69,6 +71,10 @@ def _other( player_id: int, start_year: int, g_pace: float, a_pace: float ) -> O
 
 
 _PLAYERS = 60
+_GOAL_CONSTANT = 2.0
+_GOAL_WEIGHT = 0.5
+_ASSIST_CONSTANT = 1.0
+_ASSIST_WEIGHT = 0.25
 
 
 def _goals( player_id: int ) -> float:
@@ -90,8 +96,8 @@ def _pairs( count: int, gap: int = 0, scale: float = 1.0, first_id: int = 0 ) ->
          _nhl(
             player_id,
             2021 + gap,
-            scale * ( 2.0 + 0.5 * goals ),
-            scale * ( 1.0 + 0.25 * assists ),
+            scale * ( _GOAL_CONSTANT + _GOAL_WEIGHT * goals ),
+            scale * ( _ASSIST_CONSTANT + _ASSIST_WEIGHT * assists ),
             26.4 + gap ) )
 
    return seasons
@@ -114,8 +120,8 @@ def _playoff_pairs() -> list[ NhlSkaterSeason ]:
          _nhl(
             player_id,
             2021,
-            2.0 + 0.5 * goals + 1.5 * surplus.goals,
-            1.0 + 0.25 * assists + 0.8 * surplus.assists,
+            _GOAL_CONSTANT + _GOAL_WEIGHT * goals + 1.5 * surplus.goals,
+            _ASSIST_CONSTANT + _ASSIST_WEIGHT * assists + 0.8 * surplus.assists,
             26.4 ) )
 
    return seasons
@@ -132,7 +138,12 @@ def _goal_error( model: PaceRegressionModel, seasons: list[ NhlSkaterSeason ] ) 
          [ season for season in seasons if season.player_id == target.player_id ],
          [],
          2021 )
-      paces = PaceRegressionPredictor.paces( model, priors, 2021 )
+      paces = PaceRegressionPredictor.paces(
+         model,
+         priors,
+         20212022,
+         PimRegressionModel( [], 1.0 ),
+         [] )
       assert paces is not None
       pace = paces.season_pace()
       error += ( pace.goals - target.g_pace ) ** 2
@@ -149,10 +160,10 @@ def Test_Fit_TestLinearPairs_ExpectRecoveredBandRegression() -> None:
    regression = model.regressions[ Position.FIRST ]
    assert regression.source == PriorSource.NHL
    assert regression.band == AgeBand( 25, 26 )
-   assert regression.goal_constant == pytest.approx( 2.0 )
-   assert regression.goal_weights == pytest.approx( [ 0.5 ] )
-   assert regression.assist_constant == pytest.approx( 1.0 )
-   assert regression.assist_weights == pytest.approx( [ 0.25 ] )
+   assert regression.goal_constant == pytest.approx( _GOAL_CONSTANT )
+   assert regression.goal_weights == pytest.approx( [ _GOAL_WEIGHT ] )
+   assert regression.assist_constant == pytest.approx( _ASSIST_CONSTANT )
+   assert regression.assist_weights == pytest.approx( [ _ASSIST_WEIGHT ] )
    assert model.playoff_goal_weight == PaceRegressionFitter.NO_PLAYOFF_WEIGHT
    assert model.playoff_assist_weight == PaceRegressionFitter.NO_PLAYOFF_WEIGHT
 
@@ -186,8 +197,8 @@ def Test_Fit_TestPowerPlayPairs_ExpectRecoveredBandRegression() -> None:
          _nhl(
             player_id,
             2021,
-            2.0 + 0.5 * prior_goals,
-            1.0 + 0.25 * prior_assists,
+            _GOAL_CONSTANT + _GOAL_WEIGHT * prior_goals,
+            _ASSIST_CONSTANT + _ASSIST_WEIGHT * prior_assists,
             26.4,
             current_pp_goals,
             current_pp_goals + current_pp_assists ) )
@@ -230,8 +241,8 @@ def Test_Fit_TestConstantPriorValues_ExpectWeightedTargetIntercept() -> None:
          _nhl(
             player_id,
             2021,
-            2.0 + 0.5 * _goals( player_id ),
-            1.0 + 0.25 * _assists( player_id ),
+            _GOAL_CONSTANT + _GOAL_WEIGHT * _goals( player_id ),
+            _ASSIST_CONSTANT + _ASSIST_WEIGHT * _assists( player_id ),
             26.4,
             power_play_goals=current_power_play_goals,
             power_play_points=current_power_play_points ) )
@@ -262,31 +273,34 @@ def Test_Fit_TestPlayoffSurplus_ExpectErrorMinimizingPositiveWeights() -> None:
 
 def Test_Fit_TestReturningPlayers_ExpectGapScaleWithoutChangingFit() -> None:
    count = _PLAYERS
-   seasons = _pairs( count ) + _pairs( count, gap=1, scale=0.8, first_id=count )
+   returning_scale = 0.8
+   seasons = _pairs( count ) + _pairs( count, gap=1, scale=returning_scale, first_id=count )
 
    model = PaceRegressionFitter.fit( seasons, [], [] )
 
-   assert model.regressions[ Position.FIRST ].goal_constant == pytest.approx( 2.0 )
-   assert model.nhl_gap_goals == pytest.approx( 0.8 )
-   assert model.nhl_gap_assists == pytest.approx( 0.8 )
+   assert model.regressions[ Position.FIRST ].goal_constant == pytest.approx( _GOAL_CONSTANT )
+   assert model.nhl_gap_goals == pytest.approx( returning_scale )
+   assert model.nhl_gap_assists == pytest.approx( returning_scale )
 
 
 def Test_Fit_TestOtherLeaguePriors_ExpectTranslatedRegressions() -> None:
    factor = LeagueFactor( 'AAA', 0.5 )
+   translated_goal_constant = 3.0
+   translated_goal_weight = 0.5
    other_seasons = [
       _other( player_id, 2020, 2.0 * _goals( player_id ), 2.0 * _assists( player_id ) )
       for player_id in range( _PLAYERS )
    ]
    nhl_seasons = [
-      _nhl( player_id, 2021, 3.0 + 0.5 * _goals( player_id ), 4.0 + 0.5 * _assists( player_id ), 19.4 )
+      _nhl( player_id, 2021, translated_goal_constant + translated_goal_weight * _goals( player_id ), 4.0 + 0.5 * _assists( player_id ), 19.4 )
       for player_id in range( _PLAYERS )
    ]
 
    model = PaceRegressionFitter.fit( nhl_seasons, other_seasons, [ factor ] )
 
    assert { regression.source for regression in model.regressions } == { PriorSource.TRANSLATED }
-   assert model.regressions[ Position.FIRST ].goal_constant == pytest.approx( 3.0 )
-   assert model.regressions[ Position.FIRST ].goal_weights == pytest.approx( [ 0.5 ] )
+   assert model.regressions[ Position.FIRST ].goal_constant == pytest.approx( translated_goal_constant )
+   assert model.regressions[ Position.FIRST ].goal_weights == pytest.approx( [ translated_goal_weight ] )
 
 
 def Test_Fit_TestNoSamples_ExpectEmptyModel() -> None:

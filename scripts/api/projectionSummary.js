@@ -8,6 +8,7 @@ export class ProjectionSummary {
          goals: ValueNormalizer.asFiniteNumber(row.goals),
          assists: ValueNormalizer.asFiniteNumber(row.assists),
          points: ValueNormalizer.asFiniteNumber(row.points),
+         penaltyMinutes: ValueNormalizer.asFiniteNumber(row.penaltyMinutes),
          gamesPlayed: ValueNormalizer.asFiniteNumber(row.gamesPlayed),
          powerPlayGoals: ValueNormalizer.asFiniteNumber(row.powerPlayGoals),
          powerPlayPoints: ValueNormalizer.asFiniteNumber(row.powerPlayPoints),

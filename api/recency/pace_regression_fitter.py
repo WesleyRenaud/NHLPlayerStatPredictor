@@ -5,7 +5,6 @@ from collections.abc import Callable
 
 from .age_band import AgeBand
 from ..aging.league_factor import LeagueFactor
-from .linear_system import LinearSystem
 from .pace_regression import PaceRegression
 from .pace_regression_model import PaceRegressionModel
 from .pace_regression_predictor import PaceRegressionPredictor
@@ -13,13 +12,14 @@ from .pace_sample import PaceSample
 from .prior_source import PriorSource
 from .prior_year import PriorYear
 from .prior_year_builder import PriorYearBuilder
-from ..projections.pace_values import PaceValues
+from ..projections.scoring_paces import ScoringPaces
 from ..projections.season_pace import SeasonPace
 from ..season import Season
 from ..shared.enums.position import Position
 from ..skaters.nhl_skater_season import NhlSkaterSeason
 from ..skaters.other_league_skater_season import OtherLeagueSkaterSeason
 from ..skaters.skater_season import SkaterSeason
+from .weighted_pace_solver import WeightedPaceSolver
 
 
 class PaceRegressionFitter():
@@ -160,19 +160,19 @@ class PaceRegressionFitter():
       if not complete:
          return None
 
-      goal_constant, goal_weights = cls._solve(
+      goal_constant, goal_weights = WeightedPaceSolver.solve(
          complete,
          lambda prior: prior.pace.goals,
          lambda season: season.g_pace )
-      assist_constant, assist_weights = cls._solve(
+      assist_constant, assist_weights = WeightedPaceSolver.solve(
          complete,
          lambda prior: prior.pace.assists,
          lambda season: season.a_pace )
-      power_play_goal_constant, power_play_goal_weights = cls._solve(
+      power_play_goal_constant, power_play_goal_weights = WeightedPaceSolver.solve(
          complete,
          lambda prior: prior.power_play_pace.goals,
          lambda season: season.power_play_pace().goals )
-      power_play_assist_constant, power_play_assist_weights = cls._solve(
+      power_play_assist_constant, power_play_assist_weights = WeightedPaceSolver.solve(
          complete,
          lambda prior: prior.power_play_pace.assists,
          lambda season: season.power_play_pace().assists )
@@ -187,30 +187,6 @@ class PaceRegressionFitter():
          power_play_goal_weights=power_play_goal_weights,
          power_play_assist_constant=power_play_assist_constant,
          power_play_assist_weights=power_play_assist_weights )
-
-
-   @classmethod
-   def _solve(
-         cls,
-         samples: list[ PaceSample ],
-         prior_value: Callable[ [ PriorYear ], float ],
-         actual: Callable[ [ NhlSkaterSeason ], float ] ) -> tuple[ float, list[ float ] ]:
-      size = len( samples[ Position.FIRST ].priors ) + 1
-      products = [ [ 0.0 ] * size for _ in range( size ) ]
-      targets = [ 0.0 ] * size
-
-      for sample in samples:
-         features = [ 1.0, *[ prior_value( prior ) for prior in sample.priors ] ]
-         games = float( sample.current.games_played )
-
-         for row in range( size ):
-            targets[ row ] += games * features[ row ] * actual( sample.current )
-
-            for column in range( size ):
-               products[ row ][ column ] += games * features[ row ] * features[ column ]
-
-      constant, *weights = LinearSystem.solve( products, targets )
-      return constant, weights
 
 
    @classmethod
@@ -249,7 +225,7 @@ class PaceRegressionFitter():
          cls,
          regressions: list[ PaceRegression ],
          samples: list[ PaceSample ],
-         predicted: Callable[ [ PaceValues ], float ],
+         predicted: Callable[ [ ScoringPaces ], float ],
          actual: Callable[ [ NhlSkaterSeason ], float ] ) -> float:
       actual_total = 0.0
       predicted_total = 0.0

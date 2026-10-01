@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date
 
 import pytest
@@ -45,7 +46,8 @@ def _nhl(
       playoff_goals=0,
       playoff_assists=0,
       power_play_goals=power_play_goals,
-      power_play_points=power_play_points )
+      power_play_points=power_play_points,
+      penalty_minutes=0 )
 
 
 def _other(
@@ -73,7 +75,7 @@ def Test_Year_TestMixedNhlAndOther_ExpectGamesWeightedBlend() -> None:
    factor = LeagueFactor( league, 0.40 )
    nhl_games = 1
    other_games = 46
-   nhl = _nhl( 84.0, 84.0, 20252026, nhl_games )
+   nhl = replace( _nhl( 84.0, 84.0, 20252026, nhl_games ), penalty_minutes=2 )
    other = _other( 10.96, 23.74, 20252026, league, other_games )
    total_games = nhl_games + other_games
 
@@ -88,6 +90,17 @@ def Test_Year_TestMixedNhlAndOther_ExpectGamesWeightedBlend() -> None:
       / total_games )
    assert year.power_play_goals == 0.0
    assert year.power_play_assists == 0.0
+   assert year.penalty_minutes == pytest.approx( nhl.penalty_minutes_pace() )
+
+
+def Test_Year_TestOtherLeagueOnly_ExpectMissingPim() -> None:
+   factor = LeagueFactor( 'AAA', 0.40 )
+   other = _other( 10.96, 23.74, 20252026, factor.league, 46 )
+
+   year = TranslatedPaceAverager.year( [ other ], [ factor ] )
+
+   assert year is not None
+   assert year.penalty_minutes is None
 
 
 def Test_Year_TestNhlPowerPlayTotals_ExpectSeparatePowerPlayPace() -> None:

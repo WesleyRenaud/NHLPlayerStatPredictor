@@ -18,6 +18,7 @@ def Test_FromRow_TestSummaryJson_ExpectFields() -> None:
       44,
       79,
       123,
+      12,
       20,
       60 )
 
@@ -30,6 +31,7 @@ def Test_FromRow_TestSummaryJson_ExpectFields() -> None:
       'goals': summary.goals,
       'assists': summary.assists,
       'points': summary.points,
+      'penaltyMinutes': summary.penalty_minutes,
       'ppGoals': summary.power_play_goals,
       'ppPoints': summary.power_play_points,
    } )
@@ -51,6 +53,7 @@ def Test_FromRow_TestTradedPlayer_ExpectTeams() -> None:
       10,
       20,
       30,
+      8,
       2,
       8 )
 
@@ -63,6 +66,7 @@ def Test_FromRow_TestTradedPlayer_ExpectTeams() -> None:
       'goals': summary.goals,
       'assists': summary.assists,
       'points': summary.points,
+      'penaltyMinutes': summary.penalty_minutes,
       'ppGoals': summary.power_play_goals,
       'ppPoints': summary.power_play_points,
    } )

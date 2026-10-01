@@ -20,6 +20,7 @@ def _prior(
       year,
       SeasonPace( goals, assists ),
    PowerPlayPace( power_play_goals, power_play_assists ),
+      0.0,
       82,
       82,
       27.5,
@@ -96,10 +97,16 @@ def Test_Pace_TestPriors_ExpectConstantPlusWeightedPriors() -> None:
       power_play_assist_constant=0.0,
       power_play_assist_weights=[ 0.0, 0.0 ] )
 
-   paced = regression.paces( [ _prior( 2024, 20.0, 30.0 ), _prior( 2023, 12.0, 10.0 ) ] )
+   priors = [ _prior( 2024, 20.0, 30.0 ), _prior( 2023, 12.0, 10.0 ) ]
 
-   assert paced.goals == pytest.approx( 15.0 )
-   assert paced.assists == pytest.approx( 15.0 )
+   paced = regression.paces( priors )
+
+   assert paced.goals == pytest.approx(
+      regression.goal_constant
+      + sum( weight * prior.pace.goals for weight, prior in zip( regression.goal_weights, priors ) ) )
+   assert paced.assists == pytest.approx(
+      regression.assist_constant
+      + sum( weight * prior.pace.assists for weight, prior in zip( regression.assist_weights, priors ) ) )
    assert paced.power_play_goals == 0.0
    assert paced.power_play_assists == 0.0
 

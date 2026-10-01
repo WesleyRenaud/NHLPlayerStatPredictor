@@ -18,6 +18,8 @@ from api.ingest.skater_season_ingester import SkaterSeasonIngester
 from api.paths import Paths
 from api.recency.pace_regression_fitter import PaceRegressionFitter
 from api.recency.pace_regression_store import PaceRegressionStore
+from api.recency.pim_regression_fitter import PimRegressionFitter
+from api.recency.pim_regression_store import PimRegressionStore
 from api.season_length import SeasonLength
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
@@ -57,7 +59,8 @@ def _season(
       playoff_goals=0,
       playoff_assists=0,
       power_play_goals=0,
-      power_play_points=0 )
+      power_play_points=0,
+      penalty_minutes=0 )
 
 
 def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
@@ -225,6 +228,7 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
 
    SkaterSeasonIngester.main()
    stored_model = PaceRegressionStore.read()
+   stored_pim_model = PimRegressionStore.read()
    stored_availability = AvailabilityWeightStore.read()
    stored_leagues = LeagueFactorStore.read()
    stored_teams = TeamFactorStore.read()
@@ -249,6 +253,7 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       AgingCurveFitter.fit( merged_rows, other_rows ) )
    assert merged == [ ( rows, { season_player_id: landing, roster_player_id: roster_landing } ) ]
    assert stored_model == PaceRegressionFitter.fit( merged_rows, other_rows, stored_leagues )
+   assert stored_pim_model == PimRegressionFitter.fit( merged_rows )
    assert stored_teams == team_factors
    assert previous_seasons == last_played_ids
    assert recorded == [ False ]

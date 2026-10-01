@@ -37,6 +37,7 @@ def Test_BuildRows_TestRegularSeason_ExpectPacedTotals() -> None:
          goals,
          assists,
          points,
+         12,
          power_play_goals,
          power_play_points )
    ]
@@ -49,6 +50,7 @@ def Test_BuildRows_TestRegularSeason_ExpectPacedTotals() -> None:
    assert row.g_pace == Season.pace( float( goals ), float( games_played ), pace_games )
    assert row.a_pace == Season.pace( float( assists ), float( games_played ), pace_games )
    assert row.p_pace == Season.pace( float( points ), float( games_played ), pace_games )
+   assert row.penalty_minutes == 12
    assert row.power_play_goals == power_play_goals
    assert row.power_play_points == power_play_points
    assert row.pace_games == pace_games
@@ -70,6 +72,7 @@ def Test_BuildRows_TestShortSeason_ExpectPacedTotals() -> None:
          1,
          1,
          points,
+         2,
          0,
          0 )
    ]
@@ -92,8 +95,8 @@ def Test_BuildRows_TestMissingBio_ExpectSkipped() -> None:
    games_played = 82
    pace_games = 84
    summaries = [
-      SkaterSummary( kept_id, 'Has Bio', position, [ team ], games_played, 1, 1, 2, 0, 0 ),
-      SkaterSummary( missing_id, 'No Bio', position, [ team ], games_played, 1, 1, 2, 0, 0 ),
+      SkaterSummary( kept_id, 'Has Bio', position, [ team ], games_played, 1, 1, 2, 0, 0, 0 ),
+      SkaterSummary( missing_id, 'No Bio', position, [ team ], games_played, 1, 1, 2, 0, 0, 0 ),
    ]
    bios = [ SkaterBio( kept_id, date( 1999, 1, 1 ) ) ]
    season = SeasonLength( 20242025, 82, date( 2024, 10, 4 ), date( 2025, 4, 17 ) )

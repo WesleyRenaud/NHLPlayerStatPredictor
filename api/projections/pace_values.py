@@ -2,23 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .power_play_pace import PowerPlayPace
-from .season_pace import SeasonPace
+from .scoring_paces import ScoringPaces
 
 
 @dataclass( frozen=True )
-class PaceValues():
-   goals: float
-   assists: float
-   power_play_goals: float
-   power_play_assists: float
-
-
-   def season_pace( self ) -> SeasonPace:
-      return SeasonPace( goals=self.goals, assists=self.assists )
-
-
-   def power_play_pace( self ) -> PowerPlayPace:
-      return PowerPlayPace(
-         goals=self.power_play_goals,
-         assists=self.power_play_assists )
+class PaceValues( ScoringPaces ):
+   penalty_minutes: float | None
