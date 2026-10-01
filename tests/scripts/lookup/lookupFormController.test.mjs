@@ -41,6 +41,8 @@ function resultElement() {
       '[data-games-played]': { textContent: '' },
       '[data-power-play-goals]': { textContent: '' },
       '[data-power-play-points]': { textContent: '' },
+      '[data-short-handed-goals]': { textContent: '' },
+      '[data-short-handed-points]': { textContent: '' },
       '[data-projected-toi]': { textContent: '' },
    };
    return {
@@ -127,6 +129,8 @@ test('Test_Render_TestPlayerAndProjection_ExpectNameMetaAndStats', () => {
       gamesPlayed: 70,
       powerPlayGoals: 5,
       powerPlayPoints: 12,
+      shortHandedGoals: 1,
+      shortHandedPoints: 3,
       projectedToi: '18:30',
    };
    const result = resultElement();
@@ -153,6 +157,14 @@ test('Test_Render_TestPlayerAndProjection_ExpectNameMetaAndStats', () => {
    assert.equal(
       result.nodes['[data-power-play-points]'].textContent,
       projection.powerPlayPoints
+   );
+   assert.equal(
+      result.nodes['[data-short-handed-goals]'].textContent,
+      projection.shortHandedGoals
+   );
+   assert.equal(
+      result.nodes['[data-short-handed-points]'].textContent,
+      projection.shortHandedPoints
    );
    assert.equal(result.nodes['[data-projected-toi]'].textContent, '18:30');
    assert.equal(result.hidden, false);

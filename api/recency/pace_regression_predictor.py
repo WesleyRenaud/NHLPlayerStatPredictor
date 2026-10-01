@@ -9,7 +9,6 @@ from .prior_source import PriorSource
 from .prior_year import PriorYear
 from ..projections.pace_values import PaceValues
 from ..projections.scoring_paces import ScoringPaces
-from ..projections.season_pace import SeasonPace
 from ..season import Season
 from ..shared.enums.position import Position
 from ..skaters.nhl_skater_season import NhlSkaterSeason
@@ -42,6 +41,8 @@ class PaceRegressionPredictor():
             assists=regressed.assists,
             power_play_goals=regressed.power_play_goals,
             power_play_assists=regressed.power_play_assists,
+            short_handed_goals=regressed.short_handed_goals,
+            short_handed_assists=regressed.short_handed_assists,
             penalty_minutes=pim_pace )
 
       adjusted = PlayoffPaceAdjuster.adjust(
@@ -56,6 +57,8 @@ class PaceRegressionPredictor():
             assists=adjusted.assists,
             power_play_goals=regressed.power_play_goals,
             power_play_assists=regressed.power_play_assists,
+            short_handed_goals=regressed.short_handed_goals,
+            short_handed_assists=regressed.short_handed_assists,
             penalty_minutes=pim_pace )
 
       return PaceValues(
@@ -65,6 +68,10 @@ class PaceRegressionPredictor():
             regressed.power_play_goals * model.nhl_gap_power_play_goals ),
          power_play_assists=(
             regressed.power_play_assists * model.nhl_gap_power_play_assists ),
+         short_handed_goals=(
+            regressed.short_handed_goals * model.nhl_gap_short_handed_goals ),
+         short_handed_assists=(
+            regressed.short_handed_assists * model.nhl_gap_short_handed_assists ),
          penalty_minutes=pim_pace )
 
 

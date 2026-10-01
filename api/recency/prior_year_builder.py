@@ -4,7 +4,6 @@ from collections import defaultdict
 
 from ..aging.league_factor import LeagueFactor
 from .prior_year import PriorYear
-from ..projections.power_play_pace import PowerPlayPace
 from ..projections.season_pace import SeasonPace
 from ..projections.translated_pace_averager import TranslatedPaceAverager
 from ..season import Season
@@ -64,9 +63,8 @@ class PriorYearBuilder():
             PriorYear(
                start_year,
                pace=SeasonPace( combined.goals, combined.assists ),
-               power_play_pace=PowerPlayPace(
-                  combined.power_play_goals,
-                  combined.power_play_assists ),
+               power_play_pace=combined.power_play_pace(),
+               short_handed_pace=combined.short_handed_pace(),
                pim_pace=combined.penalty_minutes,
                games=combined.games,
                nhl_games=sum(

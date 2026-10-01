@@ -55,6 +55,8 @@ def _season( age: float ) -> NhlSkaterSeason:
       playoff_assists=0,
       power_play_goals=0,
       power_play_points=0,
+      short_handed_goals=0,
+      short_handed_points=0,
       penalty_minutes=0 )
 
 
@@ -77,7 +79,7 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
       PimRegressionModel ] ] = []
    other_seasons: list[ OtherLeagueSkaterSeason ] = []
    league_factors: list[ LeagueFactor ] = []
-   model = PaceRegressionModel( [], 0.8, 0.85, 0.8, 0.85, 1.0, 1.0 )
+   model = PaceRegressionModel( [], 0.8, 0.85, 0.8, 0.85, 1.0, 1.0, 1.0, 1.0 )
 
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
    _stub_ice( monkeypatch )
@@ -98,6 +100,8 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
             assists=aged.assists,
             power_play_goals=0.0,
             power_play_assists=0.0,
+            short_handed_goals=0.0,
+            short_handed_assists=0.0,
             penalty_minutes=pim_pace ) )
    monkeypatch.setattr(
       projection_coordinator.OtherLeagueSeasonProvider,
@@ -130,6 +134,8 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
       games_played=games_played,
       power_play_goals=0,
       power_play_points=0,
+      short_handed_goals=0,
+      short_handed_points=0,
       projected_toi=None )
    assert captured == [ ( player_id, str( db_path ) ) ]
    assert resolved == [
@@ -173,7 +179,7 @@ def Test_GetProjection_TestMissingPace_ExpectNone(
    monkeypatch.setattr(
       projection_coordinator.PaceRegressionStore,
       'read',
-      lambda: PaceRegressionModel( [], 0.8, 0.85, 0.8, 0.85, 1.0, 1.0 ) )
+      lambda: PaceRegressionModel( [], 0.8, 0.85, 0.8, 0.85, 1.0, 1.0, 1.0, 1.0 ) )
    monkeypatch.setattr(
       projection_coordinator.PimRegressionStore,
       'read',
@@ -219,6 +225,8 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
          assists=aged.assists,
          power_play_goals=0.0,
          power_play_assists=0.0,
+         short_handed_goals=0.0,
+         short_handed_assists=0.0,
          penalty_minutes=pim_pace ) )
    monkeypatch.setattr(
       projection_coordinator.OtherLeagueSeasonProvider,
@@ -231,7 +239,7 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
    monkeypatch.setattr(
       projection_coordinator.PaceRegressionStore,
       'read',
-      lambda: PaceRegressionModel( [], 0.8, 0.85, 0.8, 0.85, 1.0, 1.0 ) )
+      lambda: PaceRegressionModel( [], 0.8, 0.85, 0.8, 0.85, 1.0, 1.0, 1.0, 1.0 ) )
    monkeypatch.setattr(
       projection_coordinator.PimRegressionStore,
       'read',
@@ -253,4 +261,6 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
       games_played=games_played,
       power_play_goals=0,
       power_play_points=0,
+      short_handed_goals=0,
+      short_handed_points=0,
       projected_toi=projected )

@@ -76,6 +76,16 @@ class PaceRegressionFitter():
             returning,
             lambda pace: pace.power_play_assists,
             lambda season: season.power_play_pace().assists ),
+         nhl_gap_short_handed_goals=cls._gap_scale(
+            regressions,
+            returning,
+            lambda pace: pace.short_handed_goals,
+            lambda season: season.short_handed_pace().goals ),
+         nhl_gap_short_handed_assists=cls._gap_scale(
+            regressions,
+            returning,
+            lambda pace: pace.short_handed_assists,
+            lambda season: season.short_handed_pace().assists ),
          playoff_goal_weight=cls._playoff_weight(
             regressions,
             consecutive,
@@ -176,6 +186,14 @@ class PaceRegressionFitter():
          complete,
          lambda prior: prior.power_play_pace.assists,
          lambda season: season.power_play_pace().assists )
+      short_handed_goal_constant, short_handed_goal_weights = WeightedPaceSolver.solve(
+         complete,
+         lambda prior: prior.short_handed_pace.goals,
+         lambda season: season.short_handed_pace().goals )
+      short_handed_assist_constant, short_handed_assist_weights = WeightedPaceSolver.solve(
+         complete,
+         lambda prior: prior.short_handed_pace.assists,
+         lambda season: season.short_handed_pace().assists )
       return PaceRegression(
          source=source,
          band=band,
@@ -186,7 +204,11 @@ class PaceRegressionFitter():
          power_play_goal_constant=power_play_goal_constant,
          power_play_goal_weights=power_play_goal_weights,
          power_play_assist_constant=power_play_assist_constant,
-         power_play_assist_weights=power_play_assist_weights )
+         power_play_assist_weights=power_play_assist_weights,
+         short_handed_goal_constant=short_handed_goal_constant,
+         short_handed_goal_weights=short_handed_goal_weights,
+         short_handed_assist_constant=short_handed_assist_constant,
+         short_handed_assist_weights=short_handed_assist_weights )
 
 
    @classmethod

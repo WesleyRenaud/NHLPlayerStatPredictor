@@ -28,7 +28,9 @@ def _nhl(
       a_pace: float,
    age: float,
    power_play_goals: int = 0,
-   power_play_points: int = 0 ) -> NhlSkaterSeason:
+   power_play_points: int = 0,
+   short_handed_goals: int = 0,
+   short_handed_points: int = 0 ) -> NhlSkaterSeason:
    return NhlSkaterSeason(
       player_id=player_id,
       season_id=start_year * 10000 + start_year + 1,
@@ -52,6 +54,8 @@ def _nhl(
       playoff_assists=0,
       power_play_goals=power_play_goals,
       power_play_points=power_play_points,
+      short_handed_goals=short_handed_goals,
+      short_handed_points=short_handed_points,
       penalty_minutes=0 )
 
 
@@ -210,6 +214,47 @@ def Test_Fit_TestPowerPlayPairs_ExpectRecoveredBandRegression() -> None:
    assert regression.power_play_goal_weights == pytest.approx( [ power_play_goal_weight ] )
    assert regression.power_play_assist_constant == pytest.approx( power_play_assist_constant )
    assert regression.power_play_assist_weights == pytest.approx( [ power_play_assist_weight ] )
+
+
+def Test_Fit_TestShortHandedPairs_ExpectRecoveredBandRegression() -> None:
+   seasons: list[ NhlSkaterSeason ] = []
+   short_handed_goal_constant = 2.0
+   short_handed_goal_weight = 0.5
+   short_handed_assist_constant = 1.0
+   short_handed_assist_weight = 0.25
+
+   for player_id in range( _PLAYERS ):
+      prior_goals = 2 * ( player_id % 5 )
+      prior_assists = 4 * ( player_id % 6 )
+      seasons.append(
+         _nhl(
+            player_id,
+            2020,
+            _goals( player_id ),
+            _assists( player_id ),
+            25.4,
+            short_handed_goals=prior_goals,
+            short_handed_points=prior_goals + prior_assists ) )
+      seasons.append(
+         _nhl(
+            player_id,
+            2021,
+               _GOAL_CONSTANT + _GOAL_WEIGHT * _goals( player_id ),
+               _ASSIST_CONSTANT + _ASSIST_WEIGHT * _assists( player_id ),
+            26.4,
+            short_handed_goals=(
+               short_handed_goal_constant + short_handed_goal_weight * prior_goals ),
+            short_handed_points=(
+               short_handed_goal_constant + short_handed_goal_weight * prior_goals
+               + short_handed_assist_constant + short_handed_assist_weight * prior_assists ) ) )
+
+   model = PaceRegressionFitter.fit( seasons, [], [] )
+   regression = model.regressions[ Position.FIRST ]
+
+   assert regression.short_handed_goal_constant == pytest.approx( short_handed_goal_constant )
+   assert regression.short_handed_goal_weights == pytest.approx( [ short_handed_goal_weight ] )
+   assert regression.short_handed_assist_constant == pytest.approx( short_handed_assist_constant )
+   assert regression.short_handed_assist_weights == pytest.approx( [ short_handed_assist_weight ] )
 
 
 def Test_Fit_TestConstantPriorValues_ExpectWeightedTargetIntercept() -> None:

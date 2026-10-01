@@ -14,6 +14,8 @@ def Test_ToDict_TestProjection_ExpectMappedFields() -> None:
       games_played=70,
       power_play_goals=5,
       power_play_points=12,
+      short_handed_goals=1,
+      short_handed_points=3,
       projected_toi=None )
 
    payload = projection.to_dict()
@@ -26,6 +28,8 @@ def Test_ToDict_TestProjection_ExpectMappedFields() -> None:
       'gamesPlayed': projection.games_played,
       'powerPlayGoals': 5,
       'powerPlayPoints': 12,
+      'shortHandedGoals': 1,
+      'shortHandedPoints': 3,
       'projectedToi': None,
    }
 
@@ -37,15 +41,27 @@ def Test_ToDict_TestProjection_ExpectMappedFields() -> None:
       'gamesPlayed',
       'powerPlayGoals',
       'powerPlayPoints',
+      'shortHandedGoals',
+      'shortHandedPoints',
       'projectedToi',
    ]
 
 
+def Test_Init_TestPowerPlayAndShortHandedGoalsExceedTotal_ExpectValueError() -> None:
+   with pytest.raises( ValueError, match='Special-teams projection exceeds total scoring projection' ):
+      Projection( 2, 4, 6, None, 70, 1, 2, 2, 2 )
+
+
+def Test_Init_TestPowerPlayAndShortHandedPointsExceedTotal_ExpectValueError() -> None:
+   with pytest.raises( ValueError, match='Special-teams projection exceeds total scoring projection' ):
+      Projection( 2, 4, 6, None, 70, 1, 2, 1, 5 )
+
+
 def Test_Init_TestPowerPlayGoalsExceedTotal_ExpectValueError() -> None:
-   with pytest.raises( ValueError, match='Power-play projection exceeds total scoring projection' ):
-      Projection( goals=2, assists=4, points=6, penalty_minutes=None, games_played=70, power_play_goals=3, power_play_points=4, projected_toi=None )
+   with pytest.raises( ValueError, match='Special-teams projection exceeds total scoring projection' ):
+      Projection( 2, 4, 6, None, 70, 3, 4, 0, 0 )
 
 
 def Test_Init_TestPowerPlayAssistsExceedTotal_ExpectValueError() -> None:
-   with pytest.raises( ValueError, match='Power-play projection exceeds total scoring projection' ):
-      Projection( goals=2, assists=4, points=6, penalty_minutes=None, games_played=70, power_play_goals=1, power_play_points=6, projected_toi=None )
+   with pytest.raises( ValueError, match='Special-teams projection exceeds total scoring projection' ):
+      Projection( 2, 4, 6, None, 70, 1, 6, 0, 0 )

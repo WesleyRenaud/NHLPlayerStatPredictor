@@ -19,6 +19,8 @@ class TranslatedPaceAverager():
       assists = 0.0
       power_play_goals = 0.0
       power_play_assists = 0.0
+      short_handed_goals = 0.0
+      short_handed_assists = 0.0
       nhl_games = 0
       penalty_minutes = 0.0
 
@@ -37,6 +39,9 @@ class TranslatedPaceAverager():
             power_play_pace = season.power_play_pace()
             power_play_goals += season.games_played * power_play_pace.goals
             power_play_assists += season.games_played * power_play_pace.assists
+            short_handed_pace = season.short_handed_pace()
+            short_handed_goals += season.games_played * short_handed_pace.goals
+            short_handed_assists += season.games_played * short_handed_pace.assists
 
       if not games:
          return None
@@ -46,6 +51,8 @@ class TranslatedPaceAverager():
          assists=assists / games,
          power_play_goals=power_play_goals / games,
          power_play_assists=power_play_assists / games,
+         short_handed_goals=short_handed_goals / games,
+         short_handed_assists=short_handed_assists / games,
          penalty_minutes=None if not nhl_games else penalty_minutes / nhl_games,
          games=games )
 

@@ -176,6 +176,8 @@ def Test_DoPost_TestProjection_ExpectJson(
       games_played=70,
       power_play_goals=5,
       power_play_points=12,
+      short_handed_goals=1,
+      short_handed_points=3,
       projected_toi=None )
    captured: list[ int ] = []
 

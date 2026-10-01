@@ -36,13 +36,18 @@ def Test_InsertRows_TestInsertedPlayer_ExpectPersistedPoints( tmp_path: Path ) -
       playoff_assists=0,
       power_play_goals=0,
       power_play_points=0,
+      short_handed_goals=2,
+      short_handed_points=3,
       penalty_minutes=0 )
    SkaterSeasonStore.insert_rows( [ season ], db_path=db_path )
    conn = DatabaseConnectionProvider.open( db_path )
 
    try:
-      row = conn.execute( 'SELECT POINTS FROM SkaterSeason' ).fetchone()
+      row = conn.execute(
+         'SELECT POINTS, SHORT_HANDED_GOALS, SHORT_HANDED_POINTS FROM SkaterSeason' ).fetchone()
    finally:
       DatabaseConnectionProvider.close( conn )
 
    assert row[ Position.FIRST ] == season.points
+   assert row[ Position.SECOND ] == season.short_handed_goals
+   assert row[ Position.LAST ] == season.short_handed_points
