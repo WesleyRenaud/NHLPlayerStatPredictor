@@ -22,7 +22,9 @@ def _nhl(
       season_id: int,
    games_played: int = 82,
    power_play_goals: int = 0,
-   power_play_points: int = 0 ) -> NhlSkaterSeason:
+   power_play_points: int = 0,
+   short_handed_goals: int = 0,
+   short_handed_points: int = 0 ) -> NhlSkaterSeason:
    return NhlSkaterSeason(
       player_id=1,
       season_id=season_id,
@@ -45,7 +47,9 @@ def _nhl(
       playoff_goals=0,
       playoff_assists=0,
       power_play_goals=power_play_goals,
-      power_play_points=power_play_points )
+      power_play_points=power_play_points,
+      short_handed_goals=short_handed_goals,
+      short_handed_points=short_handed_points )
 
 
 def _other(
@@ -114,6 +118,30 @@ def Test_Year_TestNhlPowerPlayTotals_ExpectSeparatePowerPlayPace() -> None:
 
    assert year.power_play_goals == pytest.approx( expected_power_play_goals )
    assert year.power_play_assists == pytest.approx( expected_power_play_assists )
+
+
+def Test_Year_TestNhlShortHandedTotals_ExpectSeparateShortHandedPace() -> None:
+   games_played = 10
+   short_handed_goals = 2
+   short_handed_points = 3
+   nhl = _nhl(
+      20.0,
+      30.0,
+      20252026,
+      games_played,
+      short_handed_goals=short_handed_goals,
+      short_handed_points=short_handed_points )
+   expected_goals = Season.pace(
+      float( short_handed_goals ), float( games_played ), nhl.pace_games )
+   expected_assists = Season.pace(
+      float( short_handed_points - short_handed_goals ),
+      float( games_played ),
+      nhl.pace_games )
+
+   year = TranslatedPaceAverager.year( [ nhl ], [] )
+
+   assert year.short_handed_goals == pytest.approx( expected_goals )
+   assert year.short_handed_assists == pytest.approx( expected_assists )
 
 
 def Test_Year_TestNoGames_ExpectNone() -> None:

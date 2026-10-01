@@ -39,7 +39,9 @@ def _season( player_id: int ) -> NhlSkaterSeason:
       playoff_goals=0,
       playoff_assists=0,
       power_play_goals=0,
-      power_play_points=0 )
+      power_play_points=0,
+      short_handed_goals=0,
+      short_handed_points=0 )
 
 
 def Test_Hydrate_TestCachedLandings_ExpectStatusInserted(

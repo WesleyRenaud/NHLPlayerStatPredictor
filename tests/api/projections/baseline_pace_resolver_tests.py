@@ -43,7 +43,9 @@ def _nhl( season_id: int, g_pace: float, a_pace: float, age: float ) -> NhlSkate
       playoff_goals=0,
       playoff_assists=0,
       power_play_goals=0,
-      power_play_points=0 )
+      power_play_points=0,
+      short_handed_goals=0,
+      short_handed_points=0 )
 
 
 def _other( season_id: int, g_pace: float, a_pace: float, league: str ) -> OtherLeagueSkaterSeason:
@@ -74,7 +76,11 @@ def _model() -> PaceRegressionModel:
             power_play_goal_constant=0.0,
             power_play_goal_weights=[ 0.0 ],
             power_play_assist_constant=0.0,
-            power_play_assist_weights=[ 0.0 ] ),
+            power_play_assist_weights=[ 0.0 ],
+            short_handed_goal_constant=0.0,
+            short_handed_goal_weights=[ 0.0 ],
+            short_handed_assist_constant=0.0,
+            short_handed_assist_weights=[ 0.0 ] ),
          PaceRegression(
             source=PriorSource.TRANSLATED,
             band=AgeBand( 17, 19 ),
@@ -85,12 +91,18 @@ def _model() -> PaceRegressionModel:
             power_play_goal_constant=0.0,
             power_play_goal_weights=[ 0.0 ],
             power_play_assist_constant=0.0,
-            power_play_assist_weights=[ 0.0 ] ),
+            power_play_assist_weights=[ 0.0 ],
+            short_handed_goal_constant=0.0,
+            short_handed_goal_weights=[ 0.0 ],
+            short_handed_assist_constant=0.0,
+            short_handed_assist_weights=[ 0.0 ] ),
       ],
       0.8,
       0.9,
       1.5,
       0.5,
+      1.0,
+      1.0,
       1.0,
       1.0 )
 

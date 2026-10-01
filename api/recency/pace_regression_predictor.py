@@ -38,7 +38,9 @@ class PaceRegressionPredictor():
             goals=adjusted.goals,
             assists=adjusted.assists,
             power_play_goals=regressed.power_play_goals,
-            power_play_assists=regressed.power_play_assists )
+            power_play_assists=regressed.power_play_assists,
+            short_handed_goals=regressed.short_handed_goals,
+            short_handed_assists=regressed.short_handed_assists )
 
       return PaceValues(
          goals=adjusted.goals * model.nhl_gap_goals,
@@ -46,7 +48,11 @@ class PaceRegressionPredictor():
          power_play_goals=(
             regressed.power_play_goals * model.nhl_gap_power_play_goals ),
          power_play_assists=(
-            regressed.power_play_assists * model.nhl_gap_power_play_assists ) )
+            regressed.power_play_assists * model.nhl_gap_power_play_assists ),
+         short_handed_goals=(
+            regressed.short_handed_goals * model.nhl_gap_short_handed_goals ),
+         short_handed_assists=(
+            regressed.short_handed_assists * model.nhl_gap_short_handed_assists ) )
 
 
    @classmethod

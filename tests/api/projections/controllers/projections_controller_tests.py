@@ -43,7 +43,7 @@ class _RecordingHandler( JsonHandlerMixin ):
 def Test_GetProjection_TestCoordinatorProjection_ExpectJsonPayload(
       monkeypatch: pytest.MonkeyPatch ) -> None:
    player_id = 7
-   projection = Projection( 12, 34, 46, 70, 5, 12 )
+   projection = Projection( 12, 34, 46, 70, 5, 12, 1, 3 )
    captured: list[ int ] = []
 
    def fake_get_projection( player_id: int ) -> Projection:

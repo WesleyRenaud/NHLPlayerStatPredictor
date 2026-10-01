@@ -21,6 +21,10 @@ class PaceRegression():
    power_play_goal_weights: list[ float ]
    power_play_assist_constant: float
    power_play_assist_weights: list[ float ]
+   short_handed_goal_constant: float
+   short_handed_goal_weights: list[ float ]
+   short_handed_assist_constant: float
+   short_handed_assist_weights: list[ float ]
 
 
    @classmethod
@@ -35,7 +39,11 @@ class PaceRegression():
          power_play_goal_constant=float( row[ 'power_play_goal_constant' ] ),
          power_play_goal_weights=[ float( weight ) for weight in row[ 'power_play_goal_weights' ] ],
          power_play_assist_constant=float( row[ 'power_play_assist_constant' ] ),
-         power_play_assist_weights=[ float( weight ) for weight in row[ 'power_play_assist_weights' ] ] )
+         power_play_assist_weights=[ float( weight ) for weight in row[ 'power_play_assist_weights' ] ],
+         short_handed_goal_constant=float( row[ 'short_handed_goal_constant' ] ),
+         short_handed_goal_weights=[ float( weight ) for weight in row[ 'short_handed_goal_weights' ] ],
+         short_handed_assist_constant=float( row[ 'short_handed_assist_constant' ] ),
+         short_handed_assist_weights=[ float( weight ) for weight in row[ 'short_handed_assist_weights' ] ] )
 
 
    def covers( self, source: PriorSource, age: int, width: int ) -> bool:
@@ -58,11 +66,19 @@ class PaceRegression():
       power_play_assists = self.power_play_assist_constant + sum(
          weight * prior.power_play_pace.assists
          for weight, prior in zip( self.power_play_assist_weights, priors ) )
+      short_handed_goals = self.short_handed_goal_constant + sum(
+         weight * prior.short_handed_pace.goals
+         for weight, prior in zip( self.short_handed_goal_weights, priors ) )
+      short_handed_assists = self.short_handed_assist_constant + sum(
+         weight * prior.short_handed_pace.assists
+         for weight, prior in zip( self.short_handed_assist_weights, priors ) )
       return PaceValues(
          goals=goals,
          assists=assists,
          power_play_goals=power_play_goals,
-         power_play_assists=power_play_assists )
+         power_play_assists=power_play_assists,
+         short_handed_goals=short_handed_goals,
+         short_handed_assists=short_handed_assists )
 
 
    def to_dict( self ) -> dict[ str, str | int | float | list[ float ] ]:
@@ -78,4 +94,8 @@ class PaceRegression():
          'power_play_goal_weights': self.power_play_goal_weights,
          'power_play_assist_constant': self.power_play_assist_constant,
          'power_play_assist_weights': self.power_play_assist_weights,
+         'short_handed_goal_constant': self.short_handed_goal_constant,
+         'short_handed_goal_weights': self.short_handed_goal_weights,
+         'short_handed_assist_constant': self.short_handed_assist_constant,
+         'short_handed_assist_weights': self.short_handed_assist_weights,
       }

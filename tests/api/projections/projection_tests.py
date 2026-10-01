@@ -6,7 +6,7 @@ from api.projections.projection import Projection
 
 
 def Test_ToDict_TestProjection_ExpectMappedFields() -> None:
-   projection = Projection( 12, 34, 46, 70, 5, 12 )
+   projection = Projection( 12, 34, 46, 70, 5, 12, 1, 3 )
 
    payload = projection.to_dict()
 
@@ -17,6 +17,8 @@ def Test_ToDict_TestProjection_ExpectMappedFields() -> None:
       'gamesPlayed': projection.games_played,
       'powerPlayGoals': 5,
       'powerPlayPoints': 12,
+      'shortHandedGoals': 1,
+      'shortHandedPoints': 3,
       'projectedToi': None,
    }
 
@@ -27,15 +29,17 @@ def Test_ToDict_TestProjection_ExpectMappedFields() -> None:
       'gamesPlayed',
       'powerPlayGoals',
       'powerPlayPoints',
+      'shortHandedGoals',
+      'shortHandedPoints',
       'projectedToi',
    ]
 
 
-def Test_Init_TestPowerPlayGoalsExceedTotal_ExpectValueError() -> None:
-   with pytest.raises( ValueError, match='Power-play projection exceeds total scoring projection' ):
-      Projection( 2, 4, 6, 70, 3, 4 )
+def Test_Init_TestPowerPlayAndShortHandedGoalsExceedTotal_ExpectValueError() -> None:
+   with pytest.raises( ValueError, match='Special-teams projection exceeds total scoring projection' ):
+      Projection( 2, 4, 6, 70, 1, 2, 2, 2 )
 
 
-def Test_Init_TestPowerPlayAssistsExceedTotal_ExpectValueError() -> None:
-   with pytest.raises( ValueError, match='Power-play projection exceeds total scoring projection' ):
-      Projection( 2, 4, 6, 70, 1, 6 )
+def Test_Init_TestPowerPlayAndShortHandedPointsExceedTotal_ExpectValueError() -> None:
+   with pytest.raises( ValueError, match='Special-teams projection exceeds total scoring projection' ):
+      Projection( 2, 4, 6, 70, 1, 2, 1, 5 )

@@ -39,7 +39,9 @@ def Test_FormatTable_TestOneSeason_ExpectPaceColumns( tmp_path: Path ) -> None:
       playoff_goals=0,
       playoff_assists=0,
       power_play_goals=0,
-      power_play_points=0 )
+      power_play_points=0,
+      short_handed_goals=0,
+      short_handed_points=0 )
    SkaterSeasonStore.insert_rows( [ season ], db_path=db_path )
    rows = SkaterSeasonProvider.seasons_for_name( season.player_name, db_path=db_path )
 

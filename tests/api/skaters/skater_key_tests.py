@@ -32,7 +32,9 @@ def Test_FromRow_TestPlayerAndName_ExpectFields() -> None:
       playoff_goals=0,
       playoff_assists=0,
       power_play_goals=0,
-      power_play_points=0 )
+      power_play_points=0,
+      short_handed_goals=0,
+      short_handed_points=0 )
 
    key = SkaterKey.from_row( season )
 

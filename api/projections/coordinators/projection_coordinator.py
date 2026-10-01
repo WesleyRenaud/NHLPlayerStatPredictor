@@ -37,6 +37,7 @@ class ProjectionCoordinator():
 
       pace = paces.season_pace()
       power_play_pace = paces.power_play_pace()
+      short_handed_pace = paces.short_handed_pace()
 
       ice = SkaterIceStore.by_player().get( player_id )
 
@@ -49,12 +50,18 @@ class ProjectionCoordinator():
             power_play_pace,
             ice.last_toi,
             ice.projected_toi )
+         short_handed_pace = IcePaceScaler.adjust(
+            short_handed_pace,
+            ice.last_toi,
+            ice.projected_toi )
 
       goals = round( pace.goals )
       assists = round( pace.assists )
       points = goals + assists
       power_play_goals = round( power_play_pace.goals )
       power_play_assists = round( power_play_pace.assists )
+      short_handed_goals = round( short_handed_pace.goals )
+      short_handed_assists = round( short_handed_pace.assists )
       return Projection(
          goals=goals,
          assists=assists,
@@ -62,4 +69,6 @@ class ProjectionCoordinator():
          games_played=PaceGamesResolver.resolve(),
          projected_toi=None if ice is None else ice.projected_toi,
          power_play_goals=power_play_goals,
-         power_play_points=power_play_goals + power_play_assists )
+         power_play_points=power_play_goals + power_play_assists,
+         short_handed_goals=short_handed_goals,
+         short_handed_points=short_handed_goals + short_handed_assists )

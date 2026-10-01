@@ -35,7 +35,9 @@ def _nhl( gp_share: float ) -> NhlSkaterSeason:
       playoff_goals=0,
       playoff_assists=0,
       power_play_goals=0,
-      power_play_points=0 )
+      power_play_points=0,
+      short_handed_goals=0,
+      short_handed_points=0 )
 
 
 def _other( games_played: int, season_id: int = 20252026 ) -> OtherLeagueSkaterSeason:

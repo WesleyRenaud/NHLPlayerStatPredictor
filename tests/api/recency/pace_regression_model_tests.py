@@ -21,7 +21,11 @@ def Test_FromRow_TestDict_ExpectRoundTrip() -> None:
             power_play_goal_constant=0.0,
             power_play_goal_weights=[ 0.0 ],
             power_play_assist_constant=0.0,
-            power_play_assist_weights=[ 0.0 ] ),
+            power_play_assist_weights=[ 0.0 ],
+            short_handed_goal_constant=0.0,
+            short_handed_goal_weights=[ 0.0 ],
+            short_handed_assist_constant=0.0,
+            short_handed_assist_weights=[ 0.0 ] ),
          PaceRegression(
             source=PriorSource.TRANSLATED,
             band=AgeBand( 24, 40 ),
@@ -32,14 +36,20 @@ def Test_FromRow_TestDict_ExpectRoundTrip() -> None:
             power_play_goal_constant=0.0,
             power_play_goal_weights=[ 0.0, 0.0 ],
             power_play_assist_constant=0.0,
-            power_play_assist_weights=[ 0.0, 0.0 ] ),
+            power_play_assist_weights=[ 0.0, 0.0 ],
+            short_handed_goal_constant=0.0,
+            short_handed_goal_weights=[ 0.0, 0.0 ],
+            short_handed_assist_constant=0.0,
+            short_handed_assist_weights=[ 0.0, 0.0 ] ),
       ],
       0.8,
       0.9,
       1.1,
       0.7,
       0.95,
-      1.05 )
+      1.05,
+      1.0,
+      1.0 )
 
    loaded = PaceRegressionModel.from_row( model.to_dict() )
 
@@ -47,7 +57,7 @@ def Test_FromRow_TestDict_ExpectRoundTrip() -> None:
 
 
 def Test_FromRow_TestMissingPowerPlayGapScale_ExpectKeyError() -> None:
-   model = PaceRegressionModel( [], 0.8, 0.9, 1.1, 0.7, 0.95, 1.05 )
+   model = PaceRegressionModel( [], 0.8, 0.9, 1.1, 0.7, 0.95, 1.05, 1.0, 1.0 )
    row = model.to_dict()
    del row[ 'nhl_gap_power_play_goals' ]
 

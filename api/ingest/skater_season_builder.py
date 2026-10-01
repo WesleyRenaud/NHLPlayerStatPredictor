@@ -81,7 +81,9 @@ class SkaterSeasonBuilder():
             playoff_goals=0,
             playoff_assists=0,
             power_play_goals=summary.power_play_goals,
-            power_play_points=summary.power_play_points ) )
+            power_play_points=summary.power_play_points,
+            short_handed_goals=summary.short_handed_goals,
+            short_handed_points=summary.short_handed_points ) )
 
       return rows
 

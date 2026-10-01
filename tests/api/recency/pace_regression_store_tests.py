@@ -29,7 +29,11 @@ def Test_Write_TestModel_ExpectReadable(
             power_play_goal_constant=0.0,
             power_play_goal_weights=[ 0.0 ],
             power_play_assist_constant=0.0,
-            power_play_assist_weights=[ 0.0 ] ),
+            power_play_assist_weights=[ 0.0 ],
+            short_handed_goal_constant=0.0,
+            short_handed_goal_weights=[ 0.0 ],
+            short_handed_assist_constant=0.0,
+            short_handed_assist_weights=[ 0.0 ] ),
          PaceRegression(
             source=PriorSource.TRANSLATED,
             band=AgeBand( 20, 21 ),
@@ -40,14 +44,20 @@ def Test_Write_TestModel_ExpectReadable(
             power_play_goal_constant=0.0,
             power_play_goal_weights=[ 0.0, 0.0 ],
             power_play_assist_constant=0.0,
-            power_play_assist_weights=[ 0.0, 0.0 ] ),
+            power_play_assist_weights=[ 0.0, 0.0 ],
+            short_handed_goal_constant=0.0,
+            short_handed_goal_weights=[ 0.0, 0.0 ],
+            short_handed_assist_constant=0.0,
+            short_handed_assist_weights=[ 0.0, 0.0 ] ),
       ],
       0.785,
       0.835,
       0.79,
       0.85,
       0.91,
-      1.04 )
+      1.04,
+      1.0,
+      1.0 )
    PaceRegressionStore.write( model )
 
    loaded = PaceRegressionStore.read()

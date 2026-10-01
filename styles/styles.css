@@ -178,12 +178,16 @@ button.is-invalid {
 }
 
 #projection {
+   position: relative;
+   left: 50%;
+   width: min(80rem, calc(100vw - 2rem));
    margin-top: 1.25rem;
    padding: 1.25rem;
    border: 1px solid var(--color-border);
    border-radius: 1.15rem;
    background: var(--color-surface);
    box-shadow: var(--shadow);
+   transform: translateX(-50%);
 }
 
 #projection[hidden] {
@@ -213,8 +217,8 @@ h2 {
 
 .statline {
    display: grid;
-   grid-template-columns: repeat(6, minmax(0, 1fr)) minmax(0, 1.5fr);
-   gap: 0.65rem;
+   grid-template-columns: repeat(8, minmax(0, 1fr)) minmax(0, 2.2fr);
+   gap: 0.4rem;
 }
 
 .statline div {
@@ -309,6 +313,10 @@ h2 {
    .lookup-row {
       flex-direction: column;
    }
+
+   .statline {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+   }
 }
 
 @media (max-width: 700px) {
@@ -317,7 +325,21 @@ h2 {
       gap: 0.4rem;
    }
 
+   .statline div:last-child {
+      grid-column: span 2;
+   }
+
    .value {
       font-size: 1.6rem;
+   }
+}
+
+@media (max-width: 360px) {
+   .statline {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+   }
+
+   .statline div:last-child {
+      grid-column: span 2;
    }
 }

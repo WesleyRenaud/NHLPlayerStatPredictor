@@ -4,6 +4,7 @@ import pytest
 
 from api.projections.power_play_pace import PowerPlayPace
 from api.projections.season_pace import SeasonPace
+from api.projections.short_handed_pace import ShortHandedPace
 from api.recency.age_band import AgeBand
 from api.recency.pace_regression import PaceRegression
 from api.recency.pace_regression_model import PaceRegressionModel
@@ -20,11 +21,14 @@ def _prior(
       age: float = 25.4,
       surplus: SeasonPace = SeasonPace.zero(),
       power_play_goals: float = 0.0,
-      power_play_assists: float = 0.0 ) -> PriorYear:
+      power_play_assists: float = 0.0,
+      short_handed_goals: float = 0.0,
+      short_handed_assists: float = 0.0 ) -> PriorYear:
    return PriorYear(
       year,
       SeasonPace( goals, goals ),
       PowerPlayPace( power_play_goals, power_play_assists ),
+      ShortHandedPace( short_handed_goals, short_handed_assists ),
       82,
       nhl_games,
       age,
@@ -44,7 +48,11 @@ def _model() -> PaceRegressionModel:
             power_play_goal_constant=2.0,
             power_play_goal_weights=[ 0.5 ],
             power_play_assist_constant=1.0,
-            power_play_assist_weights=[ 0.25 ] ),
+            power_play_assist_weights=[ 0.25 ],
+            short_handed_goal_constant=2.0,
+            short_handed_goal_weights=[ 0.4 ],
+            short_handed_assist_constant=1.0,
+            short_handed_assist_weights=[ 0.25 ] ),
          PaceRegression(
             source=PriorSource.NHL,
             band=AgeBand( 25, 26 ),
@@ -55,7 +63,11 @@ def _model() -> PaceRegressionModel:
             power_play_goal_constant=8.0,
             power_play_goal_weights=[ 0.1, 0.1 ],
             power_play_assist_constant=7.0,
-            power_play_assist_weights=[ 0.1, 0.1 ] ),
+            power_play_assist_weights=[ 0.1, 0.1 ],
+            short_handed_goal_constant=0.0,
+            short_handed_goal_weights=[ 0.0, 0.0 ],
+            short_handed_assist_constant=0.0,
+            short_handed_assist_weights=[ 0.0, 0.0 ] ),
          PaceRegression(
             source=PriorSource.TRANSLATED,
             band=AgeBand( 24, 40 ),
@@ -66,14 +78,20 @@ def _model() -> PaceRegressionModel:
             power_play_goal_constant=4.0,
             power_play_goal_weights=[ 0.4 ],
             power_play_assist_constant=2.0,
-            power_play_assist_weights=[ 0.3 ] ),
+            power_play_assist_weights=[ 0.3 ],
+            short_handed_goal_constant=0.0,
+            short_handed_goal_weights=[ 0.0 ],
+            short_handed_assist_constant=0.0,
+            short_handed_assist_weights=[ 0.0 ] ),
       ],
       0.8,
       0.9,
       1.2,
       0.7,
       0.8,
-      0.6 )
+      0.6,
+      1.0,
+      1.0 )
 
 
 def Test_Regressed_TestNoPriors_ExpectNone() -> None:
@@ -199,7 +217,13 @@ def Test_Pace_TestTranslatedPlayoffSurplus_ExpectIgnored() -> None:
 
 def Test_Paces_TestNhlGap_ExpectRegularAndPowerPlayScales() -> None:
    model = _model()
-   prior = _prior( 2023, 20.0, power_play_goals=10.0, power_play_assists=8.0 )
+   prior = _prior(
+      2023,
+      20.0,
+      power_play_goals=10.0,
+      power_play_assists=8.0,
+      short_handed_goals=6.0,
+      short_handed_assists=4.0 )
    priors = [ prior ]
    regression = model.regressions[ Position.FIRST ]
    expected_power_play_goals = (
@@ -214,9 +238,23 @@ def Test_Paces_TestNhlGap_ExpectRegularAndPowerPlayScales() -> None:
          weight * prior.power_play_pace.assists
          for weight, prior in zip( regression.power_play_assist_weights, priors ) )
    ) * model.nhl_gap_power_play_assists
+   expected_short_handed_goals = (
+      regression.short_handed_goal_constant
+      + sum(
+         weight * prior.short_handed_pace.goals
+         for weight, prior in zip( regression.short_handed_goal_weights, priors ) )
+   ) * model.nhl_gap_short_handed_goals
+   expected_short_handed_assists = (
+      regression.short_handed_assist_constant
+      + sum(
+         weight * prior.short_handed_pace.assists
+         for weight, prior in zip( regression.short_handed_assist_weights, priors ) )
+   ) * model.nhl_gap_short_handed_assists
 
    paced = PaceRegressionPredictor.paces( model, priors, 2025 )
 
    assert paced is not None
    assert paced.power_play_goals == pytest.approx( expected_power_play_goals )
    assert paced.power_play_assists == pytest.approx( expected_power_play_assists )
+   assert paced.short_handed_goals == pytest.approx( expected_short_handed_goals )
+   assert paced.short_handed_assists == pytest.approx( expected_short_handed_assists )

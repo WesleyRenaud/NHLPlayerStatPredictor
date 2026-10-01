@@ -11,6 +11,8 @@ export class ProjectionSummary {
          gamesPlayed: ValueNormalizer.asFiniteNumber(row.gamesPlayed),
          powerPlayGoals: ValueNormalizer.asFiniteNumber(row.powerPlayGoals),
          powerPlayPoints: ValueNormalizer.asFiniteNumber(row.powerPlayPoints),
+         shortHandedGoals: ValueNormalizer.asFiniteNumber(row.shortHandedGoals),
+         shortHandedPoints: ValueNormalizer.asFiniteNumber(row.shortHandedPoints),
          projectedToi: ValueNormalizer.asTrimmedString(row.projectedToi),
       };
    }

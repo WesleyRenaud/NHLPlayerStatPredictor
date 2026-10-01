@@ -4,6 +4,7 @@ import pytest
 
 from api.projections.power_play_pace import PowerPlayPace
 from api.projections.season_pace import SeasonPace
+from api.projections.short_handed_pace import ShortHandedPace
 from api.recency.age_band import AgeBand
 from api.recency.pace_regression import PaceRegression
 from api.recency.prior_source import PriorSource
@@ -15,11 +16,14 @@ def _prior(
    goals: float,
    assists: float,
    power_play_goals: float = 0.0,
-   power_play_assists: float = 0.0 ) -> PriorYear:
+   power_play_assists: float = 0.0,
+   short_handed_goals: float = 0.0,
+   short_handed_assists: float = 0.0 ) -> PriorYear:
    return PriorYear(
       year,
       SeasonPace( goals, assists ),
    PowerPlayPace( power_play_goals, power_play_assists ),
+      ShortHandedPace( short_handed_goals, short_handed_assists ),
       82,
       82,
       27.5,
@@ -37,7 +41,11 @@ def Test_FromRow_TestDict_ExpectRoundTrip() -> None:
       power_play_goal_constant=0.0,
       power_play_goal_weights=[ 0.0, 0.0 ],
       power_play_assist_constant=0.0,
-      power_play_assist_weights=[ 0.0, 0.0 ] )
+      power_play_assist_weights=[ 0.0, 0.0 ],
+      short_handed_goal_constant=0.0,
+      short_handed_goal_weights=[ 0.0, 0.0 ],
+      short_handed_assist_constant=0.0,
+      short_handed_assist_weights=[ 0.0, 0.0 ] )
 
    loaded = PaceRegression.from_row( regression.to_dict() )
 
@@ -55,7 +63,11 @@ def Test_FromRow_TestMissingPowerPlayCoefficient_ExpectKeyError() -> None:
       power_play_goal_constant=0.2,
       power_play_goal_weights=[ 0.1 ],
       power_play_assist_constant=0.3,
-      power_play_assist_weights=[ 0.2 ] )
+      power_play_assist_weights=[ 0.2 ],
+      short_handed_goal_constant=0.4,
+      short_handed_goal_weights=[ 0.3 ],
+      short_handed_assist_constant=0.5,
+      short_handed_assist_weights=[ 0.2 ] )
    row = regression.to_dict()
    del row[ 'power_play_goal_constant' ]
 
@@ -74,7 +86,11 @@ def Test_Covers_TestSourceAgeAndWidth_ExpectAllMatch() -> None:
       power_play_goal_constant=0.0,
       power_play_goal_weights=[ 0.0, 0.0 ],
       power_play_assist_constant=0.0,
-      power_play_assist_weights=[ 0.0, 0.0 ] )
+      power_play_assist_weights=[ 0.0, 0.0 ],
+      short_handed_goal_constant=0.0,
+      short_handed_goal_weights=[ 0.0, 0.0 ],
+      short_handed_assist_constant=0.0,
+      short_handed_assist_weights=[ 0.0, 0.0 ] )
 
    assert regression.covers( PriorSource.NHL, 25, 2 )
    assert regression.covers( PriorSource.NHL, 26, 2 )
@@ -94,7 +110,11 @@ def Test_Pace_TestPriors_ExpectConstantPlusWeightedPriors() -> None:
       power_play_goal_constant=0.0,
       power_play_goal_weights=[ 0.0, 0.0 ],
       power_play_assist_constant=0.0,
-      power_play_assist_weights=[ 0.0, 0.0 ] )
+      power_play_assist_weights=[ 0.0, 0.0 ],
+      short_handed_goal_constant=0.0,
+      short_handed_goal_weights=[ 0.0, 0.0 ],
+      short_handed_assist_constant=0.0,
+      short_handed_assist_weights=[ 0.0, 0.0 ] )
 
    paced = regression.paces( [ _prior( 2024, 20.0, 30.0 ), _prior( 2023, 12.0, 10.0 ) ] )
 
@@ -115,9 +135,13 @@ def Test_PowerPlayPace_TestPriors_ExpectSeparatePowerPlayValues() -> None:
       power_play_goal_constant=3.0,
       power_play_goal_weights=[ 0.4 ],
       power_play_assist_constant=2.0,
-      power_play_assist_weights=[ 0.5 ] )
+      power_play_assist_weights=[ 0.5 ],
+      short_handed_goal_constant=3.0,
+      short_handed_goal_weights=[ 0.6 ],
+      short_handed_assist_constant=2.0,
+      short_handed_assist_weights=[ 0.25 ] )
 
-   prior = _prior( 2024, 20.0, 30.0, 10.0, 8.0 )
+   prior = _prior( 2024, 20.0, 30.0, 10.0, 8.0, 2.0, 4.0 )
    paced = regression.paces( [ prior ] )
    expected_power_play_goals = regression.power_play_goal_constant + sum(
       weight * prior.power_play_pace.goals
@@ -125,7 +149,15 @@ def Test_PowerPlayPace_TestPriors_ExpectSeparatePowerPlayValues() -> None:
    expected_power_play_assists = regression.power_play_assist_constant + sum(
       weight * prior.power_play_pace.assists
       for weight, prior in zip( regression.power_play_assist_weights, [ prior ] ) )
+   expected_short_handed_goals = regression.short_handed_goal_constant + sum(
+      weight * prior.short_handed_pace.goals
+      for weight, prior in zip( regression.short_handed_goal_weights, [ prior ] ) )
+   expected_short_handed_assists = regression.short_handed_assist_constant + sum(
+      weight * prior.short_handed_pace.assists
+      for weight, prior in zip( regression.short_handed_assist_weights, [ prior ] ) )
 
    assert paced.power_play_goals == pytest.approx( expected_power_play_goals )
    assert paced.power_play_assists == pytest.approx( expected_power_play_assists )
+   assert paced.short_handed_goals == pytest.approx( expected_short_handed_goals )
+   assert paced.short_handed_assists == pytest.approx( expected_short_handed_assists )
 
