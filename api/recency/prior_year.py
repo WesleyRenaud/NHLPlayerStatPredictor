@@ -17,6 +17,7 @@ class PriorYear():
    pace: SeasonPace
    power_play_pace: PowerPlayPace
    short_handed_pace: ShortHandedPace
+   pim_pace: float | None
    games: int
    nhl_games: int
    age: float

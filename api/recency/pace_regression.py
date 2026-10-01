@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from .age_band import AgeBand
 from .prior_source import PriorSource
 from .prior_year import PriorYear
-from ..projections.pace_values import PaceValues
+from ..projections.scoring_paces import ScoringPaces
 from ..types import Types
 
 
@@ -53,7 +53,7 @@ class PaceRegression():
          and len( self.goal_weights ) == width )
 
 
-   def paces( self, priors: list[ PriorYear ] ) -> PaceValues:
+   def paces( self, priors: list[ PriorYear ] ) -> ScoringPaces:
       goals = self.goal_constant + sum(
          weight * prior.pace.goals
          for weight, prior in zip( self.goal_weights, priors ) )
@@ -72,7 +72,7 @@ class PaceRegression():
       short_handed_assists = self.short_handed_assist_constant + sum(
          weight * prior.short_handed_pace.assists
          for weight, prior in zip( self.short_handed_assist_weights, priors ) )
-      return PaceValues(
+      return ScoringPaces(
          goals=goals,
          assists=assists,
          power_play_goals=power_play_goals,

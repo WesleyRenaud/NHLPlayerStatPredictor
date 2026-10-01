@@ -8,6 +8,7 @@ test('Test_Normalize_TestRow_ExpectFields', () => {
    const goals = 12;
    const assists = 34;
    const points = 46;
+   const penaltyMinutes = 18;
    const gamesPlayed = 70;
    const powerPlayGoals = 5;
    const powerPlayPoints = 12;
@@ -17,6 +18,7 @@ test('Test_Normalize_TestRow_ExpectFields', () => {
       goals,
       assists,
       points,
+      penaltyMinutes,
       gamesPlayed,
       powerPlayGoals,
       powerPlayPoints,
@@ -29,6 +31,7 @@ test('Test_Normalize_TestRow_ExpectFields', () => {
    assert.equal(projection.goals, goals);
    assert.equal(projection.assists, assists);
    assert.equal(projection.points, points);
+   assert.equal(projection.penaltyMinutes, penaltyMinutes);
    assert.equal(projection.gamesPlayed, gamesPlayed);
    assert.equal(projection.powerPlayGoals, powerPlayGoals);
    assert.equal(projection.powerPlayPoints, powerPlayPoints);
@@ -44,4 +47,5 @@ test('Test_Normalize_TestMissingPowerPlayStats_ExpectUndefined', () => {
    assert.equal(projection.powerPlayPoints, undefined);
    assert.equal(projection.shortHandedGoals, undefined);
    assert.equal(projection.shortHandedPoints, undefined);
+   assert.equal(projection.penaltyMinutes, undefined);
 });

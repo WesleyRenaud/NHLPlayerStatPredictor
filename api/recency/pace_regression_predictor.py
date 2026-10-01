@@ -2,12 +2,16 @@ from __future__ import annotations
 
 from .pace_regression import PaceRegression
 from .pace_regression_model import PaceRegressionModel
+from .pim_regression_model import PimRegressionModel
+from .pim_regression_predictor import PimRegressionPredictor
 from .playoff_pace_adjuster import PlayoffPaceAdjuster
 from .prior_source import PriorSource
 from .prior_year import PriorYear
 from ..projections.pace_values import PaceValues
-from ..projections.season_pace import SeasonPace
+from ..projections.scoring_paces import ScoringPaces
+from ..season import Season
 from ..shared.enums.position import Position
+from ..skaters.nhl_skater_season import NhlSkaterSeason
 
 
 class PaceRegressionPredictor():
@@ -16,16 +20,30 @@ class PaceRegressionPredictor():
          cls,
          model: PaceRegressionModel,
          priors: list[ PriorYear ],
-         year: int ) -> PaceValues | None:
+         target_season_id: int,
+         pim_model: PimRegressionModel,
+         nhl_seasons: list[ NhlSkaterSeason ] ) -> PaceValues | None:
       regressed = cls.regressed_paces( model.regressions, priors )
 
       if regressed is None:
          return None
 
+      year = Season.start_year( target_season_id )
+      pim_pace = PimRegressionPredictor.pace(
+         pim_model,
+         nhl_seasons,
+         target_season_id )
       latest = priors[ Position.FIRST ]
 
       if latest.source() != PriorSource.NHL:
-         return regressed
+         return PaceValues(
+            goals=regressed.goals,
+            assists=regressed.assists,
+            power_play_goals=regressed.power_play_goals,
+            power_play_assists=regressed.power_play_assists,
+            short_handed_goals=regressed.short_handed_goals,
+            short_handed_assists=regressed.short_handed_assists,
+            penalty_minutes=pim_pace )
 
       adjusted = PlayoffPaceAdjuster.adjust(
          regressed.season_pace(),
@@ -40,7 +58,8 @@ class PaceRegressionPredictor():
             power_play_goals=regressed.power_play_goals,
             power_play_assists=regressed.power_play_assists,
             short_handed_goals=regressed.short_handed_goals,
-            short_handed_assists=regressed.short_handed_assists )
+            short_handed_assists=regressed.short_handed_assists,
+            penalty_minutes=pim_pace )
 
       return PaceValues(
          goals=adjusted.goals * model.nhl_gap_goals,
@@ -52,14 +71,15 @@ class PaceRegressionPredictor():
          short_handed_goals=(
             regressed.short_handed_goals * model.nhl_gap_short_handed_goals ),
          short_handed_assists=(
-            regressed.short_handed_assists * model.nhl_gap_short_handed_assists ) )
+            regressed.short_handed_assists * model.nhl_gap_short_handed_assists ),
+         penalty_minutes=pim_pace )
 
 
    @classmethod
    def regressed_paces(
          cls,
          regressions: list[ PaceRegression ],
-         priors: list[ PriorYear ] ) -> PaceValues | None:
+         priors: list[ PriorYear ] ) -> ScoringPaces | None:
       regression = cls._regression( regressions, priors )
       return (
          None if regression is None

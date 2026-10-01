@@ -23,6 +23,7 @@ class NhlSkaterSeason( SkaterSeason ):
    schedule_games: int
    pace_games: int
    p_pace: float
+   penalty_minutes: int
    gp_share: float | None
    playoff_games: int
    playoff_goals: int
@@ -54,6 +55,7 @@ class NhlSkaterSeason( SkaterSeason ):
          schedule_games=int( row[ 'SCHEDULE_GAMES' ] ),
          pace_games=int( row[ 'PACE_GAMES' ] ),
          p_pace=float( row[ 'P_PACE' ] ),
+         penalty_minutes=int( row[ 'PIM' ] ),
          gp_share=None if gp_share is None else float( gp_share ),
          playoff_games=int( row[ 'PLAYOFF_GAMES' ] ),
          playoff_goals=int( row[ 'PLAYOFF_GOALS' ] ),
@@ -90,6 +92,13 @@ class NhlSkaterSeason( SkaterSeason ):
             self.short_handed_points - self.short_handed_goals,
             self.games_played,
             self.pace_games ) )
+
+
+   def penalty_minutes_pace( self ) -> float:
+      return Season.pace(
+         self.penalty_minutes,
+         self.games_played,
+         self.pace_games )
 
 
    def playoff_surplus( self ) -> SeasonPace:

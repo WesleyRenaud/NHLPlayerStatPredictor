@@ -37,6 +37,7 @@ function resultElement() {
       '[data-goals]': { textContent: '' },
       '[data-assists]': { textContent: '' },
       '[data-points]': { textContent: '' },
+      '[data-penalty-minutes]': { textContent: '' },
       '[data-games-played]': { textContent: '' },
       '[data-power-play-goals]': { textContent: '' },
       '[data-power-play-points]': { textContent: '' },
@@ -124,6 +125,7 @@ test('Test_Render_TestPlayerAndProjection_ExpectNameMetaAndStats', () => {
       goals: 12,
       assists: 34,
       points: 46,
+      penaltyMinutes: 18,
       gamesPlayed: 70,
       powerPlayGoals: 5,
       powerPlayPoints: 12,
@@ -143,6 +145,10 @@ test('Test_Render_TestPlayerAndProjection_ExpectNameMetaAndStats', () => {
    assert.equal(result.nodes['[data-goals]'].textContent, projection.goals);
    assert.equal(result.nodes['[data-assists]'].textContent, projection.assists);
    assert.equal(result.nodes['[data-points]'].textContent, projection.points);
+   assert.equal(
+      result.nodes['[data-penalty-minutes]'].textContent,
+      projection.penaltyMinutes
+   );
    assert.equal(result.nodes['[data-games-played]'].textContent, projection.gamesPlayed);
    assert.equal(
       result.nodes['[data-power-play-goals]'].textContent,

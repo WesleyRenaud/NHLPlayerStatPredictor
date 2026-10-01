@@ -39,7 +39,8 @@ def _current( season_id: int ) -> NhlSkaterSeason:
       power_play_goals=0,
       power_play_points=0,
       short_handed_goals=0,
-      short_handed_points=0 )
+      short_handed_points=0,
+      penalty_minutes=0 )
 
 
 def _prior( year: int, nhl_games: int = 82 ) -> PriorYear:
@@ -48,6 +49,7 @@ def _prior( year: int, nhl_games: int = 82 ) -> PriorYear:
       SeasonPace( 10.0, 20.0 ),
       PowerPlayPace.zero(),
       ShortHandedPace( 0.0, 0.0 ),
+      0.0,
       82,
       nhl_games,
       25.4,

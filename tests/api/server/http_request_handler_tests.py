@@ -168,7 +168,17 @@ def Test_DoPost_TestPlayerNames_ExpectJson(
 def Test_DoPost_TestProjection_ExpectJson(
       monkeypatch: pytest.MonkeyPatch ) -> None:
    player_id = 7
-   projection = Projection( 12, 34, 46, 70, 5, 12, 1, 3 )
+   projection = Projection(
+      goals=12,
+      assists=34,
+      points=46,
+      penalty_minutes=18,
+      games_played=70,
+      power_play_goals=5,
+      power_play_points=12,
+      short_handed_goals=1,
+      short_handed_points=3,
+      projected_toi=None )
    captured: list[ int ] = []
 
    def fake_get_projection( player_id: int ) -> Projection:

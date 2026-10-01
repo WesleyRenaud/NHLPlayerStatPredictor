@@ -181,7 +181,8 @@ def Test_Availabilities_TestNhlGames_ExpectShare(
             power_play_goals=0,
             power_play_points=0,
             short_handed_goals=0,
-            short_handed_points=0 )
+            short_handed_points=0,
+            penalty_minutes=0 )
       ] )
    monkeypatch.setattr(
       'api.depth.depth_chart_recorder.OtherLeagueSeasonProvider.seasons_for_player_ids',
@@ -228,7 +229,8 @@ def Test_Availabilities_TestMixedYear_ExpectFull(
             power_play_goals=0,
             power_play_points=0,
             short_handed_goals=0,
-            short_handed_points=0 )
+            short_handed_points=0,
+            penalty_minutes=0 )
       ] )
    monkeypatch.setattr(
       'api.depth.depth_chart_recorder.OtherLeagueSeasonProvider.seasons_for_player_ids',

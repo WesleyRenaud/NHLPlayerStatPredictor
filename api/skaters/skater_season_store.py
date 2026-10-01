@@ -25,12 +25,12 @@ class SkaterSeasonStore():
                '''
                INSERT INTO SkaterSeason (
                   PLAYER_ID, SEASON_ID, PLAYER_NAME, POSITION, BIRTH_DATE, AGE, TEAM,
-                  GAMES_PLAYED, GOALS, ASSISTS, POINTS, SCHEDULE_GAMES, PACE_GAMES,
+                  GAMES_PLAYED, GOALS, ASSISTS, POINTS, PIM, SCHEDULE_GAMES, PACE_GAMES,
                   G_PACE, A_PACE, P_PACE, GP_SHARE, PLAYOFF_GAMES, PLAYOFF_GOALS, PLAYOFF_ASSISTS,
                   PP_GOALS, PP_POINTS, SHORT_HANDED_GOALS, SHORT_HANDED_POINTS
                ) VALUES (
                   :player_id, :season_id, :player_name, :position, :birth_date, :age, :team,
-                  :games_played, :goals, :assists, :points, :schedule_games, :pace_games,
+                  :games_played, :goals, :assists, :points, :penalty_minutes, :schedule_games, :pace_games,
                   :g_pace, :a_pace, :p_pace, :gp_share, :playoff_games, :playoff_goals, :playoff_assists,
                   :power_play_goals, :power_play_points, :short_handed_goals, :short_handed_points
                )

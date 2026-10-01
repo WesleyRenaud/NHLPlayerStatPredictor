@@ -71,6 +71,7 @@ class SkaterSeasonBuilder():
             goals=summary.goals,
             assists=summary.assists,
             points=summary.points,
+            penalty_minutes=summary.penalty_minutes,
             schedule_games=season.number_of_games,
             pace_games=pace_games,
             g_pace=Season.pace( goals, games_played, pace_games ),

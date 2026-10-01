@@ -9,6 +9,7 @@ class Projection():
    goals: int
    assists: int
    points: int
+   penalty_minutes: int | None
    games_played: int
    power_play_goals: int
    power_play_points: int
@@ -38,6 +39,7 @@ class Projection():
          'goals': self.goals,
          'assists': self.assists,
          'points': self.points,
+         'penaltyMinutes': self.penalty_minutes,
          'gamesPlayed': self.games_played,
          'powerPlayGoals': self.power_play_goals,
          'powerPlayPoints': self.power_play_points,
