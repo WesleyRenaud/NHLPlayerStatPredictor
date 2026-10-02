@@ -13,6 +13,9 @@ from api.skaters.skater_position import SkaterPosition
 from api.skaters.team import Team
 
 
+ANNUAL_PIM_MULTIPLIER = 2
+
+
 def _season( player_id: int, year: int, age: float, pim: int ) -> NhlSkaterSeason:
    return NhlSkaterSeason(
       player_id=player_id,
@@ -52,49 +55,27 @@ def _model() -> PimRegressionModel:
          player_id,
          2021,
          19.4 + player_id % 30,
-         ( player_id % 12 + 1 ) * 10 )
+         ( player_id % 12 + 1 ) * 5 * ANNUAL_PIM_MULTIPLIER )
       for player_id in range( 60 ) )
    return PimRegressionFitter.fit( seasons )
 
 
-def Test_Pace_TestPreviousSeason_ExpectPimProjection() -> None:
+def Test_Pace_TestPreviousSeason_ExpectMultiplicativeProjection() -> None:
    model = _model()
    history = [ _season( 100, 2020, 43.7, 25 ) ]
-   regression = model.regressions[ Position.FIRST ]
-   prior_pim_pace = history[ Position.FIRST ].penalty_minutes_pace()
-   expected = regression.constant + sum(
-      weight * prior_pim_pace
-      for weight in regression.weights )
 
-   pim_pace = PimRegressionPredictor.pace( model, history, 20212022 )
-
-   assert pim_pace == pytest.approx( expected )
+   prior = history[ 0 ]
+   expected_pim = prior.penalty_minutes * prior.pace_games / prior.games_played * ANNUAL_PIM_MULTIPLIER
+   assert PimRegressionPredictor.pace( model, history, 20212022 ) == pytest.approx( expected_pim )
 
 
-def Test_Pace_TestMissedSeason_ExpectGapScaleApplied() -> None:
-   seasons: list[ NhlSkaterSeason ] = []
-
-   for player_id in range( 60 ):
-      prior_pim = ( player_id % 12 + 1 ) * 5
-      age = 18.4 + player_id % 30
-      seasons.append( _season( player_id, 2020, age, prior_pim ) )
-      seasons.append( _season( player_id, 2021, age + 1.0, prior_pim * 2 ) )
-      returning_id = player_id + 60
-      seasons.append( _season( returning_id, 2020, age, prior_pim ) )
-      seasons.append( _season( returning_id, 2022, age + 2.0, int( prior_pim * 1.6 ) ) )
-
-   model = PimRegressionFitter.fit( seasons )
-   history = [ _season( 100, 2020, 43.7, 25 ) ]
-   regression = model.regressions[ Position.FIRST ]
-   prior_pim_pace = history[ Position.FIRST ].penalty_minutes_pace()
-   expected = (
-      regression.constant
-      + sum( weight * prior_pim_pace for weight in regression.weights )
-   ) * model.nhl_gap_scale
-
-   pim_pace = PimRegressionPredictor.pace( model, history, 20222023 )
-
-   assert pim_pace == pytest.approx( expected )
+def Test_Pace_TestMissedSeason_ExpectCompoundedAgeGrowth() -> None:
+   prior = _season( 100, 2020, 43.7, 25 )
+   elapsed_seasons = 2022 - 2020
+   expected_pim = (
+      prior.penalty_minutes * prior.pace_games / prior.games_played
+      * ANNUAL_PIM_MULTIPLIER ** elapsed_seasons )
+   assert PimRegressionPredictor.pace( _model(), [ prior ], 20222023 ) == pytest.approx( expected_pim )
 
 
 def Test_Pace_TestNoHistory_ExpectNone() -> None:

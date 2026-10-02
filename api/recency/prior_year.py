@@ -5,6 +5,7 @@ from typing import ClassVar
 
 from .prior_source import PriorSource
 from ..projections.power_play_pace import PowerPlayPace
+from ..projections.scoring_paces import ScoringPaces
 from ..projections.season_pace import SeasonPace
 from ..projections.short_handed_pace import ShortHandedPace
 
@@ -24,6 +25,16 @@ class PriorYear():
    playoff_surplus: SeasonPace
 
 
+   def scoring_paces( self ) -> ScoringPaces:
+      return ScoringPaces(
+         self.pace.goals,
+         self.pace.assists,
+         self.power_play_pace.goals,
+         self.power_play_pace.assists,
+         self.short_handed_pace.goals,
+         self.short_handed_pace.assists )
+
+
    def source( self ) -> PriorSource:
       if self.nhl_games >= PriorYear.MIN_GAMES:
          return PriorSource.NHL
@@ -32,7 +43,11 @@ class PriorYear():
 
 
    def target_age( self ) -> int:
-      return int( self.age ) + 1
+      return self.age_in_year( self.year + 1 )
+
+
+   def age_in_year( self, year: int ) -> int:
+      return int( self.age ) + year - self.year
 
 
    def gap_before( self, year: int ) -> int:

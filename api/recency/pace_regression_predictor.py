@@ -1,14 +1,19 @@
 from __future__ import annotations
 
+from dataclasses import fields
+
 from .pace_regression import PaceRegression
 from .pace_regression_model import PaceRegressionModel
 from .pim_regression_model import PimRegressionModel
 from .pim_regression_predictor import PimRegressionPredictor
-from .playoff_pace_adjuster import PlayoffPaceAdjuster
 from .prior_source import PriorSource
 from .prior_year import PriorYear
+from .prior_year_builder import PriorYearBuilder
+from .production_coefficient import ProductionCoefficient
+from .production_history_predictor import ProductionHistoryPredictor
 from ..projections.pace_values import PaceValues
 from ..projections.scoring_paces import ScoringPaces
+from ..projections.scoring_stat import ScoringStat
 from ..season import Season
 from ..shared.enums.position import Position
 from ..skaters.nhl_skater_season import NhlSkaterSeason
@@ -23,82 +28,65 @@ class PaceRegressionPredictor():
          target_season_id: int,
          pim_model: PimRegressionModel,
          nhl_seasons: list[ NhlSkaterSeason ] ) -> PaceValues | None:
-      regressed = cls.regressed_paces( model.regressions, priors )
-
-      if regressed is None:
-         return None
-
-      year = Season.start_year( target_season_id )
-      pim_pace = PimRegressionPredictor.pace(
-         pim_model,
-         nhl_seasons,
-         target_season_id )
-      latest = priors[ Position.FIRST ]
-
-      if latest.source() != PriorSource.NHL:
-         return PaceValues(
-            goals=regressed.goals,
-            assists=regressed.assists,
-            power_play_goals=regressed.power_play_goals,
-            power_play_assists=regressed.power_play_assists,
-            short_handed_goals=regressed.short_handed_goals,
-            short_handed_assists=regressed.short_handed_assists,
-            penalty_minutes=pim_pace )
-
-      adjusted = PlayoffPaceAdjuster.adjust(
-         regressed.season_pace(),
-         latest.playoff_surplus,
-         model.playoff_goal_weight,
-         model.playoff_assist_weight )
-
-      if not latest.gap_before( year ):
-         return PaceValues(
-            goals=adjusted.goals,
-            assists=adjusted.assists,
-            power_play_goals=regressed.power_play_goals,
-            power_play_assists=regressed.power_play_assists,
-            short_handed_goals=regressed.short_handed_goals,
-            short_handed_assists=regressed.short_handed_assists,
-            penalty_minutes=pim_pace )
-
-      return PaceValues(
-         goals=adjusted.goals * model.nhl_gap_goals,
-         assists=adjusted.assists * model.nhl_gap_assists,
-         power_play_goals=(
-            regressed.power_play_goals * model.nhl_gap_power_play_goals ),
-         power_play_assists=(
-            regressed.power_play_assists * model.nhl_gap_power_play_assists ),
-         short_handed_goals=(
-            regressed.short_handed_goals * model.nhl_gap_short_handed_goals ),
-         short_handed_assists=(
-            regressed.short_handed_assists * model.nhl_gap_short_handed_assists ),
-         penalty_minutes=pim_pace )
-
-
-   @classmethod
-   def regressed_paces(
-         cls,
-         regressions: list[ PaceRegression ],
-         priors: list[ PriorYear ] ) -> ScoringPaces | None:
-      regression = cls._regression( regressions, priors )
-      return (
-         None if regression is None
-         else regression.paces( priors[ :len( regression.goal_weights ) ] ) )
-
-
-   @classmethod
-   def _regression(
-         cls,
-         regressions: list[ PaceRegression ],
-         priors: list[ PriorYear ] ) -> PaceRegression | None:
       if not priors:
          return None
 
+      year = Season.start_year( target_season_id )
       latest = priors[ Position.FIRST ]
+      target_age = latest.age_in_year( year )
+      nhl_priors = PriorYearBuilder.build( nhl_seasons, [], year )
+      projected_paces_by_stat: dict[ ScoringStat, float ] = {}
 
-      for width in range( len( priors ), 0, -1 ):
-         for regression in regressions:
-            if regression.covers( latest.source(), latest.target_age(), width ):
-               return regression
+      for stat in ScoringStat:
+         history = priors if stat in ( ScoringStat.GOALS, ScoringStat.ASSISTS ) else nhl_priors
+         projected_paces_by_stat[ stat ] = cls._pace( model.regressions, history, target_age, stat )
 
-      return None
+      scoring = ScoringPaces( **{ stat.value: pace for stat, pace in projected_paces_by_stat.items() } )
+      return PaceValues(
+         **{ field.name: getattr( scoring, field.name ) for field in fields( ScoringPaces ) },
+         penalty_minutes=PimRegressionPredictor.pace( pim_model, nhl_seasons, target_season_id ) )
+
+
+   @classmethod
+   def _pace(
+         cls,
+         regressions: list[ PaceRegression ],
+         priors: list[ PriorYear ],
+         target_age: int,
+         stat: ScoringStat ) -> float:
+      if not priors:
+         return 0.0
+
+      sources = { int( prior.age ): prior.source() for prior in priors }
+
+      def lookup( from_age: int, to_age: int ) -> ProductionCoefficient:
+         source = sources.get( from_age, priors[ Position.FIRST ].source() )
+         return cls._coefficient( regressions, source, stat, from_age, to_age )
+
+      return ProductionHistoryPredictor.pace(
+         [ ( int( prior.age ), getattr( prior.scoring_paces(), stat.value ), prior.games ) for prior in priors ],
+         target_age,
+         lookup )
+
+
+   @classmethod
+   def _coefficient(
+         cls,
+         regressions: list[ PaceRegression ],
+         source: PriorSource,
+         stat: ScoringStat,
+         from_age: int,
+         to_age: int ) -> ProductionCoefficient:
+      matching = [
+         regression for regression in regressions
+         if regression.source == source and regression.stat == stat
+      ]
+
+      if not matching:
+         matching = [
+            regression for regression in regressions
+            if regression.source == PriorSource.NHL and regression.stat == stat
+         ]
+
+      coefficients = [ coefficient for regression in matching for coefficient in regression.coefficients ]
+      return ProductionHistoryPredictor.coefficient( coefficients, from_age, to_age )

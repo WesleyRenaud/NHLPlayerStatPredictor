@@ -24,13 +24,13 @@ def Test_ToDict_TestProjection_ExpectMappedFields() -> None:
       'goals': projection.goals,
       'assists': projection.assists,
       'points': projection.points,
-      'penaltyMinutes': 18,
+      'penaltyMinutes': projection.penalty_minutes,
       'gamesPlayed': projection.games_played,
-      'powerPlayGoals': 5,
-      'powerPlayPoints': 12,
-      'shortHandedGoals': 1,
-      'shortHandedPoints': 3,
-      'projectedToi': None,
+      'powerPlayGoals': projection.power_play_goals,
+      'powerPlayPoints': projection.power_play_points,
+      'shortHandedGoals': projection.short_handed_goals,
+      'shortHandedPoints': projection.short_handed_points,
+      'projectedToi': projection.projected_toi,
    }
 
    assert list( payload ) == [

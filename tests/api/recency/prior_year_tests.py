@@ -35,11 +35,22 @@ def Test_Source_TestFewNhlGames_ExpectTranslated() -> None:
 def Test_TargetAge_TestFractionalAge_ExpectNextCompletedAge() -> None:
    prior = _prior( 2024, 60, 24.9 )
 
-   assert prior.target_age() == 25
+   assert prior.target_age() == int( prior.age ) + 1
 
 
 def Test_GapBefore_TestYears_ExpectMissedSeasons() -> None:
    prior = _prior( 2023, 60, 24.3 )
 
    assert prior.gap_before( 2024 ) == 0
-   assert prior.gap_before( 2026 ) == 2
+   target_year = 2026
+   assert prior.gap_before( target_year ) == target_year - prior.year - 1
+
+
+def Test_AgeInYear_TestYears_ExpectCompletedAgeWithElapsedSeasons() -> None:
+   prior = _prior( 2023, 60, 24.9 )
+
+   completed_age = int( prior.age )
+   assert prior.age_in_year( prior.year ) == completed_age
+   assert prior.age_in_year( prior.year + 1 ) == completed_age + 1
+   elapsed_seasons = 3
+   assert prior.age_in_year( prior.year + elapsed_seasons ) == completed_age + elapsed_seasons

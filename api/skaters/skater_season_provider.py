@@ -6,6 +6,19 @@ from .nhl_skater_season import NhlSkaterSeason
 
 class SkaterSeasonProvider():
    @classmethod
+   def all_seasons( cls, db_path: str ) -> list[ NhlSkaterSeason ]:
+      conn = DatabaseConnectionProvider.open( db_path )
+
+      try:
+         return [
+            NhlSkaterSeason.from_row( row )
+            for row in conn.execute( 'SELECT * FROM SkaterSeason ORDER BY PLAYER_ID, SEASON_ID' )
+         ]
+      finally:
+         DatabaseConnectionProvider.close( conn )
+
+
+   @classmethod
    def seasons_for_name(
          cls,
          player_name: str,

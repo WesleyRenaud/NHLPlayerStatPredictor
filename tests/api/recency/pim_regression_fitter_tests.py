@@ -40,41 +40,20 @@ def _season( player_id: int, year: int, age: float, pim: int ) -> NhlSkaterSeaso
       short_handed_points=0 )
 
 
-def Test_Fit_TestPimRuleAcrossAges_ExpectAgeFreeRegression() -> None:
-   seasons: list[ NhlSkaterSeason ] = []
-   pim_constant = 4
-   pim_weight = 2
-
-   for player_id in range( 60 ):
-      prior_pim = player_id % 12 * 5
-      age = 18.4 + player_id % 30
-      seasons.append( _season( player_id, 2020, age, prior_pim ) )
-      seasons.append( _season( player_id, 2021, age + 1.0, pim_constant + pim_weight * prior_pim ) )
+def Test_Fit_TestMultiplicativePim_ExpectAgeMultipliers() -> None:
+   annual_multiplier = 2
+   seasons = [
+      _season( player_id, year, 18.4 + year - 2020, player_id * annual_multiplier ** ( year - 2020 ) )
+      for player_id in range( 1, 31 )
+      for year in range( 2020, 2023 )
+   ]
 
    model = PimRegressionFitter.fit( seasons )
+   coefficients = model.coefficients
 
-   assert len( model.regressions ) == 1
-   regression = model.regressions[ Position.FIRST ]
-   assert regression.constant == pytest.approx( pim_constant )
-   assert regression.weights == pytest.approx( [ pim_weight ] )
+   assert next( coefficient for coefficient in coefficients if coefficient.from_age == 18 and coefficient.to_age == 19 ).multiplier == pytest.approx( annual_multiplier )
+   assert next( coefficient for coefficient in coefficients if coefficient.from_age == 18 and coefficient.to_age == 20 ).weight == pytest.approx( 1.0 )
 
 
-def Test_Fit_TestMissedSeason_ExpectPimGapScale() -> None:
-   seasons: list[ NhlSkaterSeason ] = []
-   consecutive_multiplier = 2
-   returning_multiplier = 1.6
-
-   for player_id in range( 60 ):
-      prior_pim = ( player_id % 12 + 1 ) * 5
-      age = 18.4 + player_id % 30
-      seasons.append( _season( player_id, 2020, age, prior_pim ) )
-      seasons.append( _season( player_id, 2021, age + 1.0, prior_pim * consecutive_multiplier ) )
-      returning_id = player_id + 60
-      seasons.append( _season( returning_id, 2020, age, prior_pim ) )
-      seasons.append( _season( returning_id, 2022, age + 2.0, int( prior_pim * returning_multiplier ) ) )
-
-   model = PimRegressionFitter.fit( seasons )
-
-   assert model.regressions[ Position.FIRST ].constant == pytest.approx( 0.0 )
-   assert model.regressions[ Position.FIRST ].weights == pytest.approx( [ consecutive_multiplier ] )
-   assert model.nhl_gap_scale == pytest.approx( returning_multiplier / consecutive_multiplier )
+def Test_Fit_TestNoPairs_ExpectEmptyModel() -> None:
+   assert PimRegressionFitter.fit( [] ).coefficients == []

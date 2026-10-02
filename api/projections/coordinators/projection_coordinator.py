@@ -11,6 +11,7 @@ from ...recency.pace_regression_store import PaceRegressionStore
 from ...recency.pim_regression_store import PimRegressionStore
 from ...recency_target_resolver import RecencyTargetResolver
 from ...skaters.other_league_season_provider import OtherLeagueSeasonProvider
+from ...skaters.roster_skater_provider import RosterSkaterProvider
 from ...skaters.skater import Skater
 from ...skaters.skater_season_provider import SkaterSeasonProvider
 
@@ -19,6 +20,10 @@ class ProjectionCoordinator():
    @classmethod
    def get_projection( cls, player_id: int ) -> Projection | None:
       db_path = str( Paths.DB_PATH )
+
+      if RosterSkaterProvider.team( player_id, db_path ) is None:
+         return None
+
       seasons = [
          *SkaterSeasonProvider.seasons_for_player_id( player_id, db_path ),
          *OtherLeagueSeasonProvider.seasons_for_player_id( player_id, db_path ),

@@ -7,7 +7,6 @@ from .prior_year import PriorYear
 from ..projections.season_pace import SeasonPace
 from ..projections.translated_pace_averager import TranslatedPaceAverager
 from ..season import Season
-from ..shared.enums.position import Position
 from ..skaters.nhl_skater_season import NhlSkaterSeason
 from ..skaters.skater_season import SkaterSeason
 
@@ -26,15 +25,7 @@ class PriorYearBuilder():
          cls._qualified( seasons, factors, year ),
          key=lambda prior: prior.year,
          reverse=True )
-      run = qualified[ :1 ]
-
-      for prior in qualified[ 1: ]:
-         if len( run ) == PriorYearBuilder.WIDTH or prior.year != run[ Position.LAST ].year - 1:
-            break
-
-         run.append( prior )
-
-      return run
+      return qualified[ :PriorYearBuilder.WIDTH ]
 
 
    @classmethod

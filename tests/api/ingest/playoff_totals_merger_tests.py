@@ -80,11 +80,16 @@ def Test_Merge_TestMixedTotals_ExpectNhlPlayoffsForSeason() -> None:
 
 def Test_Merge_TestSplitPlayoffTotals_ExpectSummed() -> None:
    season = _season( 7, 20252026 )
-   landing = _landing( 7, [ _total( 20252026, 10, 3, 2 ), _total( 20252026, 4, 1, 1 ) ] )
+   totals = [ _total( 20252026, 10, 3, 2 ), _total( 20252026, 4, 1, 1 ) ]
+   landing = _landing( 7, totals )
 
    merged = PlayoffTotalsMerger.merge( [ season ], { 7: landing } )
 
-   assert merged == [ replace( season, playoff_games=14, playoff_goals=4, playoff_assists=3 ) ]
+   assert merged == [ replace(
+      season,
+      playoff_games=sum( total[ 'gamesPlayed' ] for total in totals ),
+      playoff_goals=sum( total[ 'goals' ] for total in totals ),
+      playoff_assists=sum( total[ 'assists' ] for total in totals ) ) ]
 
 
 def Test_Merge_TestNoPlayoffs_ExpectUnchanged() -> None:

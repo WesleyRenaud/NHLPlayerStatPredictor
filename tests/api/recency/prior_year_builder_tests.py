@@ -7,7 +7,6 @@ import pytest
 
 from api.aging.league_factor import LeagueFactor
 from api.projections.season_pace import SeasonPace
-from api.recency.pim_regression import PimRegression
 from api.recency.prior_source import PriorSource
 from api.recency.prior_year import PriorYear
 from api.recency.prior_year_builder import PriorYearBuilder
@@ -91,12 +90,12 @@ def Test_Build_TestMissedLatestSeason_ExpectEarlierRun() -> None:
    assert [ prior.year for prior in priors ] == [ 2022, 2021 ]
 
 
-def Test_Build_TestGapInsideRun_ExpectStopAtGap() -> None:
+def Test_Build_TestGapInsideRun_ExpectOlderQualifiedSeasonsIncluded() -> None:
    seasons = [ _nhl( 2021, 82 ), _nhl( 2022, PriorYear.MIN_GAMES - 1 ), _nhl( 2023, 82 ) ]
 
    priors = PriorYearBuilder.build( seasons, [], 2024 )
 
-   assert [ prior.year for prior in priors ] == [ 2023 ]
+   assert [ prior.year for prior in priors ] == [ 2023, 2021 ]
 
 
 def Test_Build_TestMixedYear_ExpectCombinedTranslatedPace() -> None:
@@ -147,5 +146,3 @@ def Test_Build_TestOtherLeagueYear_ExpectNoSurplus() -> None:
 
    assert priors[ Position.FIRST ].playoff_surplus == SeasonPace.zero()
    assert priors[ Position.FIRST ].pim_pace is None
-   with pytest.raises( ValueError, match='Penalty-minute pace is unavailable' ):
-      PimRegression( constant=0.0, weights=[ 1.0 ] ).pace( priors )

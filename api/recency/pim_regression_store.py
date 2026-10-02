@@ -25,5 +25,6 @@ class PimRegressionStore():
 
 	@classmethod
 	def read( cls ) -> PimRegressionModel:
-		return PimRegressionModel.from_row( json.loads( cls.path().read_text() ) )
+		row = json.loads( cls.path().read_text() )
 
+		return PimRegressionModel.from_row( row )
