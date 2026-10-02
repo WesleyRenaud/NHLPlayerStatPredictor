@@ -51,8 +51,6 @@ class ProductionCoefficientFitter():
       games = sum( pair.games for pair in pairs )
       prior_mean = sum( pair.prior_pace * pair.games for pair in pairs ) / games
       next_mean = sum( pair.following_pace * pair.games for pair in pairs ) / games
-      prior_products = sum( pair.games * pair.prior_pace * pair.prior_pace for pair in pairs )
-      cross_products = sum( pair.games * pair.prior_pace * pair.following_pace for pair in pairs )
       prior_variance = sum( pair.games * ( pair.prior_pace - prior_mean ) ** 2 for pair in pairs )
       next_variance = sum( pair.games * ( pair.following_pace - next_mean ) ** 2 for pair in pairs )
       covariance = sum(
@@ -64,6 +62,6 @@ class ProductionCoefficientFitter():
       return ProductionCoefficient(
          from_age,
          to_age,
-         max( 0.0, cross_products / prior_products ),
+         next_mean / prior_mean,
          correlation ** 2,
          len( pairs ) )
