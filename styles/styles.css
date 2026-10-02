@@ -230,8 +230,16 @@ h2 {
    text-align: center;
 }
 
-.statline [data-projected-toi] {
+.statline [data-toi] {
    white-space: nowrap;
+}
+
+.season-stats {
+   margin-bottom: 1.75rem;
+}
+
+.season-stats .value {
+   color: var(--color-muted);
 }
 
 .label {

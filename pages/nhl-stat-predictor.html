@@ -39,8 +39,69 @@
          <section id="projection" hidden>
             <h2 data-player-name></h2>
             <p class="player-meta" data-player-meta></p>
+            <div class="season-stats" data-season-stats-container hidden>
+               <p class="season" data-season-stats-label>{{ page.currentStatlineLabel }}</p>
+               <div class="statline" data-season-stats tabindex="0" role="group" aria-label="Observed season statistics">
+                  <div>
+                     <span class="label">GP</span>
+                     <span class="value context" data-games-played></span>
+                  </div>
+                  <div>
+                     <span class="label">G</span>
+                     <span class="value" data-goals></span>
+                  </div>
+                  <div>
+                     <span class="label">A</span>
+                     <span class="value" data-assists></span>
+                  </div>
+                  <div>
+                     <span class="label">P</span>
+                     <span class="value" data-points></span>
+                  </div>
+                  <div>
+                     <span class="label">PIM</span>
+                     <span class="value" data-penalty-minutes></span>
+                  </div>
+                  <div>
+                     <span class="label" title="Even-strength goals">ESG</span>
+                     <span class="value" data-even-strength-goals></span>
+                  </div>
+                  <div>
+                     <span class="label" title="Even-strength points">ESP</span>
+                     <span class="value" data-even-strength-points></span>
+                  </div>
+                  <div>
+                     <span class="label">PPG</span>
+                     <span class="value" data-power-play-goals></span>
+                  </div>
+                  <div>
+                     <span class="label">PPP</span>
+                     <span class="value" data-power-play-points></span>
+                  </div>
+                  <div>
+                     <span class="label">SHG</span>
+                     <span class="value" data-short-handed-goals></span>
+                  </div>
+                  <div>
+                     <span class="label">SHP</span>
+                     <span class="value" data-short-handed-points></span>
+                  </div>
+                  <div>
+                     <span class="label">TOI/G</span>
+                     <span class="value context" data-toi></span>
+                  </div>
+                  <div>
+                     <span class="label" title="Shots on goal">SOG</span>
+                     <span class="value" data-shots></span>
+                  </div>
+                  <div>
+                     <span class="label" title="Shooting percentage">S%</span>
+                     <span class="value" data-shooting-percentage></span>
+                  </div>
+               </div>
+            </div>
             <p class="season">{{ page.seasonLabel }}</p>
-            <div class="statline" tabindex="0" role="group" aria-label="Projected statistics">
+            <div class="statline" data-projection-stats tabindex="0" role="group" aria-label="Projected statistics">
                <div>
                   <span class="label">GP</span>
                   <span class="value context" data-games-played></span>
@@ -87,7 +148,7 @@
                </div>
                <div>
                   <span class="label">TOI/G</span>
-                  <span class="value context" data-projected-toi></span>
+                  <span class="value context" data-toi></span>
                </div>
                <div>
                   <span class="label" title="Shots on goal">SOG</span>
