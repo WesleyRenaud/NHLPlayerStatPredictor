@@ -40,7 +40,7 @@
             <h2 data-player-name></h2>
             <p class="player-meta" data-player-meta></p>
             <p class="season">{{ page.seasonLabel }}</p>
-            <div class="statline">
+            <div class="statline" tabindex="0" role="group" aria-label="Projected statistics">
                <div>
                   <span class="label">GP</span>
                   <span class="value context" data-games-played></span>
@@ -60,6 +60,14 @@
                <div>
                   <span class="label">PIM</span>
                   <span class="value" data-penalty-minutes></span>
+               </div>
+               <div>
+                  <span class="label" title="Even-strength goals">ESG</span>
+                  <span class="value" data-even-strength-goals></span>
+               </div>
+               <div>
+                  <span class="label" title="Even-strength points">ESP</span>
+                  <span class="value" data-even-strength-points></span>
                </div>
                <div>
                   <span class="label">PPG</span>
