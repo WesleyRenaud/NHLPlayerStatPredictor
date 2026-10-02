@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from functools import partial
+
 from .nhl_production_regression import NhlProductionRegression
 from .nhl_production_stat import NhlProductionStat
 from .pace_regression import PaceRegression
@@ -56,14 +58,22 @@ class PaceRegressionPredictor():
 
       sources = { int( prior.age ): prior.source() for prior in priors }
 
-      def lookup( from_age: int, to_age: int ) -> ProductionCoefficient:
-         source = sources.get( from_age, priors[ Position.FIRST ].source() )
-         return cls._coefficient( regressions, source, stat, from_age, to_age )
-
       return ProductionHistoryPredictor.pace(
          [ ( int( prior.age ), getattr( prior.scoring, stat.value ), prior.games ) for prior in priors ],
          target_age,
-         lookup )
+         partial( cls._coefficient, regressions, PriorSource.NHL, stat ),
+         partial( cls._prior_coefficient, regressions, sources, stat ) )
+
+
+   @classmethod
+   def _prior_coefficient(
+         cls,
+         regressions: list[ PaceRegression ],
+         sources: dict[ int, PriorSource ],
+         stat: ScoringStat,
+         from_age: int,
+         to_age: int ) -> ProductionCoefficient:
+      return cls._coefficient( regressions, sources[ from_age ], stat, from_age, to_age )
 
 
    @classmethod

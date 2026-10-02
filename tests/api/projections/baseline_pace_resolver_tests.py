@@ -129,6 +129,37 @@ def Test_Resolve_TestOtherLeagueOnly_ExpectTranslatedMultiplicativePace() -> Non
    assert resolved.shots is None
 
 
+def Test_Resolve_TestTranslatedSeason_ExpectLeagueConversionOnceThenNhlGrowth() -> None:
+   factor = LeagueFactor( 'AAA', 0.4 )
+   season = _other( 20242025, 30.0, 50.0, factor.league )
+   translated_multiplier = 3.0
+   model = PaceRegressionModel( [
+      PaceRegression( source, stat, [
+         ProductionCoefficient( 18, 19, multiplier, 0.8, 100 )
+      ] )
+      for source, multiplier in (
+         ( PriorSource.NHL, SCORING_MULTIPLIER ),
+         ( PriorSource.TRANSLATED, translated_multiplier ) )
+      for stat in ScoringStat
+   ], [ OTHER_LEAGUE_SHARES ] )
+
+   resolved = BaselinePaceResolver.resolve( Skater( [ season ] ), 20252026, [ factor ], model )
+
+   assert resolved is not None
+   translated_goals = season.g_pace * factor.rate
+   translated_assists = season.a_pace * factor.rate
+   expected_components = {
+      ScoringStat.EVEN_STRENGTH_GOALS: translated_goals * OTHER_LEAGUE_SHARES.even_strength_goals,
+      ScoringStat.EVEN_STRENGTH_ASSISTS: translated_assists * OTHER_LEAGUE_SHARES.even_strength_assists,
+      ScoringStat.POWER_PLAY_GOALS: translated_goals * OTHER_LEAGUE_SHARES.power_play_goals,
+      ScoringStat.POWER_PLAY_ASSISTS: translated_assists * OTHER_LEAGUE_SHARES.power_play_assists,
+      ScoringStat.SHORT_HANDED_GOALS: translated_goals * OTHER_LEAGUE_SHARES.short_handed_goals,
+      ScoringStat.SHORT_HANDED_ASSISTS: translated_assists * OTHER_LEAGUE_SHARES.short_handed_assists,
+   }
+   for stat, translated_pace in expected_components.items():
+      assert getattr( resolved, stat.value ) == pytest.approx( translated_pace * SCORING_MULTIPLIER )
+
+
 def Test_Resolve_TestSmallNhlStint_ExpectObservedAndInferredComponents() -> None:
    factor = LeagueFactor( 'AAA', 0.4 )
    nhl = replace( _nhl( 20242025, 20.0, 30.0, 18.4 ), games_played=9, power_play_goals=2, power_play_points=4 )

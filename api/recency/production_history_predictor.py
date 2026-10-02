@@ -43,15 +43,19 @@ class ProductionHistoryPredictor():
          cls,
          history: list[ tuple[ int, float, int ] ],
          target_age: int,
-         lookup: Callable[ [ int, int ], ProductionCoefficient ] ) -> float:
-      anchor_age = history[ Position.FIRST ][ 0 ]
+         lookup: Callable[ [ int, int ], ProductionCoefficient ],
+         weight_lookup: Callable[ [ int, int ], ProductionCoefficient ] | None = None ) -> float:
+      if weight_lookup is None:
+         weight_lookup = lookup
+
       weighted = 0.0
       total_weight = 0.0
 
       for age, value, games in history:
-         weight = lookup( age, target_age ).weight * games
-         weighted += weight * value * cls.multiplier( lookup, age, anchor_age )
+         weight = weight_lookup( age, target_age ).weight * games
+         weighted += weight * value * cls.multiplier( lookup, age, target_age )
          total_weight += weight
 
-      average = history[ Position.FIRST ][ 1 ] if not total_weight else weighted / total_weight
-      return max( 0.0, average * cls.multiplier( lookup, anchor_age, target_age ) )
+      latest_age, latest_value, _ = history[ Position.FIRST ]
+      return max( 0.0, weighted / total_weight if total_weight else
+         latest_value * cls.multiplier( lookup, latest_age, target_age ) )

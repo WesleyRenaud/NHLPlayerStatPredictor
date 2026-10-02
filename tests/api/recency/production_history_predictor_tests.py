@@ -65,3 +65,20 @@ def Test_Coefficient_TestUnknownAge_ExpectNearestAgeForSameLag() -> None:
    assert coefficient == coefficients[ 0 ]
    assert missing.multiplier == 1.0
    assert missing.weight == 0.0
+
+
+def Test_Pace_TestSeparateUnsupportedWeights_ExpectLatestNhlGrowthFallback() -> None:
+   annual_multiplier = 1.2
+   translated_multiplier = 3.0
+   latest_pace = 10.0
+
+   def lookup( from_age: int, to_age: int ) -> ProductionCoefficient:
+      return ProductionCoefficient( from_age, to_age, annual_multiplier, 1.0, 100 )
+
+   def weight_lookup( from_age: int, to_age: int ) -> ProductionCoefficient:
+      return ProductionCoefficient( from_age, to_age, translated_multiplier, 0.0, 100 )
+
+   history = [ ( 18, latest_pace, 82 ), ( 17, 100.0, 82 ) ]
+   pace = ProductionHistoryPredictor.pace( history, 20, lookup, weight_lookup )
+
+   assert pace == pytest.approx( latest_pace * annual_multiplier ** ( 20 - history[ 0 ][ 0 ] ) )
