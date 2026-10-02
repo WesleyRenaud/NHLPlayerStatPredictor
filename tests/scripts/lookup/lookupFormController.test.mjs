@@ -49,7 +49,9 @@ function resultElement() {
       '[data-short-handed-points]': { textContent: '' },
       '[data-toi]': { textContent: '' },
    };
-   const seasonNodes = Object.fromEntries(Object.keys(nodes).map(selector => [selector, { textContent: '' }]));
+   for (const node of Object.values(nodes)) node.classList = classList();
+   const seasonNodes = Object.fromEntries(Object.keys(nodes).map(selector =>
+      [selector, { textContent: '', classList: classList() }]));
    nodes['[data-projection-stats]'] = { querySelector: selector => nodes[selector] };
    nodes['[data-season-stats]'] = { querySelector: selector => seasonNodes[selector] };
    nodes['[data-season-stats-container]'] = { hidden: true };
@@ -234,16 +236,23 @@ test('Test_Render_TestUnavailableShotHistory_ExpectPlaceholders', () => {
 
    assert.equal(result.nodes['[data-shots]'].textContent, '—');
    assert.equal(result.nodes['[data-shooting-percentage]'].textContent, '—');
+   for (const selector of ['[data-penalty-minutes]', '[data-shots]', '[data-shooting-percentage]', '[data-toi]']) {
+      assert.equal(result.nodes[selector].classList.contains('is-unavailable'), true);
+   }
 });
 
 
 test('Test_Render_TestZeroShotsAndPercentage_ExpectZero', () => {
    const result = resultElement();
 
-   LookupFormController.render(result, {}, { shots: 0, shootingPercentage: 0 });
+   LookupFormController.render(result, {}, {});
+   LookupFormController.render(result, {}, { shots: 0, shootingPercentage: 0, penaltyMinutes: 0, projectedToi: '0:00' });
 
    assert.equal(result.nodes['[data-shots]'].textContent, 0);
    assert.equal(result.nodes['[data-shooting-percentage]'].textContent, '0.0');
+   for (const selector of ['[data-penalty-minutes]', '[data-shots]', '[data-shooting-percentage]', '[data-toi]']) {
+      assert.equal(result.nodes[selector].classList.contains('is-unavailable'), false);
+   }
 });
 
 
