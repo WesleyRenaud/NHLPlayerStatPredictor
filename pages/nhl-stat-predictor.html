@@ -37,7 +37,7 @@
          </form>
 
          <section id="projection" hidden>
-            <h2 data-player-name></h2>
+            <h2><button class="player-history-trigger" type="button" data-player-name aria-haspopup="dialog" aria-controls="player-history"></button></h2>
             <p class="player-meta" data-player-meta></p>
             <div class="season-stats" data-season-stats-container hidden>
                <div class="season-tabs" role="tablist" aria-label="Season statistics">
@@ -164,5 +164,27 @@
             </div>
          </section>
       </main>
+      <dialog id="player-history" aria-labelledby="history-player-name">
+         <header class="history-header">
+            <div>
+               <h2 id="history-player-name"></h2>
+               <p>{{ page.historyLabel }}</p>
+            </div>
+            <form method="dialog"><button class="history-close" title="{{ page.closeHistoryLabel }}" aria-label="{{ page.closeHistoryLabel }}" autofocus>&times;</button></form>
+         </header>
+         <div class="history-table-container" tabindex="0">
+            <table class="history-table">
+               <thead><tr>
+                  <th scope="col">Season</th><th scope="col">League</th><th scope="col">Team</th>
+                  <th scope="col" aria-sort="none"><button type="button" class="history-sort" data-history-sort="gamesPlayed" aria-label="Sort by games played">GP</button></th><th scope="col" aria-sort="none"><button type="button" class="history-sort" data-history-sort="goals" aria-label="Sort by goals">G</button></th><th scope="col" aria-sort="none"><button type="button" class="history-sort" data-history-sort="assists" aria-label="Sort by assists">A</button></th><th scope="col" aria-sort="none"><button type="button" class="history-sort" data-history-sort="points" aria-label="Sort by points">P</button></th>
+                  <th scope="col" aria-sort="none"><button type="button" class="history-sort" data-history-sort="penaltyMinutes" aria-label="Sort by penalty minutes">PIM</button></th><th scope="col" aria-sort="none"><button type="button" class="history-sort" data-history-sort="evenStrengthGoals" aria-label="Sort by even-strength goals">ESG</button></th><th scope="col" aria-sort="none"><button type="button" class="history-sort" data-history-sort="evenStrengthPoints" aria-label="Sort by even-strength points">ESP</button></th>
+                  <th scope="col" aria-sort="none"><button type="button" class="history-sort" data-history-sort="powerPlayGoals" aria-label="Sort by power-play goals">PPG</button></th><th scope="col" aria-sort="none"><button type="button" class="history-sort" data-history-sort="powerPlayPoints" aria-label="Sort by power-play points">PPP</button></th><th scope="col" aria-sort="none"><button type="button" class="history-sort" data-history-sort="shortHandedGoals" aria-label="Sort by short-handed goals">SHG</button></th><th scope="col" aria-sort="none"><button type="button" class="history-sort" data-history-sort="shortHandedPoints" aria-label="Sort by short-handed points">SHP</button></th>
+                  <th scope="col" aria-sort="none"><button type="button" class="history-sort" data-history-sort="timeOnIcePerGame" aria-label="Sort by time on ice per game">TOI/G</button></th><th scope="col" aria-sort="none"><button type="button" class="history-sort" data-history-sort="shots" aria-label="Sort by shots on goal">SOG</button></th><th scope="col" aria-sort="none"><button type="button" class="history-sort" data-history-sort="shootingPercentage" aria-label="Sort by shooting percentage">S%</button></th>
+               </tr></thead>
+               <tbody data-history-seasons></tbody>
+               <tfoot><tr data-history-career><th scope="row" colspan="3">{{ page.careerLabel }}</th></tr></tfoot>
+            </table>
+         </div>
+      </dialog>
    </body>
 </html>

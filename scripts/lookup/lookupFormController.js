@@ -5,6 +5,7 @@ import { ProjectionClient } from '../api/projectionClient.js';
 
 export class LookupFormController {
    static seasonStats = new WeakMap();
+   static playerHistories = new WeakMap();
 
 
    static bind(form, result) {
@@ -67,6 +68,7 @@ export class LookupFormController {
 
 
    static render(result, player, projection) {
+      LookupFormController.playerHistories.set(result, { playerName: player.playerName, ...projection.playerHistory });
       result.querySelector('[data-player-name]').textContent = player.playerName;
       result.querySelector('[data-player-meta]').textContent =
          PlayerSearchLabel.meta(player);

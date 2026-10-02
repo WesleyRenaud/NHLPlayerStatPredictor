@@ -27,3 +27,23 @@ def Test_ClockString_TestDecimalMinutes_ExpectMinutesAndSeconds() -> None:
 
 def Test_ClockString_TestRoundingSeconds_ExpectMinuteCarry() -> None:
    assert Time.clock_string( 18.999 ) == '19:00'
+
+
+def Test_ClockStringFromSeconds_TestMinutesAndSeconds_ExpectFormattedClock() -> None:
+   minutes = 18
+   seconds = 30
+   total_seconds = minutes * Time.SECONDS_PER_MINUTE + seconds
+
+   assert Time.clock_string_from_seconds( total_seconds ) == '%d:%02d' % ( minutes, seconds )
+
+
+def Test_ClockStringFromSeconds_TestFractionalSeconds_ExpectMinuteCarry() -> None:
+   minutes = 18
+   seconds = 59.9
+   total_seconds = minutes * Time.SECONDS_PER_MINUTE + seconds
+
+   assert Time.clock_string_from_seconds( total_seconds ) == f'{ minutes + 1 }:00'
+
+
+def Test_ClockStringFromSeconds_TestZero_ExpectZeroClock() -> None:
+   assert Time.clock_string_from_seconds( 0.0 ) == '0:00'

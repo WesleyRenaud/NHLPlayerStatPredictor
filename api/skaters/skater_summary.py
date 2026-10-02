@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .skater_position import SkaterPosition
+from .skater_stat_rates import SkaterStatRates
 from .team import Team
 from ..time import Time
 from ..types import Types
@@ -58,7 +59,7 @@ class SkaterSummary():
 
    @property
    def shooting_percentage( self ) -> float | None:
-      return None if not self.shots else 100 * self.goals / self.shots
+      return SkaterStatRates.shooting_percentage( self.goals, self.shots )
 
 
    def stats_dict( self ) -> Types.JsonObject:
@@ -76,7 +77,7 @@ class SkaterSummary():
          'shortHandedPoints': self.short_handed_points,
          'shots': self.shots,
          'shootingPercentage': self.shooting_percentage,
-         'timeOnIcePerGame': Time.clock_string( Time.minutes( self.time_on_ice_per_game ) ),
+         'timeOnIcePerGame': Time.clock_string_from_seconds( self.time_on_ice_per_game ),
       }
 
 

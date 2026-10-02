@@ -180,6 +180,8 @@ def Test_DoPost_TestProjection_ExpectJson(
       projected_toi=None )
    captured: list[ int ] = []
    monkeypatch.setattr( projections_controller.SeasonStatsResolver, 'resolve', lambda requested_id, on_date: None )
+   monkeypatch.setattr( projections_controller.PlayerHistoryResolver, 'resolve',
+      lambda requested_id: { 'seasons': [], 'career': {} } )
 
    def fake_get_projection( player_id: int ) -> Projection:
       captured.append( player_id )
@@ -207,7 +209,7 @@ def Test_DoPost_TestProjection_ExpectJson(
 
    assert captured == [ player_id ]
    assert response.status == 200
-   assert body == { **projection.to_dict(), 'seasonStats': None }
+   assert body == { **projection.to_dict(), 'seasonStats': None, 'playerHistory': { 'seasons': [], 'career': {} } }
 
 
 def Test_DoPost_TestUnknownPath_ExpectNotFound() -> None:
