@@ -1,6 +1,7 @@
 import { PlayerNamesClient } from '../api/playerNamesClient.js';
 import { LookupFormController } from '../lookup/lookupFormController.js';
 import { PlayerNameAutocompleteController } from '../lookup/playerNameAutocompleteController.js';
+import { PlayerHistoryController } from '../lookup/playerHistoryController.js';
 
 
 export class LookupBootstrap {
@@ -14,6 +15,12 @@ export class LookupBootstrap {
          inputEl: document.querySelector('#player-name'),
          resultsEl: document.querySelector('#player-name-results'),
       });
+      const result = document.querySelector('#projection');
+      PlayerHistoryController.bind(
+         result.querySelector('[data-player-name]'),
+         document.querySelector('#player-history'),
+         () => LookupFormController.playerHistories.get(result)
+      );
    }
 
 

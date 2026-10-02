@@ -13,6 +13,7 @@ from ...skaters.other_league_season_provider import OtherLeagueSeasonProvider
 from ...skaters.roster_skater_provider import RosterSkaterProvider
 from ...skaters.skater import Skater
 from ...skaters.skater_season_provider import SkaterSeasonProvider
+from ...skaters.skater_stat_rates import SkaterStatRates
 
 
 class ProjectionCoordinator():
@@ -85,6 +86,6 @@ class ProjectionCoordinator():
          short_handed_goals=short_handed_goals,
          short_handed_points=short_handed_goals + short_handed_assists,
          shots=None if shots_pace is None else round( shots_pace ),
-         shooting_percentage=(
-            None if shots_pace is None or shots_pace == 0.0 else
-            100 * ( even_strength_pace.goals + power_play_pace.goals + short_handed_pace.goals ) / shots_pace ) )
+         shooting_percentage=SkaterStatRates.shooting_percentage_from_paces(
+            even_strength_pace.goals + power_play_pace.goals + short_handed_pace.goals,
+            shots_pace ) )

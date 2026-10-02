@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from .club_ice import ClubIce
 from ..ingest.club_ice_parser import ClubIceParser
+from ..skaters.skater_stat_rates import SkaterStatRates
 from ..types import Types
 from .usable_nhl_ice import UsableNhlIce
 
@@ -18,12 +18,7 @@ class UsableNhlIceResolver():
 
          return UsableNhlIce(
             season_id,
-            cls._toi( clubs, games ),
+            SkaterStatRates.time_on_ice_per_game( sum( club.toi * club.games for club in clubs ), games ),
             clubs )
 
       return None
-
-
-   @classmethod
-   def _toi( cls, clubs: list[ ClubIce ], games: int ) -> float:
-      return sum( club.toi * club.games for club in clubs ) / games

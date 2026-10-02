@@ -62,6 +62,8 @@ def Test_GetProjection_TestCoordinatorProjection_ExpectJsonPayload(
    clock = Mock()
    clock.now.return_value = now
    resolver = Mock( return_value=season_stats )
+   history = { 'seasons': [], 'career': {} }
+   monkeypatch.setattr( projections_controller.PlayerHistoryResolver, 'resolve', Mock( return_value=history ) )
    monkeypatch.setattr( projections_controller, 'datetime', clock )
    monkeypatch.setattr(
       projections_controller.SeasonStatsResolver,
@@ -85,7 +87,7 @@ def Test_GetProjection_TestCoordinatorProjection_ExpectJsonPayload(
    clock.now.assert_called_once_with( ZoneInfo( 'America/Toronto' ) )
    assert handler.status == 200
    assert json.loads( handler.body.decode( 'utf-8' ) ) == {
-      **projection.to_dict(), 'seasonStats': season_stats,
+      **projection.to_dict(), 'seasonStats': season_stats, 'playerHistory': history,
    }
 
 

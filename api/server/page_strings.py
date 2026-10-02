@@ -13,6 +13,9 @@ class PageStrings():
       'page.seasonLabel': '2026-27 Projection',
       'page.currentStatlineLabel': 'Current Statline',
       'page.fullSeasonPaceLabel': 'Full Season Pace',
+      'page.historyLabel': 'Season History',
+      'page.careerLabel': 'NHL Career · Regular Season',
+      'page.closeHistoryLabel': 'Close season history',
       'page.submit': 'Project',
       'page.title': 'NHL Stat Predictor',
    }

@@ -8,6 +8,7 @@ export class ProjectionSummary {
       return {
          ...ProjectionSummary.normalizeStats(row),
          projectedToi: ValueNormalizer.asTrimmedString(row.projectedToi),
+         playerHistory: row.playerHistory,
          seasonStats: season == null ? null : {
             ...ProjectionSummary.normalizeStats(season),
             seasonLabel: ValueNormalizer.asTrimmedString(season.seasonLabel),

@@ -21,3 +21,8 @@ class Time():
       total_seconds = round( minutes * cls.SECONDS_PER_MINUTE )
       whole_minutes, seconds = divmod( total_seconds, int( cls.SECONDS_PER_MINUTE ) )
       return '%d:%02d' % ( whole_minutes, seconds )
+
+
+   @classmethod
+   def clock_string_from_seconds( cls, seconds: float ) -> str:
+      return cls.clock_string( cls.minutes( seconds ) )

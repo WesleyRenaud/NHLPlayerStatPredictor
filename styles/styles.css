@@ -5,10 +5,16 @@
    --color-text: #f4f7fb;
    --color-muted: #9aadc2;
    --color-stat: #ff5c7a;
+   --color-career: #69b8ac;
    --color-unavailable: #b69b62;
    --color-accent: #e31837;
    --color-accent-hover: #ff3b57;
    --shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+   --stat-column-width: 224px;
+   --stat-toi-width: 320px;
+   --stat-shots-width: 240px;
+   --stat-percentage-width: 288px;
+   --stat-cell-padding: 28px 8px;
 }
 
 * {
@@ -206,6 +212,203 @@ h2 {
    font-size: 2.1rem;
 }
 
+.player-history-trigger {
+   padding: 0;
+   border-radius: 0;
+   background: transparent;
+   color: inherit;
+   font: inherit;
+   text-align: left;
+   text-decoration: underline;
+   text-decoration-color: var(--color-muted);
+   text-decoration-thickness: 1px;
+   text-underline-offset: 6px;
+}
+
+.player-history-trigger:hover {
+   background: transparent;
+   color: var(--color-accent);
+}
+
+#projection > h2,
+#projection > .player-meta {
+   text-align: center;
+}
+
+#player-history {
+   width: max-content;
+   max-width: calc(100vw - 32px);
+   max-height: calc(100dvh - 32px);
+   padding: 0;
+   border: 1px solid var(--color-border);
+   border-radius: 8px;
+   background: var(--color-surface);
+   color: var(--color-text);
+   box-shadow: var(--shadow);
+   overflow: hidden;
+}
+
+#player-history[open] {
+   display: flex;
+   flex-direction: column;
+}
+
+#player-history::backdrop {
+   background: rgba(0, 0, 0, 0.7);
+}
+
+body:has(#player-history[open]) {
+   overflow: hidden;
+}
+
+.history-header {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   gap: 16px;
+   padding: 24px;
+   border-bottom: 1px solid var(--color-border);
+   flex: 0 0 auto;
+}
+
+.history-header h2 {
+   font-size: 2rem;
+   overflow-wrap: anywhere;
+}
+
+.history-header p {
+   margin: 8px 0 0;
+   color: var(--color-muted);
+   font-size: 1rem;
+}
+
+.history-header form {
+   margin: 0;
+   flex: 0 0 auto;
+   padding: 0;
+   border: 0;
+   border-radius: 0;
+   background: transparent;
+   box-shadow: none;
+}
+
+.history-close {
+   width: 2rem;
+   height: 2rem;
+   padding: 0;
+   border-radius: 4px;
+   background: transparent;
+   color: var(--color-text);
+   font-size: 1.75rem;
+}
+
+.history-table-container {
+   overflow: auto;
+   min-height: 0;
+}
+
+.history-table {
+   width: max-content;
+   border-collapse: separate;
+   border-spacing: 0;
+   font-variant-numeric: tabular-nums;
+}
+
+.history-table th,
+.history-table td {
+   min-width: var(--stat-column-width);
+   border-bottom: 1px solid var(--color-border);
+   text-align: center;
+   white-space: nowrap;
+}
+
+.history-table tr > :first-child {
+   min-width: 360px;
+}
+
+.history-table thead tr > :nth-child(3),
+.history-table tbody tr > :nth-child(3),
+.history-table thead tr > :nth-child(15),
+.history-table tbody tr > :nth-child(15),
+.history-table tfoot tr > :nth-child(13) {
+   min-width: var(--stat-toi-width);
+}
+
+.history-table thead tr > :nth-child(16),
+.history-table tbody tr > :nth-child(16),
+.history-table tfoot tr > :nth-child(14) {
+   min-width: var(--stat-shots-width);
+}
+
+.history-table thead tr > :nth-child(17),
+.history-table tbody tr > :nth-child(17),
+.history-table tfoot tr > :nth-child(15) {
+   min-width: var(--stat-percentage-width);
+}
+
+.history-table tfoot th {
+   text-align: left;
+   white-space: normal;
+}
+
+.history-table thead th {
+   position: sticky;
+   top: 0;
+   background: #0b1a2a;
+   color: var(--color-muted);
+   z-index: 1;
+}
+
+.history-sort {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   gap: 8px;
+   width: 100%;
+   padding: 0;
+   border-radius: 0;
+   background: transparent;
+   color: inherit;
+   font: inherit;
+}
+
+.history-sort::after {
+   content: '';
+   width: 1em;
+   flex: 0 0 1em;
+}
+
+[aria-sort="descending"] .history-sort::after {
+   content: '\2193';
+}
+
+[aria-sort="ascending"] .history-sort::after {
+   content: '\2191';
+}
+
+.history-sort:hover {
+   background: transparent;
+   color: var(--color-text);
+}
+
+.history-sort:focus-visible {
+   outline: 2px solid var(--color-career);
+   outline-offset: 4px;
+}
+
+.history-table tfoot th,
+.history-table tfoot td {
+   position: sticky;
+   bottom: 0;
+   background: #0b1a2a;
+   font-weight: 700;
+   border-top: 2px solid var(--color-accent);
+}
+
+.history-table .is-unavailable {
+   color: var(--color-muted);
+}
+
 .player-meta {
    margin: 0.15rem 0 0.85rem;
    color: var(--color-muted);
@@ -220,15 +423,20 @@ h2 {
 
 .statline {
    display: grid;
-   grid-template-columns: repeat(11, 224px) 320px 240px 288px;
+   grid-template-columns: repeat(11, var(--stat-column-width)) var(--stat-toi-width) var(--stat-shots-width) var(--stat-percentage-width);
    gap: 6px;
 }
 
 .statline div {
-   padding: 28px 8px;
    border-radius: 8px;
    background: #0b1a2a;
    text-align: center;
+}
+
+.statline div,
+.history-table th,
+.history-table td {
+   padding: var(--stat-cell-padding);
 }
 
 .statline [data-toi] {
@@ -239,8 +447,14 @@ h2 {
    margin-bottom: 1.75rem;
 }
 
-.season-stats .value {
+.season-stats .value,
+.history-table tbody th,
+.history-table tbody td {
    color: var(--color-muted);
+}
+
+.history-table tfoot td {
+   color: var(--color-career);
 }
 
 .season-tabs {
@@ -298,6 +512,10 @@ h2 {
 .label {
    display: block;
    margin-bottom: 0.3rem;
+}
+
+.label,
+.history-table thead th {
    color: var(--color-muted);
    font-size: 28px;
    font-weight: 700;
@@ -306,8 +524,18 @@ h2 {
 
 .value {
    color: var(--color-stat);
+}
+
+.value,
+.history-table tbody th,
+.history-table tbody td,
+.history-table tfoot td {
    font-size: 80px;
    font-weight: 700;
+}
+
+.history-table tfoot th {
+   font-size: 36px;
 }
 
 .value.context {
