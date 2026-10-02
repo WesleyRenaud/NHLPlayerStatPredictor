@@ -243,6 +243,58 @@ h2 {
    color: var(--color-muted);
 }
 
+.season-tabs {
+   display: flex;
+   justify-content: center;
+   gap: 32px;
+   margin-bottom: 1.35rem;
+   border-bottom: 1px solid var(--color-border);
+}
+
+.season-tab {
+   padding: 16px 0;
+   border-bottom: 3px solid transparent;
+   border-radius: 0;
+   background: transparent;
+   color: var(--color-muted);
+   font-size: 48px;
+   font-weight: 600;
+   white-space: nowrap;
+}
+
+.season-tab[aria-selected="true"] {
+   border-bottom-color: var(--color-accent);
+   color: var(--color-text);
+}
+
+.season-tab:hover {
+   background: transparent;
+   color: var(--color-text);
+}
+
+.season-tab:disabled,
+.season-tab:disabled:hover {
+   background: transparent;
+   color: var(--color-muted);
+   cursor: default;
+   opacity: 0.5;
+}
+
+.season-tab:focus-visible {
+   outline: 2px solid var(--color-accent);
+   outline-offset: 4px;
+}
+
+@media (max-width: 600px) {
+   .season-tabs {
+      gap: 16px;
+   }
+
+   .season-tab {
+      font-size: 20px;
+   }
+}
+
 .label {
    display: block;
    margin-bottom: 0.3rem;

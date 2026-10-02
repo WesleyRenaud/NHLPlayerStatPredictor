@@ -12,6 +12,7 @@ class PageStrings():
       'page.playerRequired': 'Select a player from the list.',
       'page.seasonLabel': '2026-27 Projection',
       'page.currentStatlineLabel': 'Current Statline',
+      'page.fullSeasonPaceLabel': 'Full Season Pace',
       'page.submit': 'Project',
       'page.title': 'NHL Stat Predictor',
    }

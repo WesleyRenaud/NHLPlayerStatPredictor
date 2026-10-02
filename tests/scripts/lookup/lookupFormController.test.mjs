@@ -53,7 +53,21 @@ function resultElement() {
    const seasonNodes = Object.fromEntries(Object.keys(nodes).map(selector =>
       [selector, { textContent: '', classList: classList() }]));
    nodes['[data-projection-stats]'] = { querySelector: selector => nodes[selector] };
-   nodes['[data-season-stats]'] = { querySelector: selector => seasonNodes[selector] };
+   nodes['[data-season-stats]'] = {
+      querySelector: selector => seasonNodes[selector],
+      attributes: {},
+      setAttribute(name, value) { this.attributes[name] = value; },
+   };
+   for (const mode of ['current', 'pace']) {
+      nodes[`[data-season-tab="${mode}"]`] = {
+         disabled: false,
+         attributes: {},
+         listeners: {},
+         setAttribute(name, value) { this.attributes[name] = value; },
+         addEventListener(name, handler) { this.listeners[name] = handler; },
+         focus() { this.focused = true; },
+      };
+   }
    nodes['[data-season-stats-container]'] = { hidden: true };
    return {
       hidden: true,
@@ -226,6 +240,62 @@ test('Test_Render_TestZeroEvenStrengthStats_ExpectZero', () => {
 
    assert.equal(result.nodes['[data-even-strength-goals]'].textContent, 0);
    assert.equal(result.nodes['[data-even-strength-points]'].textContent, 0);
+});
+
+
+test('Test_BindSeasonTabs_TestClickAndKeyboard_ExpectPaceSwitchAndReset', () => {
+   const result = resultElement();
+   const seasonStats = {
+      gamesPlayed: 10, goals: 5, shots: 30, shootingPercentage: 100 * 5 / 30,
+      timeOnIcePerGame: '20:00',
+   };
+   const gamesRemaining = 60;
+   seasonStats.fullSeasonPace = {
+      ...seasonStats,
+      gamesPlayed: seasonStats.gamesPlayed + gamesRemaining,
+      goals: seasonStats.goals / seasonStats.gamesPlayed * (seasonStats.gamesPlayed + gamesRemaining),
+   };
+   const projection = { goals: 20, seasonStats };
+   LookupFormController.bindSeasonTabs(result);
+   LookupFormController.render(result, {}, projection);
+   const current = result.nodes['[data-season-tab="current"]'];
+   const pace = result.nodes['[data-season-tab="pace"]'];
+   pace.listeners.click();
+
+   assert.equal(result.seasonNodes['[data-goals]'].textContent, seasonStats.fullSeasonPace.goals);
+   assert.equal(result.seasonNodes['[data-games-played]'].textContent, seasonStats.fullSeasonPace.gamesPlayed);
+   assert.equal(result.nodes['[data-goals]'].textContent, projection.goals);
+   assert.equal(result.seasonNodes['[data-toi]'].textContent, seasonStats.timeOnIcePerGame);
+   assert.equal(pace.attributes['aria-selected'], 'true');
+   assert.equal(current.tabIndex, -1);
+   assert.equal(result.nodes['[data-season-stats]'].attributes['aria-labelledby'], 'full-season-pace-tab');
+
+   for (const key of ['ArrowLeft', 'Home', 'ArrowRight', 'End']) {
+      let prevented = false;
+      pace.listeners.keydown({ key, preventDefault() { prevented = true; } });
+      assert.equal(prevented, true);
+   }
+   assert.equal(current.focused, true);
+   assert.equal(pace.focused, true);
+   LookupFormController.render(result, {}, projection);
+   assert.equal(current.attributes['aria-selected'], 'true');
+   assert.equal(result.seasonNodes['[data-goals]'].textContent, seasonStats.goals);
+});
+
+
+test('Test_BindSeasonTabs_TestUnavailablePace_ExpectDisabledTab', () => {
+   const result = resultElement();
+   LookupFormController.bindSeasonTabs(result);
+   const seasonStats = { goals: 0, gamesPlayed: 0, fullSeasonPace: null };
+   LookupFormController.render(result, {}, { seasonStats });
+   const pace = result.nodes['[data-season-tab="pace"]'];
+   const current = result.nodes['[data-season-tab="current"]'];
+
+   current.listeners.keydown({ key: 'ArrowRight', preventDefault() {} });
+   current.listeners.keydown({ key: 'Enter', preventDefault() { assert.fail('Unexpected key interception'); } });
+   assert.equal(pace.disabled, true);
+   assert.equal(current.attributes['aria-selected'], 'true');
+   assert.equal(result.seasonNodes['[data-games-played]'].textContent, seasonStats.gamesPlayed);
 });
 
 

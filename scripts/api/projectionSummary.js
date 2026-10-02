@@ -12,6 +12,10 @@ export class ProjectionSummary {
             ...ProjectionSummary.normalizeStats(season),
             seasonLabel: ValueNormalizer.asTrimmedString(season.seasonLabel),
             timeOnIcePerGame: ValueNormalizer.asTrimmedString(season.timeOnIcePerGame),
+            fullSeasonPace: season.fullSeasonPace == null ? null : {
+               ...ProjectionSummary.normalizeStats(season.fullSeasonPace),
+               timeOnIcePerGame: ValueNormalizer.asTrimmedString(season.fullSeasonPace.timeOnIcePerGame),
+            },
          },
       };
    }
