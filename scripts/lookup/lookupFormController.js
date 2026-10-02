@@ -66,6 +66,22 @@ export class LookupFormController {
       result.querySelector('[data-player-name]').textContent = player.playerName;
       result.querySelector('[data-player-meta]').textContent =
          PlayerSearchLabel.meta(player);
+      LookupFormController.renderStats(
+         result.querySelector('[data-projection-stats]'), projection, projection.projectedToi);
+      const season = projection.seasonStats;
+      result.querySelector('[data-season-stats-container]').hidden = !season;
+      if (season) {
+         LookupFormController.renderStats(
+            result.querySelector('[data-season-stats]'), season, season.timeOnIcePerGame);
+      }
+      result.hidden = false;
+      result.classList.remove('is-updated');
+      result.offsetWidth;
+      result.classList.add('is-updated');
+   }
+
+
+   static renderStats(result, projection, toi) {
       result.querySelector('[data-goals]').textContent = projection.goals;
       result.querySelector('[data-assists]').textContent = projection.assists;
       result.querySelector('[data-points]').textContent = projection.points;
@@ -81,11 +97,6 @@ export class LookupFormController {
       result.querySelector('[data-power-play-points]').textContent = projection.powerPlayPoints;
       result.querySelector('[data-short-handed-goals]').textContent = projection.shortHandedGoals;
       result.querySelector('[data-short-handed-points]').textContent = projection.shortHandedPoints;
-      result.querySelector('[data-projected-toi]').textContent =
-         projection.projectedToi || '—';
-      result.hidden = false;
-      result.classList.remove('is-updated');
-      result.offsetWidth;
-      result.classList.add('is-updated');
+      result.querySelector('[data-toi]').textContent = toi || '—';
    }
 }

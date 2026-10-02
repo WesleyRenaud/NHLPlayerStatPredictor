@@ -81,3 +81,27 @@ test('Test_Normalize_TestZeroEvenStrengthStats_ExpectZero', () => {
    assert.equal(projection.evenStrengthGoals, 0);
    assert.equal(projection.evenStrengthPoints, 0);
 });
+
+
+test('Test_Normalize_TestObservedSeason_ExpectTotalsAndTimePreserved', () => {
+   const seasonStats = {
+      seasonLabel: '2025-26', goals: 40, gamesPlayed: 80, shots: 300,
+      shootingPercentage: 100 * 40 / 300, timeOnIcePerGame: '22:15',
+   };
+
+   const projection = ProjectionSummary.normalize({ goals: 35, seasonStats });
+
+   assert.equal(projection.goals, 35);
+   assert.equal(projection.seasonStats.goals, seasonStats.goals);
+   assert.equal(projection.seasonStats.gamesPlayed, seasonStats.gamesPlayed);
+   assert.equal(projection.seasonStats.shots, seasonStats.shots);
+   assert.equal(projection.seasonStats.shootingPercentage, seasonStats.shootingPercentage);
+   assert.equal(projection.seasonStats.seasonLabel, seasonStats.seasonLabel);
+   assert.equal(projection.seasonStats.timeOnIcePerGame, seasonStats.timeOnIcePerGame);
+});
+
+
+test('Test_Normalize_TestMissingObservedSeason_ExpectNull', () => {
+   assert.equal(ProjectionSummary.normalize({ seasonStats: null }).seasonStats, null);
+   assert.equal(ProjectionSummary.normalize({}).seasonStats, null);
+});

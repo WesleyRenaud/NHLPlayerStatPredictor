@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from datetime import datetime
 from io import BytesIO
 import json
+from unittest.mock import Mock
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -54,6 +57,16 @@ def Test_GetProjection_TestCoordinatorProjection_ExpectJsonPayload(
       short_handed_points=3,
       projected_toi=None )
    captured: list[ int ] = []
+   season_stats = { 'seasonLabel': '2025-26', 'gamesPlayed': 80, 'goals': 40 }
+   now = datetime( 2026, 10, 2, tzinfo=ZoneInfo( 'America/Toronto' ) )
+   clock = Mock()
+   clock.now.return_value = now
+   resolver = Mock( return_value=season_stats )
+   monkeypatch.setattr( projections_controller, 'datetime', clock )
+   monkeypatch.setattr(
+      projections_controller.SeasonStatsResolver,
+      'resolve',
+      resolver )
 
    def fake_get_projection( player_id: int ) -> Projection:
       captured.append( player_id )
@@ -68,13 +81,21 @@ def Test_GetProjection_TestCoordinatorProjection_ExpectJsonPayload(
    ProjectionsController.get_projection( handler )
 
    assert captured == [ player_id ]
+   resolver.assert_called_once_with( player_id, now.date() )
+   clock.now.assert_called_once_with( ZoneInfo( 'America/Toronto' ) )
    assert handler.status == 200
-   assert json.loads( handler.body.decode( 'utf-8' ) ) == projection.to_dict()
+   assert json.loads( handler.body.decode( 'utf-8' ) ) == {
+      **projection.to_dict(), 'seasonStats': season_stats,
+   }
 
 
 def Test_GetProjection_TestMissingProjection_ExpectNotFound(
       monkeypatch: pytest.MonkeyPatch ) -> None:
    player_id = 7
+   resolver = Mock()
+   clock = Mock()
+   monkeypatch.setattr( projections_controller.SeasonStatsResolver, 'resolve', resolver )
+   monkeypatch.setattr( projections_controller, 'datetime', clock )
    monkeypatch.setattr(
       projections_controller.ProjectionCoordinator,
       'get_projection',
@@ -84,3 +105,5 @@ def Test_GetProjection_TestMissingProjection_ExpectNotFound(
    ProjectionsController.get_projection( handler )
 
    assert handler.status == 404
+   resolver.assert_not_called()
+   clock.now.assert_not_called()

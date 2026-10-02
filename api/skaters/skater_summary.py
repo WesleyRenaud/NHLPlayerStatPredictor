@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from .skater_position import SkaterPosition
 from .team import Team
+from ..time import Time
 from ..types import Types
 
 
@@ -25,6 +26,7 @@ class SkaterSummary():
    even_strength_goals: int
    even_strength_points: int
    shots: int
+   time_on_ice_per_game: float
 
 
    @classmethod
@@ -50,4 +52,29 @@ class SkaterSummary():
          int( raw[ 'shPoints' ] ),
          int( raw[ 'evGoals' ] ),
          int( raw[ 'evPoints' ] ),
-         int( raw[ 'shots' ] ) )
+         int( raw[ 'shots' ] ),
+         float( raw[ 'timeOnIcePerGame' ] ) )
+
+
+   @property
+   def shooting_percentage( self ) -> float | None:
+      return None if not self.shots else 100 * self.goals / self.shots
+
+
+   def stats_dict( self ) -> Types.JsonObject:
+      return {
+         'goals': self.goals,
+         'assists': self.assists,
+         'points': self.points,
+         'gamesPlayed': self.games_played,
+         'penaltyMinutes': self.penalty_minutes,
+         'evenStrengthGoals': self.even_strength_goals,
+         'evenStrengthPoints': self.even_strength_points,
+         'powerPlayGoals': self.power_play_goals,
+         'powerPlayPoints': self.power_play_points,
+         'shortHandedGoals': self.short_handed_goals,
+         'shortHandedPoints': self.short_handed_points,
+         'shots': self.shots,
+         'shootingPercentage': self.shooting_percentage,
+         'timeOnIcePerGame': Time.clock_string( Time.minutes( self.time_on_ice_per_game ) ),
+      }

@@ -47,8 +47,12 @@ function resultElement() {
       '[data-power-play-points]': { textContent: '' },
       '[data-short-handed-goals]': { textContent: '' },
       '[data-short-handed-points]': { textContent: '' },
-      '[data-projected-toi]': { textContent: '' },
+      '[data-toi]': { textContent: '' },
    };
+   const seasonNodes = Object.fromEntries(Object.keys(nodes).map(selector => [selector, { textContent: '' }]));
+   nodes['[data-projection-stats]'] = { querySelector: selector => nodes[selector] };
+   nodes['[data-season-stats]'] = { querySelector: selector => seasonNodes[selector] };
+   nodes['[data-season-stats-container]'] = { hidden: true };
    return {
       hidden: true,
       classList: classList(),
@@ -57,6 +61,7 @@ function resultElement() {
          return nodes[selector];
       },
       nodes,
+      seasonNodes,
    };
 }
 
@@ -178,8 +183,37 @@ test('Test_Render_TestPlayerAndProjection_ExpectNameMetaAndStats', () => {
       result.nodes['[data-short-handed-points]'].textContent,
       projection.shortHandedPoints
    );
-   assert.equal(result.nodes['[data-projected-toi]'].textContent, '18:30');
+   assert.equal(result.nodes['[data-toi]'].textContent, '18:30');
    assert.equal(result.hidden, false);
+});
+
+
+test('Test_Render_TestObservedSeason_ExpectSeparateActualAndProjectedRows', () => {
+   const result = resultElement();
+   const seasonStats = {
+      seasonLabel: '2025-26', gamesPlayed: 80, goals: 40, assists: 60, points: 100,
+      penaltyMinutes: 20, evenStrengthGoals: 30, evenStrengthPoints: 70,
+      powerPlayGoals: 10, powerPlayPoints: 30, shortHandedGoals: 0, shortHandedPoints: 0,
+      shots: 300, shootingPercentage: 100 * 40 / 300, timeOnIcePerGame: '22:15',
+   };
+   const projection = { goals: 35, seasonStats, projectedToi: '23:00' };
+
+   LookupFormController.render(result, {}, projection);
+
+   assert.equal(result.nodes['[data-season-stats-container]'].hidden, false);
+   assert.equal(result.seasonNodes['[data-games-played]'].textContent, seasonStats.gamesPlayed);
+   assert.equal(result.seasonNodes['[data-goals]'].textContent, seasonStats.goals);
+   assert.equal(result.seasonNodes['[data-even-strength-points]'].textContent, seasonStats.evenStrengthPoints);
+   assert.equal(result.seasonNodes['[data-shots]'].textContent, seasonStats.shots);
+   assert.equal(result.seasonNodes['[data-shooting-percentage]'].textContent, seasonStats.shootingPercentage.toFixed(1));
+   assert.equal(result.seasonNodes['[data-toi]'].textContent, seasonStats.timeOnIcePerGame);
+   assert.equal(result.nodes['[data-goals]'].textContent, projection.goals);
+   assert.equal(result.nodes['[data-toi]'].textContent, projection.projectedToi);
+
+   LookupFormController.render(result, {}, { goals: 10, seasonStats: null });
+
+   assert.equal(result.nodes['[data-season-stats-container]'].hidden, true);
+   assert.equal(result.nodes['[data-goals]'].textContent, 10);
 });
 
 

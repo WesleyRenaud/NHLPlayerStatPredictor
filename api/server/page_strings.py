@@ -10,7 +10,8 @@ class PageStrings():
       'page.placeholder': 'Connor McDavid',
       'page.playerNameLabel': 'Player name',
       'page.playerRequired': 'Select a player from the list.',
-      'page.seasonLabel': '2026-27 projection',
+      'page.seasonLabel': '2026-27 Projection',
+      'page.currentStatlineLabel': 'Current Statline',
       'page.submit': 'Project',
       'page.title': 'NHL Stat Predictor',
    }

@@ -49,7 +49,8 @@ def Test_BuildRows_TestRegularSeason_ExpectPacedTotals() -> None:
          short_handed_points,
          even_strength_goals,
          even_strength_points,
-         shots )
+         shots,
+         1280.0 )
    ]
    bios = [ SkaterBio( player_id, date( 1997, 1, 13 ) ) ]
 
@@ -95,7 +96,8 @@ def Test_BuildRows_TestShortSeason_ExpectPacedTotals() -> None:
          0,
          1,
          points,
-         10 )
+         10,
+         1200.0 )
    ]
    bios = [ SkaterBio( player_id, date( 1999, 1, 1 ) ) ]
    season = SeasonLength( 20242025, 82, date( 2024, 10, 4 ), date( 2025, 4, 17 ) )
@@ -116,8 +118,8 @@ def Test_BuildRows_TestMissingBio_ExpectSkipped() -> None:
    games_played = 82
    pace_games = 84
    summaries = [
-      SkaterSummary( kept_id, 'Has Bio', position, [ team ], games_played, 1, 1, 2, 0, 0, 0, 0, 0, 1, 2, 10 ),
-      SkaterSummary( missing_id, 'No Bio', position, [ team ], games_played, 1, 1, 2, 0, 0, 0, 0, 0, 1, 2, 10 ),
+      SkaterSummary( kept_id, 'Has Bio', position, [ team ], games_played, 1, 1, 2, 0, 0, 0, 0, 0, 1, 2, 10, 1200.0 ),
+      SkaterSummary( missing_id, 'No Bio', position, [ team ], games_played, 1, 1, 2, 0, 0, 0, 0, 0, 1, 2, 10, 1200.0 ),
    ]
    bios = [ SkaterBio( kept_id, date( 1999, 1, 1 ) ) ]
    season = SeasonLength( 20242025, 82, date( 2024, 10, 4 ), date( 2025, 4, 17 ) )

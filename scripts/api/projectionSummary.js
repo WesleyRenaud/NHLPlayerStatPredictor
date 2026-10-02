@@ -4,6 +4,21 @@ import { ValueNormalizer } from './valueNormalizer.js';
 export class ProjectionSummary {
    static normalize(value) {
       const row = ValueNormalizer.asObject(value);
+      const season = row.seasonStats;
+      return {
+         ...ProjectionSummary.normalizeStats(row),
+         projectedToi: ValueNormalizer.asTrimmedString(row.projectedToi),
+         seasonStats: season == null ? null : {
+            ...ProjectionSummary.normalizeStats(season),
+            seasonLabel: ValueNormalizer.asTrimmedString(season.seasonLabel),
+            timeOnIcePerGame: ValueNormalizer.asTrimmedString(season.timeOnIcePerGame),
+         },
+      };
+   }
+
+
+   static normalizeStats(value) {
+      const row = ValueNormalizer.asObject(value);
       return {
          goals: ValueNormalizer.asFiniteNumber(row.goals),
          assists: ValueNormalizer.asFiniteNumber(row.assists),
@@ -18,7 +33,6 @@ export class ProjectionSummary {
          powerPlayPoints: ValueNormalizer.asFiniteNumber(row.powerPlayPoints),
          shortHandedGoals: ValueNormalizer.asFiniteNumber(row.shortHandedGoals),
          shortHandedPoints: ValueNormalizer.asFiniteNumber(row.shortHandedPoints),
-         projectedToi: ValueNormalizer.asTrimmedString(row.projectedToi),
       };
    }
 }
