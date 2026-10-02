@@ -10,6 +10,7 @@ from api.projections.season_stats_resolver import SeasonStatsResolver
 from api.season import Season
 from api.season_length import SeasonLength
 from api.skaters.skater_summary import SkaterSummary
+from api.skaters.team import Team
 
 
 def _summary( games: int, goals: int ) -> SkaterSummary:
@@ -44,14 +45,49 @@ def Test_Resolve_TestSeasonStart_ExpectCorrectObservedSeason(
    fetch = Mock( side_effect=lambda season_id: [ summaries[ season_id ] ] )
    monkeypatch.setattr( season_stats_resolver.NhlClient, 'seasons', _seasons )
    monkeypatch.setattr( season_stats_resolver.NhlClient, 'skater_summary', fetch )
+   monkeypatch.setattr( season_stats_resolver.RosterSkaterProvider, 'team', Mock( return_value=Team( 'COL' ) ) )
+   team_games = 5
+   standings = Mock( return_value={
+      'standings': [ { 'seasonId': 20262027, 'teamAbbrev': { 'default': 'COL' }, 'gamesPlayed': team_games } ],
+   } )
+   monkeypatch.setattr( season_stats_resolver.NhlClient, 'standings', standings )
+   remaining = 0 if expected_season_id == 20252026 else _seasons()[ 1 ].number_of_games - team_games
 
    stats = SeasonStatsResolver.resolve( 7, on_date )
 
    assert stats == {
       'seasonLabel': Season.label( expected_season_id ), **summaries[ expected_season_id ].stats_dict(),
+      'fullSeasonPace': summaries[ expected_season_id ].full_season_pace( remaining ),
    }
    assert stats[ 'gamesPlayed' ] == summaries[ expected_season_id ].games_played
    fetch.assert_called_once_with( expected_season_id )
+   if expected_season_id == 20252026:
+      standings.assert_not_called()
+   else:
+      assert stats[ 'fullSeasonPace' ][ 'gamesPlayed' ] == summaries[ expected_season_id ].games_played + remaining
+      assert stats[ 'fullSeasonPace' ][ 'gamesPlayed' ] < _seasons()[ 1 ].number_of_games
+
+
+def Test_Resolve_TestTradedPlayer_ExpectCurrentRosterTeamRemainingGames(
+      monkeypatch: pytest.MonkeyPatch ) -> None:
+   summary = _summary( 3, 1 )
+   current_team = Team( 'EDM' )
+   team_games = 6
+   monkeypatch.setattr( season_stats_resolver.NhlClient, 'seasons', _seasons )
+   monkeypatch.setattr( season_stats_resolver.NhlClient, 'skater_summary', Mock( return_value=[ summary ] ) )
+   monkeypatch.setattr( season_stats_resolver.RosterSkaterProvider, 'team', Mock( return_value=current_team ) )
+   monkeypatch.setattr( season_stats_resolver.NhlClient, 'standings', Mock( return_value={
+      'standings': [
+         { 'seasonId': 20262027, 'teamAbbrev': { 'default': 'COL' }, 'gamesPlayed': 4 },
+         { 'seasonId': 20262027, 'teamAbbrev': { 'default': current_team.value }, 'gamesPlayed': team_games },
+      ],
+   } ) )
+
+   stats = SeasonStatsResolver.resolve( summary.player_id, date( 2026, 10, 2 ) )
+
+   remaining = _seasons()[ 1 ].number_of_games - team_games
+   assert stats is not None
+   assert stats[ 'fullSeasonPace' ] == summary.full_season_pace( remaining )
 
 
 def Test_Resolve_TestMissingPlayer_ExpectNoneWithoutOldSeasonFallback(

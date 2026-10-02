@@ -40,8 +40,11 @@
             <h2 data-player-name></h2>
             <p class="player-meta" data-player-meta></p>
             <div class="season-stats" data-season-stats-container hidden>
-               <p class="season" data-season-stats-label>{{ page.currentStatlineLabel }}</p>
-               <div class="statline" data-season-stats tabindex="0" role="group" aria-label="Observed season statistics">
+               <div class="season-tabs" role="tablist" aria-label="Season statistics">
+                  <button id="current-statline-tab" class="season-tab" type="button" role="tab" aria-selected="true" aria-controls="season-statline" data-season-tab="current">{{ page.currentStatlineLabel }}</button>
+                  <button id="full-season-pace-tab" class="season-tab" type="button" role="tab" aria-selected="false" aria-controls="season-statline" tabindex="-1" data-season-tab="pace">{{ page.fullSeasonPaceLabel }}</button>
+               </div>
+               <div id="season-statline" class="statline" data-season-stats tabindex="0" role="tabpanel" aria-labelledby="current-statline-tab">
                   <div>
                      <span class="label">GP</span>
                      <span class="value context" data-games-played></span>

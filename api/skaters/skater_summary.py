@@ -78,3 +78,37 @@ class SkaterSummary():
          'shootingPercentage': self.shooting_percentage,
          'timeOnIcePerGame': Time.clock_string( Time.minutes( self.time_on_ice_per_game ) ),
       }
+
+
+   def full_season_pace( self, games_remaining: int ) -> Types.JsonObject | None:
+      if not self.games_played:
+         return None
+
+      if not games_remaining:
+         return self.stats_dict()
+
+      games = self.games_played + games_remaining
+      scale = games / self.games_played
+      even_strength_goals = round( self.even_strength_goals * scale )
+      even_strength_assists = round( ( self.even_strength_points - self.even_strength_goals ) * scale )
+      power_play_goals = round( self.power_play_goals * scale )
+      power_play_assists = round( ( self.power_play_points - self.power_play_goals ) * scale )
+      short_handed_goals = round( self.short_handed_goals * scale )
+      short_handed_assists = round( ( self.short_handed_points - self.short_handed_goals ) * scale )
+      goals = even_strength_goals + power_play_goals + short_handed_goals
+      assists = even_strength_assists + power_play_assists + short_handed_assists
+      return {
+         **self.stats_dict(),
+         'gamesPlayed': games,
+         'goals': goals,
+         'assists': assists,
+         'points': goals + assists,
+         'penaltyMinutes': round( self.penalty_minutes * scale ),
+         'evenStrengthGoals': even_strength_goals,
+         'evenStrengthPoints': even_strength_goals + even_strength_assists,
+         'powerPlayGoals': power_play_goals,
+         'powerPlayPoints': power_play_goals + power_play_assists,
+         'shortHandedGoals': short_handed_goals,
+         'shortHandedPoints': short_handed_goals + short_handed_assists,
+         'shots': round( self.shots * scale ),
+      }

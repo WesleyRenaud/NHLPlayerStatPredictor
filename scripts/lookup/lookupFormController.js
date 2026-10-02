@@ -4,8 +4,12 @@ import { ProjectionClient } from '../api/projectionClient.js';
 
 
 export class LookupFormController {
+   static seasonStats = new WeakMap();
+
+
    static bind(form, result) {
       const input = form.querySelector('#player-name');
+      LookupFormController.bindSeasonTabs(result);
 
       form.addEventListener('submit', async event => {
          event.preventDefault();
@@ -69,15 +73,48 @@ export class LookupFormController {
       LookupFormController.renderStats(
          result.querySelector('[data-projection-stats]'), projection, projection.projectedToi);
       const season = projection.seasonStats;
+      LookupFormController.seasonStats.set(result, season);
       result.querySelector('[data-season-stats-container]').hidden = !season;
       if (season) {
-         LookupFormController.renderStats(
-            result.querySelector('[data-season-stats]'), season, season.timeOnIcePerGame);
+         result.querySelector('[data-season-tab="pace"]').disabled = !season.fullSeasonPace;
+         LookupFormController.selectSeasonTab(result, 'current');
       }
       result.hidden = false;
       result.classList.remove('is-updated');
       result.offsetWidth;
       result.classList.add('is-updated');
+   }
+
+
+   static bindSeasonTabs(result) {
+      for (const mode of ['current', 'pace']) {
+         const tab = result.querySelector(`[data-season-tab="${mode}"]`);
+         tab.addEventListener('click', () => LookupFormController.selectSeasonTab(result, mode));
+         tab.addEventListener('keydown', event => {
+            if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+            event.preventDefault();
+            const nextMode = event.key === 'Home' ? 'current' : event.key === 'End' ? 'pace' :
+               mode === 'current' ? 'pace' : 'current';
+            const nextTab = result.querySelector(`[data-season-tab="${nextMode}"]`);
+            if (nextTab.disabled) return;
+            LookupFormController.selectSeasonTab(result, nextMode);
+            nextTab.focus();
+         });
+      }
+   }
+
+
+   static selectSeasonTab(result, mode) {
+      const season = LookupFormController.seasonStats.get(result);
+      const stats = mode === 'pace' ? season.fullSeasonPace : season;
+      for (const tabMode of ['current', 'pace']) {
+         const tab = result.querySelector(`[data-season-tab="${tabMode}"]`);
+         tab.setAttribute('aria-selected', String(tabMode === mode));
+         tab.tabIndex = tabMode === mode ? 0 : -1;
+      }
+      const panel = result.querySelector('[data-season-stats]');
+      panel.setAttribute('aria-labelledby', mode === 'pace' ? 'full-season-pace-tab' : 'current-statline-tab');
+      LookupFormController.renderStats(panel, stats, stats.timeOnIcePerGame);
    }
 
 

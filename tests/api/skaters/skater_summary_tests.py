@@ -106,6 +106,45 @@ def Test_ShootingPercentage_TestNoShots_ExpectNone() -> None:
    assert summary.shooting_percentage is None
 
 
+def Test_FullSeasonPace_TestRemainingGames_ExpectScaledComponentsAndUnchangedRates() -> None:
+   summary = replace( _summary(), power_play_goals=1, power_play_points=2,
+      short_handed_goals=1, short_handed_points=2, goals=3, assists=4, points=7 )
+   remaining = 70
+   games = summary.games_played + remaining
+   scale = games / summary.games_played
+
+   pace = summary.full_season_pace( remaining )
+
+   assert pace is not None
+   assert pace[ 'gamesPlayed' ] == games
+   assert pace[ 'shots' ] == round( summary.shots * scale )
+   assert pace[ 'penaltyMinutes' ] == round( summary.penalty_minutes * scale )
+   for key, goals, points in [
+      ( 'evenStrength', summary.even_strength_goals, summary.even_strength_points ),
+      ( 'powerPlay', summary.power_play_goals, summary.power_play_points ),
+      ( 'shortHanded', summary.short_handed_goals, summary.short_handed_points ),
+   ]:
+      assert pace[ f'{ key }Goals' ] == round( goals * scale )
+      assert pace[ f'{ key }Points' ] == round( goals * scale ) + round( ( points - goals ) * scale )
+   assert pace[ 'goals' ] == sum( pace[ f'{ key }Goals' ] for key in [ 'evenStrength', 'powerPlay', 'shortHanded' ] )
+   assert pace[ 'points' ] == sum( pace[ f'{ key }Points' ] for key in [ 'evenStrength', 'powerPlay', 'shortHanded' ] )
+   assert pace[ 'points' ] == pace[ 'goals' ] + pace[ 'assists' ]
+   assert pace[ 'shootingPercentage' ] == summary.shooting_percentage
+   assert pace[ 'timeOnIcePerGame' ] == summary.stats_dict()[ 'timeOnIcePerGame' ]
+
+
+def Test_FullSeasonPace_TestCompletedSeason_ExpectActualTotals() -> None:
+   summary = _summary()
+
+   assert summary.full_season_pace( 0 ) == summary.stats_dict()
+
+
+def Test_FullSeasonPace_TestNoAppearances_ExpectUnavailable() -> None:
+   summary = replace( _summary(), games_played=0 )
+
+   assert summary.full_season_pace( 84 ) is None
+
+
 def Test_FromRow_TestTradedPlayer_ExpectTeams() -> None:
    teams = list( Team )
    first = teams[ Position.FIRST ]

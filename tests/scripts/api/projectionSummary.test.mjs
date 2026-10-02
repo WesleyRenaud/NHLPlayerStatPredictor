@@ -98,6 +98,22 @@ test('Test_Normalize_TestObservedSeason_ExpectTotalsAndTimePreserved', () => {
    assert.equal(projection.seasonStats.shootingPercentage, seasonStats.shootingPercentage);
    assert.equal(projection.seasonStats.seasonLabel, seasonStats.seasonLabel);
    assert.equal(projection.seasonStats.timeOnIcePerGame, seasonStats.timeOnIcePerGame);
+   assert.equal(projection.seasonStats.fullSeasonPace, null);
+});
+
+
+test('Test_Normalize_TestFullSeasonPace_ExpectNumericTotalsAndPreservedRates', () => {
+   const fullSeasonPace = {
+      goals: '42', gamesPlayed: '82', shots: '300',
+      shootingPercentage: '14', timeOnIcePerGame: ' 22:15 ',
+   };
+   const projection = ProjectionSummary.normalize({ seasonStats: { fullSeasonPace } });
+
+   assert.equal(projection.seasonStats.fullSeasonPace.goals, Number(fullSeasonPace.goals));
+   assert.equal(projection.seasonStats.fullSeasonPace.gamesPlayed, Number(fullSeasonPace.gamesPlayed));
+   assert.equal(projection.seasonStats.fullSeasonPace.shots, Number(fullSeasonPace.shots));
+   assert.equal(projection.seasonStats.fullSeasonPace.shootingPercentage, Number(fullSeasonPace.shootingPercentage));
+   assert.equal(projection.seasonStats.fullSeasonPace.timeOnIcePerGame, fullSeasonPace.timeOnIcePerGame.trim());
 });
 
 
