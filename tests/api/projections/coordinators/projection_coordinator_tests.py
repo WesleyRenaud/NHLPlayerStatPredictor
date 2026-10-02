@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 
@@ -29,6 +30,13 @@ def _stub_ice( monkeypatch: pytest.MonkeyPatch ) -> None:
       projection_coordinator.SkaterIceStore,
       'by_player',
       lambda: {} )
+
+
+def _stub_roster( monkeypatch: pytest.MonkeyPatch ) -> None:
+   monkeypatch.setattr(
+      projection_coordinator.RosterSkaterProvider,
+      'team',
+      lambda player_id, path: list( Team )[ Position.FIRST ] )
 
 
 def _season( age: float ) -> NhlSkaterSeason:
@@ -82,6 +90,7 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
    model = PaceRegressionModel( [] )
 
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
+   _stub_roster( monkeypatch )
    _stub_ice( monkeypatch )
    monkeypatch.setattr(
       projection_coordinator.SkaterSeasonProvider,
@@ -155,6 +164,7 @@ def Test_GetProjection_TestMissingPace_ExpectNone(
    player_id = 7
    target_season_id = 20262027
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
+   _stub_roster( monkeypatch )
    _stub_ice( monkeypatch )
    monkeypatch.setattr(
       projection_coordinator.SkaterSeasonProvider,
@@ -211,6 +221,7 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
    projected = 24.0
    target_season_id = 20232024
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
+   _stub_roster( monkeypatch )
    _stub_ice( monkeypatch )
    monkeypatch.setattr(
       projection_coordinator.SkaterIceStore,
@@ -279,3 +290,22 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
       short_handed_goals=expected_sh,
       short_handed_points=expected_sh,
       projected_toi=projected )
+
+
+def Test_GetProjection_TestUnrosteredPlayer_ExpectNoneWithoutCalculation(
+      monkeypatch: pytest.MonkeyPatch,
+      tmp_path: Path ) -> None:
+   db_path = tmp_path / 'skaters.sqlite'
+   player_id = 7
+   roster_team = Mock( return_value=None )
+   season_lookup = Mock()
+   baseline = Mock()
+   monkeypatch.setattr( Paths, 'DB_PATH', db_path )
+   monkeypatch.setattr( projection_coordinator.RosterSkaterProvider, 'team', roster_team )
+   monkeypatch.setattr( projection_coordinator.SkaterSeasonProvider, 'seasons_for_player_id', season_lookup )
+   monkeypatch.setattr( projection_coordinator.BaselinePaceResolver, 'resolve', baseline )
+
+   assert ProjectionCoordinator.get_projection( player_id ) is None
+   roster_team.assert_called_once_with( player_id, str( db_path ) )
+   season_lookup.assert_not_called()
+   baseline.assert_not_called()
