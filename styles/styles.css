@@ -5,6 +5,7 @@
    --color-text: #f4f7fb;
    --color-muted: #9aadc2;
    --color-stat: #ff5c7a;
+   --color-unavailable: #b69b62;
    --color-accent: #e31837;
    --color-accent-hover: #ff3b57;
    --shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
@@ -259,6 +260,10 @@ h2 {
 
 .value.context {
    color: var(--color-muted);
+}
+
+[data-projection-stats] .value.is-unavailable {
+   color: var(--color-unavailable);
 }
 
 .player-name-autocomplete {
