@@ -19,6 +19,11 @@ class PimRegressionFitter():
       for season in seasons:
          by_player[ season.player_id ].append( season )
 
+      history_by_player = {
+         player_id: PriorYearBuilder.history( history, [], [] )
+         for player_id, history in by_player.items()
+      }
+
       pairs: list[ ProductionPair ] = []
 
       for current in seasons:
@@ -26,12 +31,13 @@ class PimRegressionFitter():
             continue
 
          year = Season.start_year( current.season_id )
-         priors = PriorYearBuilder._qualified( by_player[ current.player_id ], [], year )
+         priors = history_by_player[ current.player_id ]
+         actual = current.penalty_minutes_pace()
 
          for prior in priors:
             lag = year - prior.year
 
-            if lag > PriorYearBuilder.WIDTH or prior.pim_pace is None:
+            if not 0 < lag <= PriorYearBuilder.WIDTH or prior.pim_pace is None:
                continue
 
             age = int( prior.age )
@@ -39,7 +45,7 @@ class PimRegressionFitter():
                from_age=age,
                to_age=age + lag,
                prior_pace=prior.pim_pace,
-               following_pace=current.penalty_minutes_pace(),
+               following_pace=actual,
                games=float( min( prior.games, current.games_played ) ) ) )
 
       return PimRegressionModel( ProductionCoefficientFitter.fit( pairs ) )

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import date
 
 from ..projections.power_play_pace import PowerPlayPace
+from ..projections.scoring_paces import ScoringPaces
 from ..projections.season_pace import SeasonPace
 from ..projections.short_handed_pace import ShortHandedPace
 from ..season import Season
@@ -32,6 +33,8 @@ class NhlSkaterSeason( SkaterSeason ):
    power_play_points: int
    short_handed_goals: int
    short_handed_points: int
+   even_strength_goals: int
+   even_strength_points: int
 
 
    @classmethod
@@ -63,11 +66,26 @@ class NhlSkaterSeason( SkaterSeason ):
          power_play_goals=int( row[ 'PP_GOALS' ] ),
          power_play_points=int( row[ 'PP_POINTS' ] ),
          short_handed_goals=int( row[ 'SHORT_HANDED_GOALS' ] ),
-         short_handed_points=int( row[ 'SHORT_HANDED_POINTS' ] ) )
+         short_handed_points=int( row[ 'SHORT_HANDED_POINTS' ] ),
+         even_strength_goals=int( row[ 'EV_GOALS' ] ),
+         even_strength_points=int( row[ 'EV_POINTS' ] ) )
 
 
    def key( self ) -> SkaterSeasonKey:
       return SkaterSeasonKey( self.player_id, self.season_id )
+
+
+   def scoring_paces( self ) -> ScoringPaces:
+      even_strength = self.even_strength_pace()
+      power_play = self.power_play_pace()
+      short_handed = self.short_handed_pace()
+      return ScoringPaces(
+         even_strength.goals,
+         even_strength.assists,
+         power_play.goals,
+         power_play.assists,
+         short_handed.goals,
+         short_handed.assists )
 
 
    def power_play_pace( self ) -> PowerPlayPace:
@@ -99,6 +117,15 @@ class NhlSkaterSeason( SkaterSeason ):
          self.penalty_minutes,
          self.games_played,
          self.pace_games )
+
+
+   def even_strength_pace( self ) -> SeasonPace:
+      return SeasonPace(
+         Season.pace( self.even_strength_goals, self.games_played, self.pace_games ),
+         Season.pace(
+            self.even_strength_points - self.even_strength_goals,
+            self.games_played,
+            self.pace_games ) )
 
 
    def playoff_surplus( self ) -> SeasonPace:

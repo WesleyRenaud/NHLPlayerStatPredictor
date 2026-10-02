@@ -5,6 +5,7 @@ from datetime import date
 
 import pytest
 
+from api.season import Season
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
 from api.skaters.skater_position import SkaterPosition
@@ -23,6 +24,8 @@ def _season( games_played: int, goals: int, assists: int ) -> NhlSkaterSeason:
       age=28.7,
       team=list( Team )[ Position.FIRST ],
       games_played=games_played,
+      even_strength_goals=goals,
+      even_strength_points=( goals + assists ),
       goals=goals,
       assists=assists,
       points=goals + assists,
@@ -54,6 +57,8 @@ def Test_FromRow_TestStoredFields_ExpectValues() -> None:
       age=28.7,
       team=team,
       games_played=82,
+      even_strength_goals=48 - 20 - 3,
+      even_strength_points=138 - 35 - 5,
       goals=48,
       assists=90,
       points=138,
@@ -98,6 +103,8 @@ def Test_FromRow_TestStoredFields_ExpectValues() -> None:
       'PP_POINTS': season.power_play_points,
       'SHORT_HANDED_GOALS': season.short_handed_goals,
       'SHORT_HANDED_POINTS': season.short_handed_points,
+      'EV_GOALS': season.even_strength_goals,
+      'EV_POINTS': season.even_strength_points,
    } )
 
    assert loaded == season
@@ -114,6 +121,8 @@ def Test_Key_TestPlayerAndSeason_ExpectKey() -> None:
       age=28.7,
       team=list( Team )[ Position.FIRST ],
       games_played=82,
+      even_strength_goals=48,
+      even_strength_points=138,
       goals=48,
       assists=90,
       points=138,
@@ -135,6 +144,17 @@ def Test_Key_TestPlayerAndSeason_ExpectKey() -> None:
    key = season.key()
 
    assert key == SkaterSeasonKey( season.player_id, season.season_id )
+
+
+def Test_EvenStrengthPace_TestExplicitCounts_ExpectPacedSourceValues() -> None:
+   season = replace( _season( 60, 12, 18 ), even_strength_goals=8, even_strength_points=20 )
+
+   pace = season.even_strength_pace()
+
+   assert pace.goals == pytest.approx(
+      Season.pace( season.even_strength_goals, season.games_played, season.pace_games ) )
+   assert pace.assists == pytest.approx(
+      Season.pace( season.even_strength_points - season.even_strength_goals, season.games_played, season.pace_games ) )
 
 
 def Test_PlayoffSurplus_TestAboveRegularRate_ExpectExtraScoring() -> None:

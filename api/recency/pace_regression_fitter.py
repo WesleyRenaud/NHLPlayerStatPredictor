@@ -11,8 +11,8 @@ from .prior_year import PriorYear
 from .prior_year_builder import PriorYearBuilder
 from .production_coefficient_fitter import ProductionCoefficientFitter
 from .production_pair import ProductionPair
-from ..projections.scoring_paces import ScoringPaces
 from ..projections.scoring_stat import ScoringStat
+from .scoring_component_share_fitter import ScoringComponentShareFitter
 from ..season import Season
 from ..skaters.nhl_skater_season import NhlSkaterSeason
 from ..skaters.other_league_skater_season import OtherLeagueSkaterSeason
@@ -27,13 +27,15 @@ class PaceRegressionFitter():
          other_seasons: list[ OtherLeagueSkaterSeason ],
          factors: list[ LeagueFactor ] ) -> PaceRegressionModel:
       by_player: dict[ int, list[ SkaterSeason ] ] = defaultdict( list )
-      nhl_by_player: dict[ int, list[ SkaterSeason ] ] = defaultdict( list )
+      component_shares = ScoringComponentShareFitter.fit( nhl_seasons )
 
       for season in [ *nhl_seasons, *other_seasons ]:
          by_player[ season.player_id ].append( season )
 
-      for season in nhl_seasons:
-         nhl_by_player[ season.player_id ].append( season )
+      history_by_player = {
+         player_id: PriorYearBuilder.history( seasons, factors, component_shares )
+         for player_id, seasons in by_player.items()
+      }
 
       training_datasets = [
          PaceRegressionTrainingData( source, stat )
@@ -46,42 +48,32 @@ class PaceRegressionFitter():
             continue
 
          year = Season.start_year( current.season_id )
-         priors = PriorYearBuilder._qualified( by_player[ current.player_id ], factors, year )
-         nhl_priors = PriorYearBuilder._qualified( nhl_by_player[ current.player_id ], [], year )
-         actual = cls._paces( current )
+         priors = history_by_player[ current.player_id ]
+         actual = current.scoring_paces()
 
-         for dataset in training_datasets:
-            training = priors if dataset.stat in ( ScoringStat.GOALS, ScoringStat.ASSISTS ) else nhl_priors
+         for prior in priors:
+            lag = year - prior.year
 
-            for prior in training:
-               lag = year - prior.year
+            if not 0 < lag <= PriorYearBuilder.WIDTH:
+               continue
 
-               if prior.source() != dataset.source or lag > PriorYearBuilder.WIDTH:
+            source = prior.source()
+            age = int( prior.age )
+            games = float( min( prior.games, current.games_played ) )
+
+            for dataset in training_datasets:
+               if dataset.source != source:
                   continue
 
-               age = int( prior.age )
                dataset.samples.append( ProductionPair(
                   from_age=age,
                   to_age=age + lag,
-                  prior_pace=getattr( prior.scoring_paces(), dataset.stat.value ),
+                  prior_pace=getattr( prior.scoring, dataset.stat.value ),
                   following_pace=getattr( actual, dataset.stat.value ),
-                  games=float( min( prior.games, current.games_played ) ) ) )
+                  games=games ) )
 
       return PaceRegressionModel( [
          PaceRegression( dataset.source, dataset.stat, ProductionCoefficientFitter.fit( dataset.samples ) )
          for dataset in training_datasets
          if dataset.samples
-      ] )
-
-
-   @classmethod
-   def _paces( cls, season: NhlSkaterSeason ) -> ScoringPaces:
-      power_play = season.power_play_pace()
-      short_handed = season.short_handed_pace()
-      return ScoringPaces(
-         season.g_pace,
-         season.a_pace,
-         power_play.goals,
-         power_play.assists,
-         short_handed.goals,
-         short_handed.assists )
+      ], component_shares )

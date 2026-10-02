@@ -22,6 +22,8 @@ def _nhl( gp_share: float ) -> NhlSkaterSeason:
       age=28.7,
       team=list( Team )[ Position.FIRST ],
       games_played=9,
+      even_strength_goals=0,
+      even_strength_points=0,
       goals=0,
       assists=0,
       points=0,

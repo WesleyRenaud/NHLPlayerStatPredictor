@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date
 
 from api.aging.league_factor import LeagueFactor
@@ -8,6 +9,7 @@ from api.projections.previous_season_nhl_skater import PreviousSeasonNhlSkater
 from api.projections.previous_season_skater import PreviousSeasonSkater
 from api.projections.previous_season_skater_builder import PreviousSeasonSkaterBuilder
 from api.projections.season_pace import SeasonPace
+from api.season import Season
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
 from api.skaters.other_league_skater_season import OtherLeagueSkaterSeason
@@ -30,14 +32,16 @@ def _nhl(
       age=28.7,
       team=team,
       games_played=games_played,
+      even_strength_goals=int( g_pace ),
+      even_strength_points=( int( g_pace + a_pace ) ),
       goals=int( g_pace ),
       assists=int( a_pace ),
       points=int( g_pace + a_pace ),
       schedule_games=82,
       pace_games=84,
-      g_pace=g_pace,
-      a_pace=a_pace,
-      p_pace=g_pace + a_pace,
+      g_pace=Season.pace( int( g_pace ), games_played, 84 ),
+      a_pace=Season.pace( int( a_pace ), games_played, 84 ),
+      p_pace=Season.pace( int( g_pace + a_pace ), games_played, 84 ),
       gp_share=1.0,
       playoff_games=0,
       playoff_goals=0,
@@ -148,7 +152,10 @@ def Test_Build_TestUnknownLeague_ExpectOmitted() -> None:
 def Test_Build_TestZeroGames_ExpectOmitted() -> None:
    league = 'AAA'
    factor = LeagueFactor( league, 0.40 )
-   nhl = _nhl( 1, list( Team )[ Position.FIRST ], 40.0, 50.0, 0 )
+   nhl = replace(
+      _nhl( 1, list( Team )[ Position.FIRST ], 0.0, 0.0 ),
+      games_played=0,
+      gp_share=0.0 )
    other = _other( 2, 20.0, 30.0, league, 0 )
 
    group = PreviousSeasonSkaterBuilder.build( [ nhl ], [ other ], [ factor ] )

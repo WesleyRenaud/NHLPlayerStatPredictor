@@ -49,6 +49,8 @@ def _season( age: float ) -> NhlSkaterSeason:
       age=age,
       team=list( Team )[ Position.FIRST ],
       games_played=1,
+      even_strength_goals=0,
+      even_strength_points=0,
       goals=0,
       assists=0,
       points=0,
@@ -105,8 +107,8 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
       'resolve',
       lambda skater, target, leagues, pace_model, pim_model: resolved.append(
          ( skater, target, leagues, pace_model, pim_model ) ) or PaceValues(
-            goals=aged.goals,
-            assists=aged.assists,
+            even_strength_goals=aged.goals,
+            even_strength_assists=aged.assists,
             power_play_goals=0.0,
             power_play_assists=0.0,
             short_handed_goals=0.0,
@@ -136,9 +138,8 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
    projection = ProjectionCoordinator.get_projection( player_id )
 
    assert projection == Projection(
-      goals=round( aged.goals ),
-      assists=round( aged.assists ),
-      points=round( aged.goals ) + round( aged.assists ),
+      even_strength_goals=round( aged.goals ),
+      even_strength_points=round( aged.goals ) + round( aged.assists ),
       penalty_minutes=round( pim_pace ),
       games_played=games_played,
       power_play_goals=0,
@@ -201,15 +202,14 @@ def Test_GetProjection_TestMissingPace_ExpectNone(
 
 
 @pytest.mark.parametrize(
-   'goal_pace, pp_pace, sh_pace, expected_error',
-   [ ( 30.0, 0.0, 0.0, False ), ( 1.2, 0.6, 0.6, True ), ( 1.0, 2.0, 0.0, True ) ] )
+   'goal_pace, pp_pace, sh_pace',
+   [ ( 30.0, 0.0, 0.0 ), ( 1.2, 0.6, 0.6 ), ( 1.0, 2.0, 0.0 ) ] )
 def Test_GetProjection_TestIceChange_ExpectLastToiScale(
       monkeypatch: pytest.MonkeyPatch,
       tmp_path: Path,
       goal_pace: float,
       pp_pace: float,
-      sh_pace: float,
-      expected_error: bool ) -> None:
+      sh_pace: float ) -> None:
    db_path = tmp_path / 'skaters.sqlite'
    player_id = 7
    seasons = [ _season( 27.2 ) ]
@@ -239,8 +239,8 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
       projection_coordinator.BaselinePaceResolver,
       'resolve',
       lambda skater, target, leagues, pace_model, pim_model: PaceValues(
-         goals=aged.goals,
-         assists=aged.assists,
+         even_strength_goals=aged.goals,
+         even_strength_assists=aged.assists,
          power_play_goals=pp_pace,
          power_play_assists=0.0,
          short_handed_goals=sh_pace,
@@ -267,20 +267,13 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
       'resolve',
       lambda: games_played )
 
-   if expected_error:
-      with pytest.raises( ValueError, match='Special-teams projection exceeds total scoring projection' ):
-         ProjectionCoordinator.get_projection( player_id )
-
-      return
-
    projection = ProjectionCoordinator.get_projection( player_id )
 
    expected_pp = round( pp_pace * projected / last )
    expected_sh = round( sh_pace * projected / last )
    assert projection == Projection(
-      goals=round( aged.goals * projected / last ),
-      assists=round( aged.assists * projected / last ),
-      points=(
+      even_strength_goals=round( aged.goals * projected / last ),
+      even_strength_points=(
          round( aged.goals * projected / last )
          + round( aged.assists * projected / last ) ),
       penalty_minutes=round( pim_pace * projected / last ),

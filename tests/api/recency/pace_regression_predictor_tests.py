@@ -2,10 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from api.projections.power_play_pace import PowerPlayPace
+from api.projections.scoring_paces import ScoringPaces
 from api.projections.scoring_stat import ScoringStat
-from api.projections.season_pace import SeasonPace
-from api.projections.short_handed_pace import ShortHandedPace
 from api.recency.pace_regression import PaceRegression
 from api.recency.pace_regression_model import PaceRegressionModel
 from api.recency.pace_regression_predictor import PaceRegressionPredictor
@@ -23,8 +21,8 @@ OLDER_RELATIONSHIP_WEIGHT = 0.5
 
 def _prior( year: int, age: int, goals: float, nhl_games: int = 82 ) -> PriorYear:
    return PriorYear(
-      year, SeasonPace( goals, goals ), PowerPlayPace( 0.0, 0.0 ), ShortHandedPace( 0.0, 0.0 ),
-      0.0, 82, nhl_games, age + 0.4, SeasonPace( 0.0, 0.0 ) )
+      year, ScoringPaces( goals, goals, 0.0, 0.0, 0.0, 0.0 ),
+      0.0, 82, nhl_games, age + 0.4 )
 
 
 def _model() -> PaceRegressionModel:
@@ -35,7 +33,7 @@ def _model() -> PaceRegressionModel:
          ProductionCoefficient( 18, 20, AGE_18_TO_19_MULTIPLIER * AGE_19_TO_20_MULTIPLIER, OLDER_RELATIONSHIP_WEIGHT, 100 )
       ] )
       for source in PriorSource
-      for stat in ( ScoringStat.GOALS, ScoringStat.ASSISTS )
+      for stat in ( ScoringStat.EVEN_STRENGTH_GOALS, ScoringStat.EVEN_STRENGTH_ASSISTS )
    ] )
 
 
@@ -46,11 +44,11 @@ def Test_Paces_TestWeightedHistory_ExpectAverageThenAgeGrowth() -> None:
 
    assert paced is not None
    latest, older = priors
-   normalized_older_goals = older.pace.goals * AGE_18_TO_19_MULTIPLIER
+   normalized_older_goals = older.scoring.goals * AGE_18_TO_19_MULTIPLIER
    latest_weight = latest.games * LATEST_RELATIONSHIP_WEIGHT
    older_weight = older.games * OLDER_RELATIONSHIP_WEIGHT
    weighted_goals = (
-      latest.pace.goals * latest_weight + normalized_older_goals * older_weight
+      latest.scoring.goals * latest_weight + normalized_older_goals * older_weight
    ) / ( latest_weight + older_weight )
    assert paced.goals == pytest.approx( weighted_goals * AGE_19_TO_20_MULTIPLIER )
    assert paced.power_play_goals == 0.0
@@ -64,7 +62,7 @@ def Test_Paces_TestMissedSeason_ExpectActualElapsedAgeGrowth() -> None:
 
    assert paced is not None
    assert paced.goals == pytest.approx(
-      priors[ 0 ].pace.goals * AGE_18_TO_19_MULTIPLIER * AGE_19_TO_20_MULTIPLIER )
+      priors[ 0 ].scoring.goals * AGE_18_TO_19_MULTIPLIER * AGE_19_TO_20_MULTIPLIER )
 
 
 def Test_Paces_TestTranslatedHistory_ExpectSameMultiplicativeWorkflow() -> None:
@@ -73,7 +71,7 @@ def Test_Paces_TestTranslatedHistory_ExpectSameMultiplicativeWorkflow() -> None:
    paced = PaceRegressionPredictor.paces( _model(), priors, 20252026, PimRegressionModel( [] ), [] )
 
    assert paced is not None
-   assert paced.goals == pytest.approx( priors[ 0 ].pace.goals * AGE_19_TO_20_MULTIPLIER )
+   assert paced.goals == pytest.approx( priors[ 0 ].scoring.goals * AGE_19_TO_20_MULTIPLIER )
 
 
 def Test_Paces_TestNoHistory_ExpectNone() -> None:
@@ -90,7 +88,7 @@ def Test_Paces_TestMixedSources_ExpectEachPriorUsesItsSource() -> None:
          ProductionCoefficient( 18, 20, multiplier ** 2, 1.0, 100 )
       ] )
       for source, multiplier in ( ( PriorSource.NHL, nhl_multiplier ), ( PriorSource.TRANSLATED, translated_multiplier ) )
-      for stat in ( ScoringStat.GOALS, ScoringStat.ASSISTS )
+      for stat in ( ScoringStat.EVEN_STRENGTH_GOALS, ScoringStat.EVEN_STRENGTH_ASSISTS )
    ] )
    priors = [ _prior( 2024, 19, 10.0 ), _prior( 2023, 18, 5.0, nhl_games=0 ) ]
 
@@ -98,8 +96,8 @@ def Test_Paces_TestMixedSources_ExpectEachPriorUsesItsSource() -> None:
 
    assert paced is not None
    latest, older = priors
-   normalized_older_goals = older.pace.goals * translated_multiplier
+   normalized_older_goals = older.scoring.goals * translated_multiplier
    expected_goals = (
-      latest.pace.goals * latest.games + normalized_older_goals * older.games
+      latest.scoring.goals * latest.games + normalized_older_goals * older.games
    ) / ( latest.games + older.games ) * nhl_multiplier
    assert paced.goals == pytest.approx( expected_goals )

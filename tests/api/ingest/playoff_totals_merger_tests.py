@@ -22,6 +22,8 @@ def _season( player_id: int, season_id: int ) -> NhlSkaterSeason:
       age=28.7,
       team=list( Team )[ Position.FIRST ],
       games_played=58,
+      even_strength_goals=12,
+      even_strength_points=22,
       goals=12,
       assists=10,
       points=22,

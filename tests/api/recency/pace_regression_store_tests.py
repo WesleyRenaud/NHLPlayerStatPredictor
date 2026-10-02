@@ -19,7 +19,7 @@ def Test_Write_TestModel_ExpectReadable(
       tmp_path: Path ) -> None:
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
    model = PaceRegressionModel( [
-      PaceRegression( PriorSource.NHL, ScoringStat.GOALS, [ ProductionCoefficient( 18, 19, 1.2, 0.8, 100 ) ] )
+      PaceRegression( PriorSource.NHL, ScoringStat.EVEN_STRENGTH_GOALS, [ ProductionCoefficient( 18, 19, 1.2, 0.8, 100 ) ] )
    ] )
 
    PaceRegressionStore.write( model )
@@ -32,7 +32,7 @@ def Test_Read_TestModel_ExpectFileUnchanged(
       monkeypatch: pytest.MonkeyPatch,
       tmp_path: Path ) -> None:
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
-   content = json.dumps( { 'regressions': [] } )
+   content = json.dumps( { 'regressions': [], 'component_shares': [] } )
    PaceRegressionStore.path().write_text( content )
 
    model = PaceRegressionStore.read()

@@ -43,7 +43,7 @@ class ProjectionCoordinator():
       if paces is None:
          return None
 
-      pace = paces.season_pace()
+      even_strength_pace = paces.even_strength_pace()
       power_play_pace = paces.power_play_pace()
       short_handed_pace = paces.short_handed_pace()
       pim_pace = paces.penalty_minutes
@@ -51,8 +51,8 @@ class ProjectionCoordinator():
       ice = SkaterIceStore.by_player().get( player_id )
 
       if ice is not None and ice.last_toi:
-         pace = IcePaceScaler.adjust(
-            pace,
+         even_strength_pace = IcePaceScaler.adjust(
+            even_strength_pace,
             ice.last_toi,
             ice.projected_toi )
          power_play_pace = IcePaceScaler.adjust(
@@ -67,17 +67,15 @@ class ProjectionCoordinator():
          if pim_pace is not None:
             pim_pace *= IcePaceScaler.ratio( ice.last_toi, ice.projected_toi )
 
-      goals = round( pace.goals )
-      assists = round( pace.assists )
-      points = goals + assists
       power_play_goals = round( power_play_pace.goals )
       power_play_assists = round( power_play_pace.assists )
       short_handed_goals = round( short_handed_pace.goals )
       short_handed_assists = round( short_handed_pace.assists )
+      even_strength_goals = round( even_strength_pace.goals )
+      even_strength_assists = round( even_strength_pace.assists )
       return Projection(
-         goals=goals,
-         assists=assists,
-         points=points,
+         even_strength_goals=even_strength_goals,
+         even_strength_points=even_strength_goals + even_strength_assists,
          penalty_minutes=None if pim_pace is None else round( pim_pace ),
          games_played=PaceGamesResolver.resolve(),
          projected_toi=None if ice is None else ice.projected_toi,

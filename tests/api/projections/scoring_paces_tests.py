@@ -15,6 +15,9 @@ def Test_Paces_TestComponents_ExpectUnalteredValues() -> None:
    assert pace.season_pace() == SeasonPace( pace.goals, pace.assists )
    assert pace.power_play_pace() == PowerPlayPace( pace.power_play_goals, pace.power_play_assists )
    assert pace.short_handed_pace() == ShortHandedPace( pace.short_handed_goals, pace.short_handed_assists )
+   assert pace.even_strength_pace() == SeasonPace( pace.even_strength_goals, pace.even_strength_assists )
+   assert pace.goals == pace.even_strength_goals + pace.power_play_goals + pace.short_handed_goals
+   assert pace.assists == pace.even_strength_assists + pace.power_play_assists + pace.short_handed_assists
 
 
 def Test_Paces_TestScoringStats_ExpectEnumMatchesFields() -> None:

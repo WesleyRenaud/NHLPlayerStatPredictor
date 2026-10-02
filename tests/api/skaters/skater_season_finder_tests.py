@@ -26,6 +26,8 @@ def Test_FormatTable_TestOneSeason_ExpectPaceColumns( tmp_path: Path ) -> None:
       age=28.7,
       team=team,
       games_played=82,
+      even_strength_goals=48,
+      even_strength_points=138,
       goals=48,
       assists=90,
       points=138,

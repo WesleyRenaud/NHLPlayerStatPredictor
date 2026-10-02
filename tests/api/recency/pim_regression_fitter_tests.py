@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from datetime import date
+from unittest.mock import Mock
 
 import pytest
 
 from api.recency.pim_regression_fitter import PimRegressionFitter
+from api.recency.prior_year_builder import PriorYearBuilder
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
 from api.skaters.skater_position import SkaterPosition
@@ -21,6 +23,8 @@ def _season( player_id: int, year: int, age: float, pim: int ) -> NhlSkaterSeaso
       age=age,
       team=list( Team )[ Position.FIRST ],
       games_played=82,
+      even_strength_goals=0,
+      even_strength_points=0,
       goals=0,
       assists=0,
       points=0,
@@ -57,3 +61,22 @@ def Test_Fit_TestMultiplicativePim_ExpectAgeMultipliers() -> None:
 
 def Test_Fit_TestNoPairs_ExpectEmptyModel() -> None:
    assert PimRegressionFitter.fit( [] ).coefficients == []
+
+
+def Test_Fit_TestMultipleYears_ExpectOneHistoryPreparationPerPlayer(
+      monkeypatch: pytest.MonkeyPatch ) -> None:
+   seasons = [
+      _season( player_id, year, 18.4 + year - 2020, 10 )
+      for player_id in range( 1, 3 )
+      for year in range( 2020, 2024 )
+   ]
+   history = Mock( wraps=PriorYearBuilder.history )
+   monkeypatch.setattr( PriorYearBuilder, 'history', history )
+
+   model = PimRegressionFitter.fit( seasons )
+
+   assert history.call_count == len( { season.player_id for season in seasons } )
+   assert model.coefficients
+   assert all(
+      0 < coefficient.to_age - coefficient.from_age <= PriorYearBuilder.WIDTH
+      for coefficient in model.coefficients )

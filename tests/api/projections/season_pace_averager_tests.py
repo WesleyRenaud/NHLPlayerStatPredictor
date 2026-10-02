@@ -21,6 +21,8 @@ def _season( g_pace: float, a_pace: float, season_id: int ) -> NhlSkaterSeason:
       age=28.7,
       team=list( Team )[ Position.FIRST ],
       games_played=82,
+      even_strength_goals=int( g_pace ),
+      even_strength_points=( int( g_pace + a_pace ) ),
       goals=int( g_pace ),
       assists=int( a_pace ),
       points=int( g_pace + a_pace ),

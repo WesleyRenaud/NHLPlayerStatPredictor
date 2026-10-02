@@ -22,6 +22,8 @@ class SkaterSummary():
    power_play_points: int
    short_handed_goals: int
    short_handed_points: int
+   even_strength_goals: int
+   even_strength_points: int
 
 
    @classmethod
@@ -44,4 +46,6 @@ class SkaterSummary():
          int( raw[ 'ppGoals' ] ),
          int( raw[ 'ppPoints' ] ),
          int( raw[ 'shGoals' ] ),
-         int( raw[ 'shPoints' ] ) )
+         int( raw[ 'shPoints' ] ),
+         int( raw[ 'evGoals' ] ),
+         int( raw[ 'evPoints' ] ) )

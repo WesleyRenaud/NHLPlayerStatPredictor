@@ -100,9 +100,12 @@ def Test_Migrate_TestPriorSkaterSeasonSchema_ExpectZeroPlayoffTotals( tmp_path: 
          'SELECT PLAYOFF_GAMES, PLAYOFF_GOALS, PLAYOFF_ASSISTS FROM SkaterSeason' ).fetchall()
       short_handed = conn.execute(
          'SELECT SHORT_HANDED_GOALS, SHORT_HANDED_POINTS FROM SkaterSeason' ).fetchall()
+      even_strength = conn.execute(
+         'SELECT EV_GOALS, EV_POINTS FROM SkaterSeason' ).fetchall()
 
    assert totals == [ ( 0, 0, 0 ) ]
    assert short_handed == [ ( None, None ) ]
+   assert even_strength == [ ( None, None ) ]
 
 
 def Test_Migrate_TestCurrentSchema_ExpectIdempotent( tmp_path: Path ) -> None:

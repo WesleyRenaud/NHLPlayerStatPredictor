@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .pace_values import PaceValues
+from .scoring_paces import ScoringPaces
 
 @dataclass( frozen=True )
-class YearPace( PaceValues ):
+class YearPace():
+   scoring: ScoringPaces
+   penalty_minutes: float | None
    games: int
+   nhl_games: int
