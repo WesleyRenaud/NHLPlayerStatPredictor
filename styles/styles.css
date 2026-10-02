@@ -179,9 +179,9 @@ button.is-invalid {
 #projection {
    position: relative;
    left: 50%;
-   width: min(80rem, calc(100vw - 2rem));
+   width: min(80rem, calc(100vw - 24px));
    margin-top: 1.75rem;
-   padding: 1.6rem 1.7rem 1.75rem;
+   padding: 1.6rem 16px 1.75rem;
    border: 1px solid var(--color-border);
    border-radius: 1.15rem;
    background: var(--color-surface);
@@ -216,18 +216,19 @@ h2 {
 
 .statline {
    display: grid;
-   grid-template-columns: repeat(9, minmax(0, 1fr)) minmax(0, 2.2fr);
-   gap: 0.4rem;
+   grid-template-columns: repeat(11, minmax(176px, 1fr)) minmax(264px, 1.4fr);
+   gap: 6px;
+   overflow-x: auto;
 }
 
 .statline div {
-   padding: 0.75rem 0.35rem;
-   border-radius: 0.9rem;
+   padding: 28px 8px;
+   border-radius: 8px;
    background: #0b1a2a;
    text-align: center;
 }
 
-.statline div:last-child .value {
+.statline [data-projected-toi] {
    white-space: nowrap;
 }
 
@@ -235,14 +236,14 @@ h2 {
    display: block;
    margin-bottom: 0.3rem;
    color: var(--color-muted);
-   font-size: 0.8rem;
+   font-size: 28px;
    font-weight: 700;
-   letter-spacing: 0.08em;
+   letter-spacing: 0;
 }
 
 .value {
    color: var(--color-stat);
-   font-size: 1.35rem;
+   font-size: 80px;
    font-weight: 700;
 }
 
@@ -308,25 +309,6 @@ h2 {
    font-weight: 600;
 }
 
-@media (max-width: 1200px) {
-   .statline {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.9rem;
-   }
-
-   .statline div {
-      padding: 1.15rem 0.6rem;
-   }
-
-   .label {
-      font-size: 0.9rem;
-   }
-
-   .value {
-      font-size: 2.6rem;
-   }
-}
-
 @media (max-width: 900px) {
    html {
       font-size: 22px;
@@ -344,24 +326,6 @@ h2 {
       flex-direction: column;
    }
 
-   .statline {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-   }
-}
-
-@media (max-width: 700px) {
-   .statline {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.4rem;
-   }
-
-   .statline div:last-child {
-      grid-column: span 2;
-   }
-
-   .value {
-      font-size: 1.6rem;
-   }
 }
 
 @media (max-width: 360px) {
@@ -373,11 +337,4 @@ h2 {
       font-size: 1.4rem;
    }
 
-   .statline {
-      grid-template-columns: minmax(0, 1fr);
-   }
-
-   .statline div:last-child {
-      grid-column: auto;
-   }
 }

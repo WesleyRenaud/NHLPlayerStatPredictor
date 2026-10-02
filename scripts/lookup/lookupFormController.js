@@ -72,6 +72,8 @@ export class LookupFormController {
       result.querySelector('[data-penalty-minutes]').textContent =
          projection.penaltyMinutes ?? '—';
       result.querySelector('[data-games-played]').textContent = projection.gamesPlayed;
+      result.querySelector('[data-even-strength-goals]').textContent = projection.evenStrengthGoals;
+      result.querySelector('[data-even-strength-points]').textContent = projection.evenStrengthPoints;
       result.querySelector('[data-power-play-goals]').textContent = projection.powerPlayGoals;
       result.querySelector('[data-power-play-points]').textContent = projection.powerPlayPoints;
       result.querySelector('[data-short-handed-goals]').textContent = projection.shortHandedGoals;

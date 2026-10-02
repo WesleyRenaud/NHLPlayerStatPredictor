@@ -39,6 +39,8 @@ function resultElement() {
       '[data-points]': { textContent: '' },
       '[data-penalty-minutes]': { textContent: '' },
       '[data-games-played]': { textContent: '' },
+      '[data-even-strength-goals]': { textContent: '' },
+      '[data-even-strength-points]': { textContent: '' },
       '[data-power-play-goals]': { textContent: '' },
       '[data-power-play-points]': { textContent: '' },
       '[data-short-handed-goals]': { textContent: '' },
@@ -127,6 +129,8 @@ test('Test_Render_TestPlayerAndProjection_ExpectNameMetaAndStats', () => {
       points: 46,
       penaltyMinutes: 18,
       gamesPlayed: 70,
+      evenStrengthGoals: 6,
+      evenStrengthPoints: 31,
       powerPlayGoals: 5,
       powerPlayPoints: 12,
       shortHandedGoals: 1,
@@ -150,6 +154,8 @@ test('Test_Render_TestPlayerAndProjection_ExpectNameMetaAndStats', () => {
       projection.penaltyMinutes
    );
    assert.equal(result.nodes['[data-games-played]'].textContent, projection.gamesPlayed);
+   assert.equal(result.nodes['[data-even-strength-goals]'].textContent, projection.evenStrengthGoals);
+   assert.equal(result.nodes['[data-even-strength-points]'].textContent, projection.evenStrengthPoints);
    assert.equal(
       result.nodes['[data-power-play-goals]'].textContent,
       projection.powerPlayGoals
@@ -168,6 +174,16 @@ test('Test_Render_TestPlayerAndProjection_ExpectNameMetaAndStats', () => {
    );
    assert.equal(result.nodes['[data-projected-toi]'].textContent, '18:30');
    assert.equal(result.hidden, false);
+});
+
+
+test('Test_Render_TestZeroEvenStrengthStats_ExpectZero', () => {
+   const result = resultElement();
+
+   LookupFormController.render(result, {}, { evenStrengthGoals: 0, evenStrengthPoints: 0 });
+
+   assert.equal(result.nodes['[data-even-strength-goals]'].textContent, 0);
+   assert.equal(result.nodes['[data-even-strength-points]'].textContent, 0);
 });
 
 
