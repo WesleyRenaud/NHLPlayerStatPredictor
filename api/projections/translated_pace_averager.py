@@ -22,6 +22,7 @@ class TranslatedPaceAverager():
       weighted_paces_by_stat = { stat: 0.0 for stat in ScoringStat }
       nhl_games = 0
       penalty_minutes = 0.0
+      shots = 0.0
 
       for season in seasons:
          if not season.games_played:
@@ -39,6 +40,7 @@ class TranslatedPaceAverager():
          if isinstance( season, NhlSkaterSeason ):
             nhl_games += season.games_played
             penalty_minutes += season.games_played * season.penalty_minutes_pace()
+            shots += season.games_played * season.shots_pace()
 
       if not games:
          return None
@@ -50,7 +52,8 @@ class TranslatedPaceAverager():
          } ),
          penalty_minutes=None if not nhl_games else penalty_minutes / nhl_games,
          games=games,
-         nhl_games=nhl_games )
+         nhl_games=nhl_games,
+         shots=None if not nhl_games else shots / nhl_games )
 
 
    @classmethod

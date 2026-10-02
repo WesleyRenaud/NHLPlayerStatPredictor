@@ -40,6 +40,7 @@ def Test_InsertRows_TestInsertedPlayer_ExpectPersistedPoints( tmp_path: Path ) -
       power_play_points=0,
       short_handed_goals=2,
       short_handed_points=3,
+      shots=200,
       penalty_minutes=0 )
    SkaterSeasonStore.insert_rows( [ season ], db_path=db_path )
    conn = DatabaseConnectionProvider.open( db_path )

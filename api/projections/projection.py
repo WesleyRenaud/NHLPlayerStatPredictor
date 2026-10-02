@@ -15,6 +15,8 @@ class Projection():
    short_handed_goals: int
    short_handed_points: int
    projected_toi: float | None = None
+   shots: int | None = None
+   shooting_percentage: float | None = None
 
 
    @property
@@ -32,7 +34,7 @@ class Projection():
       return self.even_strength_points + self.power_play_points + self.short_handed_points
 
 
-   def to_dict( self ) -> dict[ str, int | str | None ]:
+   def to_dict( self ) -> dict[ str, int | float | str | None ]:
       payload = {
          'goals': self.goals,
          'assists': self.assists,
@@ -45,6 +47,8 @@ class Projection():
          'shortHandedPoints': self.short_handed_points,
          'evenStrengthGoals': self.even_strength_goals,
          'evenStrengthPoints': self.even_strength_points,
+         'shots': self.shots,
+         'shootingPercentage': self.shooting_percentage,
          'projectedToi': (
             None if self.projected_toi is None
             else Time.clock_string( self.projected_toi ) ),

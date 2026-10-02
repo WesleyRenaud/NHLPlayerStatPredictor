@@ -35,6 +35,7 @@ class NhlSkaterSeason( SkaterSeason ):
    short_handed_points: int
    even_strength_goals: int
    even_strength_points: int
+   shots: int
 
 
    @classmethod
@@ -68,7 +69,8 @@ class NhlSkaterSeason( SkaterSeason ):
          short_handed_goals=int( row[ 'SHORT_HANDED_GOALS' ] ),
          short_handed_points=int( row[ 'SHORT_HANDED_POINTS' ] ),
          even_strength_goals=int( row[ 'EV_GOALS' ] ),
-         even_strength_points=int( row[ 'EV_POINTS' ] ) )
+         even_strength_points=int( row[ 'EV_POINTS' ] ),
+         shots=int( row[ 'SHOTS' ] ) )
 
 
    def key( self ) -> SkaterSeasonKey:
@@ -117,6 +119,10 @@ class NhlSkaterSeason( SkaterSeason ):
          self.penalty_minutes,
          self.games_played,
          self.pace_games )
+
+
+   def shots_pace( self ) -> float:
+      return Season.pace( self.shots, self.games_played, self.pace_games )
 
 
    def even_strength_pace( self ) -> SeasonPace:

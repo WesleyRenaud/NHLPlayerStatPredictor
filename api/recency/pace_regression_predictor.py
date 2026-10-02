@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from .nhl_production_regression import NhlProductionRegression
+from .nhl_production_stat import NhlProductionStat
 from .pace_regression import PaceRegression
 from .pace_regression_model import PaceRegressionModel
-from .pim_regression_model import PimRegressionModel
-from .pim_regression_predictor import PimRegressionPredictor
 from .prior_source import PriorSource
 from .prior_year import PriorYear
+from .prior_year_builder import PriorYearBuilder
 from .production_coefficient import ProductionCoefficient
 from .production_history_predictor import ProductionHistoryPredictor
 from ..projections.pace_values import PaceValues
@@ -22,7 +23,6 @@ class PaceRegressionPredictor():
          model: PaceRegressionModel,
          priors: list[ PriorYear ],
          target_season_id: int,
-         pim_model: PimRegressionModel,
          nhl_seasons: list[ NhlSkaterSeason ] ) -> PaceValues | None:
       if not priors:
          return None
@@ -31,13 +31,17 @@ class PaceRegressionPredictor():
       latest = priors[ Position.FIRST ]
       target_age = latest.age_in_year( year )
       projected_paces_by_stat: dict[ ScoringStat, float ] = {}
+      nhl_priors = PriorYearBuilder.build( nhl_seasons, [], year, [] )
 
       for stat in ScoringStat:
          projected_paces_by_stat[ stat ] = cls._pace( model.regressions, priors, target_age, stat )
 
       return PaceValues(
          **{ stat.value: pace for stat, pace in projected_paces_by_stat.items() },
-         penalty_minutes=PimRegressionPredictor.pace( pim_model, nhl_seasons, target_season_id ) )
+         penalty_minutes=NhlProductionRegression.pace(
+            model.pim_coefficients, nhl_priors, year, NhlProductionStat.PIM ),
+         shots=NhlProductionRegression.pace(
+            model.shots_coefficients, nhl_priors, year, NhlProductionStat.SHOTS ) )
 
 
    @classmethod

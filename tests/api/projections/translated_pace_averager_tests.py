@@ -53,6 +53,7 @@ def _nhl(
       power_play_points=power_play_points,
       short_handed_goals=short_handed_goals,
       short_handed_points=short_handed_points,
+      shots=0,
       penalty_minutes=0 )
 
 

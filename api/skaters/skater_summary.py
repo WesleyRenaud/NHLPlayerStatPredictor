@@ -24,6 +24,7 @@ class SkaterSummary():
    short_handed_points: int
    even_strength_goals: int
    even_strength_points: int
+   shots: int
 
 
    @classmethod
@@ -48,4 +49,5 @@ class SkaterSummary():
          int( raw[ 'shGoals' ] ),
          int( raw[ 'shPoints' ] ),
          int( raw[ 'evGoals' ] ),
-         int( raw[ 'evPoints' ] ) )
+         int( raw[ 'evPoints' ] ),
+         int( raw[ 'shots' ] ) )

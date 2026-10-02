@@ -17,6 +17,7 @@ class PriorYear():
    games: int
    nhl_games: int
    age: float
+   shots_pace: float | None = None
 
 
    def source( self ) -> PriorSource:

@@ -30,6 +30,7 @@ def Test_BuildRows_TestRegularSeason_ExpectPacedTotals() -> None:
    even_strength_goals = goals - power_play_goals - short_handed_goals
    even_strength_points = points - power_play_points - short_handed_points
    pace_games = 84
+   shots = 250
    season = SeasonLength( 20242025, 82, date( 2024, 10, 4 ), date( 2025, 4, 17 ) )
    summaries = [
       SkaterSummary(
@@ -47,7 +48,8 @@ def Test_BuildRows_TestRegularSeason_ExpectPacedTotals() -> None:
          short_handed_goals,
          short_handed_points,
          even_strength_goals,
-         even_strength_points )
+         even_strength_points,
+         shots )
    ]
    bios = [ SkaterBio( player_id, date( 1997, 1, 13 ) ) ]
 
@@ -65,6 +67,8 @@ def Test_BuildRows_TestRegularSeason_ExpectPacedTotals() -> None:
    assert row.short_handed_points == short_handed_points
    assert row.even_strength_goals == even_strength_goals
    assert row.even_strength_points == even_strength_points
+   assert row.shots == shots
+   assert row.shots_pace() == Season.pace( shots, games_played, pace_games )
    assert row.pace_games == pace_games
    assert row.team == team
 
@@ -90,7 +94,8 @@ def Test_BuildRows_TestShortSeason_ExpectPacedTotals() -> None:
          0,
          0,
          1,
-         points )
+         points,
+         10 )
    ]
    bios = [ SkaterBio( player_id, date( 1999, 1, 1 ) ) ]
    season = SeasonLength( 20242025, 82, date( 2024, 10, 4 ), date( 2025, 4, 17 ) )
@@ -111,8 +116,8 @@ def Test_BuildRows_TestMissingBio_ExpectSkipped() -> None:
    games_played = 82
    pace_games = 84
    summaries = [
-      SkaterSummary( kept_id, 'Has Bio', position, [ team ], games_played, 1, 1, 2, 0, 0, 0, 0, 0, 1, 2 ),
-      SkaterSummary( missing_id, 'No Bio', position, [ team ], games_played, 1, 1, 2, 0, 0, 0, 0, 0, 1, 2 ),
+      SkaterSummary( kept_id, 'Has Bio', position, [ team ], games_played, 1, 1, 2, 0, 0, 0, 0, 0, 1, 2, 10 ),
+      SkaterSummary( missing_id, 'No Bio', position, [ team ], games_played, 1, 1, 2, 0, 0, 0, 0, 0, 1, 2, 10 ),
    ]
    bios = [ SkaterBio( kept_id, date( 1999, 1, 1 ) ) ]
    season = SeasonLength( 20242025, 82, date( 2024, 10, 4 ), date( 2025, 4, 17 ) )

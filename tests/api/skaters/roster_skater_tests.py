@@ -37,6 +37,7 @@ def _season( season_id: int, player_id: int ) -> NhlSkaterSeason:
       power_play_points=0,
       short_handed_goals=0,
       short_handed_points=0,
+      shots=0,
       penalty_minutes=0 )
 
 

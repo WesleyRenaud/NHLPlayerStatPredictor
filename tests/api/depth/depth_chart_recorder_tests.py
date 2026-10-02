@@ -184,6 +184,7 @@ def Test_Availabilities_TestNhlGames_ExpectShare(
             power_play_points=0,
             short_handed_goals=0,
             short_handed_points=0,
+            shots=0,
             penalty_minutes=0 )
       ] )
    monkeypatch.setattr(
@@ -234,6 +235,7 @@ def Test_Availabilities_TestMixedYear_ExpectFull(
             power_play_points=0,
             short_handed_goals=0,
             short_handed_points=0,
+            shots=0,
             penalty_minutes=0 )
       ] )
    monkeypatch.setattr(
