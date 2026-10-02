@@ -79,7 +79,7 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
       PimRegressionModel ] ] = []
    other_seasons: list[ OtherLeagueSkaterSeason ] = []
    league_factors: list[ LeagueFactor ] = []
-   model = PaceRegressionModel( [], 0.8, 0.85, 0.8, 0.85, 1.0, 1.0, 1.0, 1.0 )
+   model = PaceRegressionModel( [] )
 
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
    _stub_ice( monkeypatch )
@@ -118,7 +118,7 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
    monkeypatch.setattr(
       projection_coordinator.PimRegressionStore,
       'read',
-      lambda: PimRegressionModel( [], 1.0 ) )
+      lambda: PimRegressionModel( [] ) )
    monkeypatch.setattr(
       projection_coordinator.PaceGamesResolver,
       'resolve',
@@ -144,7 +144,7 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
          target_season_id,
          league_factors,
          model,
-         PimRegressionModel( [], 1.0 ) )
+         PimRegressionModel( [] ) )
    ]
 
 
@@ -179,24 +179,31 @@ def Test_GetProjection_TestMissingPace_ExpectNone(
    monkeypatch.setattr(
       projection_coordinator.PaceRegressionStore,
       'read',
-      lambda: PaceRegressionModel( [], 0.8, 0.85, 0.8, 0.85, 1.0, 1.0, 1.0, 1.0 ) )
+      lambda: PaceRegressionModel( [] ) )
    monkeypatch.setattr(
       projection_coordinator.PimRegressionStore,
       'read',
-      lambda: PimRegressionModel( [], 1.0 ) )
+      lambda: PimRegressionModel( [] ) )
 
    projection = ProjectionCoordinator.get_projection( player_id )
 
    assert projection is None
 
 
+@pytest.mark.parametrize(
+   'goal_pace, pp_pace, sh_pace, expected_error',
+   [ ( 30.0, 0.0, 0.0, False ), ( 1.2, 0.6, 0.6, True ), ( 1.0, 2.0, 0.0, True ) ] )
 def Test_GetProjection_TestIceChange_ExpectLastToiScale(
       monkeypatch: pytest.MonkeyPatch,
-      tmp_path: Path ) -> None:
+      tmp_path: Path,
+      goal_pace: float,
+      pp_pace: float,
+      sh_pace: float,
+      expected_error: bool ) -> None:
    db_path = tmp_path / 'skaters.sqlite'
    player_id = 7
    seasons = [ _season( 27.2 ) ]
-   aged = SeasonPace( 30.0, 40.0 )
+   aged = SeasonPace( goal_pace, 40.0 )
    pim_pace = 18.7
    games_played = 84
    last = 20.0
@@ -223,9 +230,9 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
       lambda skater, target, leagues, pace_model, pim_model: PaceValues(
          goals=aged.goals,
          assists=aged.assists,
-         power_play_goals=0.0,
+         power_play_goals=pp_pace,
          power_play_assists=0.0,
-         short_handed_goals=0.0,
+         short_handed_goals=sh_pace,
          short_handed_assists=0.0,
          penalty_minutes=pim_pace ) )
    monkeypatch.setattr(
@@ -239,18 +246,26 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
    monkeypatch.setattr(
       projection_coordinator.PaceRegressionStore,
       'read',
-      lambda: PaceRegressionModel( [], 0.8, 0.85, 0.8, 0.85, 1.0, 1.0, 1.0, 1.0 ) )
+      lambda: PaceRegressionModel( [] ) )
    monkeypatch.setattr(
       projection_coordinator.PimRegressionStore,
       'read',
-      lambda: PimRegressionModel( [], 1.0 ) )
+      lambda: PimRegressionModel( [] ) )
    monkeypatch.setattr(
       projection_coordinator.PaceGamesResolver,
       'resolve',
       lambda: games_played )
 
+   if expected_error:
+      with pytest.raises( ValueError, match='Special-teams projection exceeds total scoring projection' ):
+         ProjectionCoordinator.get_projection( player_id )
+
+      return
+
    projection = ProjectionCoordinator.get_projection( player_id )
 
+   expected_pp = round( pp_pace * projected / last )
+   expected_sh = round( sh_pace * projected / last )
    assert projection == Projection(
       goals=round( aged.goals * projected / last ),
       assists=round( aged.assists * projected / last ),
@@ -259,8 +274,8 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
          + round( aged.assists * projected / last ) ),
       penalty_minutes=round( pim_pace * projected / last ),
       games_played=games_played,
-      power_play_goals=0,
-      power_play_points=0,
-      short_handed_goals=0,
-      short_handed_points=0,
+      power_play_goals=expected_pp,
+      power_play_points=expected_pp,
+      short_handed_goals=expected_sh,
+      short_handed_points=expected_sh,
       projected_toi=projected )

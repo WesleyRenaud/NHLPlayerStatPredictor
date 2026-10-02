@@ -41,4 +41,4 @@ def Test_Solve_TestZeroColumn_ExpectZeroFreeVariable() -> None:
 
    solution = LinearSystem.solve( products, targets )
 
-   assert solution == [ 4.0, 0.0 ]
+   assert solution == [ targets[ 0 ] / products[ 0 ][ 0 ], 0.0 ]

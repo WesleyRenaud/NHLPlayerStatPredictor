@@ -25,4 +25,6 @@ class PaceRegressionStore():
 
    @classmethod
    def read( cls ) -> PaceRegressionModel:
-      return PaceRegressionModel.from_row( json.loads( cls.path().read_text() ) )
+      row = json.loads( cls.path().read_text() )
+
+      return PaceRegressionModel.from_row( row )

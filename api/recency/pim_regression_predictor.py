@@ -1,46 +1,34 @@
 from __future__ import annotations
 
-from .pim_regression import PimRegression
 from .pim_regression_model import PimRegressionModel
-from .prior_year import PriorYear
 from .prior_year_builder import PriorYearBuilder
+from .production_coefficient import ProductionCoefficient
+from .production_history_predictor import ProductionHistoryPredictor
 from ..season import Season
 from ..shared.enums.position import Position
 from ..skaters.nhl_skater_season import NhlSkaterSeason
 
 
 class PimRegressionPredictor():
-	@classmethod
-	def pace(
-			cls,
-			model: PimRegressionModel,
-			seasons: list[ NhlSkaterSeason ],
-			target_season_id: int ) -> float | None:
-		year = Season.start_year( target_season_id )
-		priors = PriorYearBuilder.build( seasons, [], year )
-		regression = cls._regression( model.regressions, priors )
+   @classmethod
+   def pace(
+         cls,
+         model: PimRegressionModel,
+         seasons: list[ NhlSkaterSeason ],
+         target_season_id: int ) -> float | None:
+      year = Season.start_year( target_season_id )
+      priors = PriorYearBuilder.build( seasons, [], year )
 
-		if regression is None:
-			return None
+      if not priors:
+         return None
 
-		pace = regression.pace( priors[ :len( regression.weights ) ] )
-		latest = priors[ Position.FIRST ]
+      latest = priors[ Position.FIRST ]
+      target_age = latest.age_in_year( year )
 
-		if latest.gap_before( year ):
-			return pace * model.nhl_gap_scale
+      def lookup( from_age: int, to_age: int ) -> ProductionCoefficient:
+         return ProductionHistoryPredictor.coefficient( model.coefficients, from_age, to_age )
 
-		return pace
-
-
-	@classmethod
-	def _regression(
-			cls,
-			regressions: list[ PimRegression ],
-			priors: list[ PriorYear ] ) -> PimRegression | None:
-		for width in range( len( priors ), 0, -1 ):
-			for regression in regressions:
-				if regression.covers( width ):
-					return regression
-
-		return None
-
+      return ProductionHistoryPredictor.pace(
+         [ ( int( prior.age ), float( prior.pim_pace ), prior.games ) for prior in priors ],
+         target_age,
+         lookup )

@@ -41,7 +41,10 @@ def Test_GamesOut_TestTwoHalfAvailable_ExpectQuarterTwoOut() -> None:
 
    mix = AvailabilityEnumerator.games_out( skaters, pace_games )
 
-   assert abs( mix[ Position.FIRST ] - 0.25 * pace_games ) < 0.001
-   assert abs( mix[ Position.SECOND ] - 0.5 * pace_games ) < 0.001
-   assert abs( mix[ Position.THIRD ] - 0.25 * pace_games ) < 0.001
+   neither_out = availability ** 2
+   one_out = 2 * availability * ( 1 - availability )
+   both_out = ( 1 - availability ) ** 2
+   assert abs( mix[ Position.FIRST ] - neither_out * pace_games ) < 0.001
+   assert abs( mix[ Position.SECOND ] - one_out * pace_games ) < 0.001
+   assert abs( mix[ Position.THIRD ] - both_out * pace_games ) < 0.001
    assert abs( sum( mix ) - pace_games ) < 0.001

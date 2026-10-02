@@ -6,6 +6,19 @@ from .other_league_skater_season import OtherLeagueSkaterSeason
 
 class OtherLeagueSeasonProvider():
    @classmethod
+   def all_seasons( cls, db_path: str ) -> list[ OtherLeagueSkaterSeason ]:
+      conn = DatabaseConnectionProvider.open( db_path )
+
+      try:
+         return [
+            OtherLeagueSkaterSeason.from_row( row )
+            for row in conn.execute( 'SELECT * FROM OtherLeagueSeason ORDER BY PLAYER_ID, SEASON_ID, LEAGUE' )
+         ]
+      finally:
+         DatabaseConnectionProvider.close( conn )
+
+
+   @classmethod
    def seasons_for_season_id(
          cls,
          season_id: int,
