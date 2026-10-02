@@ -14,7 +14,6 @@ from ..depth.slot_average_store import SlotAverageStore
 from .github_cli import GithubCli
 from ..paths import Paths
 from ..recency.pace_regression_store import PaceRegressionStore
-from ..recency.pim_regression_store import PimRegressionStore
 from ..shared.enums.position import Position
 from ..team_factor.team_factor_store import TeamFactorStore
 
@@ -48,7 +47,6 @@ class IngestArtifactPuller():
       Paths.PROCESSED_DIR.mkdir( parents=True, exist_ok=True )
       shutil.copy2( cls._source_db( artifact_root ), Paths.DB_PATH )
       shutil.copy2( cls._source_regressions( artifact_root ), PaceRegressionStore.path() )
-      shutil.copy2( cls._source_pim_regressions( artifact_root ), PimRegressionStore.path() )
       shutil.copy2(
          cls._source_availability( artifact_root ),
          AvailabilityWeightStore.path() )
@@ -80,7 +78,6 @@ class IngestArtifactPuller():
                not cls._source_db( artifact_root ).is_file()
                or not cls._source_raw( artifact_root ).is_dir()
                or not cls._source_regressions( artifact_root ).is_file()
-               or not cls._source_pim_regressions( artifact_root ).is_file()
                or not cls._source_availability( artifact_root ).is_file()
                or not cls._source_leagues( artifact_root ).is_file()
                or not cls._source_teams( artifact_root ).is_file()
@@ -193,11 +190,6 @@ class IngestArtifactPuller():
    @classmethod
    def _source_regressions( cls, artifact_root: Path ) -> Path:
       return artifact_root / PaceRegressionStore.path().relative_to( Paths.ROOT )
-
-
-   @classmethod
-   def _source_pim_regressions( cls, artifact_root: Path ) -> Path:
-      return artifact_root / PimRegressionStore.path().relative_to( Paths.ROOT )
 
 
    @classmethod

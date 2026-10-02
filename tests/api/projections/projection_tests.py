@@ -29,6 +29,8 @@ def Test_ToDict_TestProjection_ExpectMappedFields() -> None:
       'shortHandedPoints': projection.short_handed_points,
       'evenStrengthGoals': projection.even_strength_goals,
       'evenStrengthPoints': projection.even_strength_points,
+      'shots': projection.shots,
+      'shootingPercentage': projection.shooting_percentage,
       'projectedToi': projection.projected_toi,
    }
 
@@ -44,6 +46,8 @@ def Test_ToDict_TestProjection_ExpectMappedFields() -> None:
       'shortHandedPoints',
       'evenStrengthGoals',
       'evenStrengthPoints',
+      'shots',
+      'shootingPercentage',
       'projectedToi',
    ]
 

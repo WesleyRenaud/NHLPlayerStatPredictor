@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date
 from pathlib import Path
 from unittest.mock import Mock
@@ -16,7 +17,6 @@ from api.projections.power_play_pace import PowerPlayPace
 from api.projections.projection import Projection
 from api.projections.season_pace import SeasonPace
 from api.recency.pace_regression_model import PaceRegressionModel
-from api.recency.pim_regression_model import PimRegressionModel
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
 from api.skaters.other_league_skater_season import OtherLeagueSkaterSeason
@@ -67,12 +67,15 @@ def _season( age: float ) -> NhlSkaterSeason:
       power_play_points=0,
       short_handed_goals=0,
       short_handed_points=0,
+      shots=0,
       penalty_minutes=0 )
 
 
+@pytest.mark.parametrize( 'shots_pace', [ None, 0.0, 205.3 ] )
 def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
       monkeypatch: pytest.MonkeyPatch,
-      tmp_path: Path ) -> None:
+      tmp_path: Path,
+      shots_pace: float | None ) -> None:
    db_path = tmp_path / 'skaters.sqlite'
    player_id = 7
    seasons = [ _season( 27.2 ), _season( 28.7 ) ]
@@ -85,8 +88,7 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
       Skater,
       int,
       list[ LeagueFactor ],
-      PaceRegressionModel,
-      PimRegressionModel ] ] = []
+      PaceRegressionModel ] ] = []
    other_seasons: list[ OtherLeagueSkaterSeason ] = []
    league_factors: list[ LeagueFactor ] = []
    model = PaceRegressionModel( [] )
@@ -105,14 +107,15 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
    monkeypatch.setattr(
       projection_coordinator.BaselinePaceResolver,
       'resolve',
-      lambda skater, target, leagues, pace_model, pim_model: resolved.append(
-         ( skater, target, leagues, pace_model, pim_model ) ) or PaceValues(
+      lambda skater, target, leagues, pace_model: resolved.append(
+         ( skater, target, leagues, pace_model ) ) or PaceValues(
             even_strength_goals=aged.goals,
             even_strength_assists=aged.assists,
             power_play_goals=0.0,
             power_play_assists=0.0,
             short_handed_goals=0.0,
             short_handed_assists=0.0,
+            shots=shots_pace,
             penalty_minutes=pim_pace ) )
    monkeypatch.setattr(
       projection_coordinator.OtherLeagueSeasonProvider,
@@ -127,19 +130,16 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
       'read',
       lambda: model )
    monkeypatch.setattr(
-      projection_coordinator.PimRegressionStore,
-      'read',
-      lambda: PimRegressionModel( [] ) )
-   monkeypatch.setattr(
       projection_coordinator.PaceGamesResolver,
       'resolve',
       lambda: games_played )
 
    projection = ProjectionCoordinator.get_projection( player_id )
 
-   assert projection == Projection(
+   assert replace( projection, shooting_percentage=None ) == Projection(
       even_strength_goals=round( aged.goals ),
       even_strength_points=round( aged.goals ) + round( aged.assists ),
+      shots=None if shots_pace is None else round( shots_pace ),
       penalty_minutes=round( pim_pace ),
       games_played=games_played,
       power_play_goals=0,
@@ -147,14 +147,17 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
       short_handed_goals=0,
       short_handed_points=0,
       projected_toi=None )
+   if not shots_pace:
+      assert projection.shooting_percentage is None
+   else:
+      assert projection.shooting_percentage == pytest.approx( 100 * aged.goals / shots_pace )
    assert captured == [ ( player_id, str( db_path ) ) ]
    assert resolved == [
       (
          Skater( [ *seasons, *other_seasons ] ),
          target_season_id,
          league_factors,
-         model,
-         PimRegressionModel( [] ) )
+         model )
    ]
 
 
@@ -182,7 +185,7 @@ def Test_GetProjection_TestMissingPace_ExpectNone(
    monkeypatch.setattr(
       projection_coordinator.BaselinePaceResolver,
       'resolve',
-      lambda skater, target, leagues, pace_model, pim_model: None )
+      lambda skater, target, leagues, pace_model: None )
    monkeypatch.setattr(
       projection_coordinator.LeagueFactorStore,
       'read',
@@ -191,10 +194,6 @@ def Test_GetProjection_TestMissingPace_ExpectNone(
       projection_coordinator.PaceRegressionStore,
       'read',
       lambda: PaceRegressionModel( [] ) )
-   monkeypatch.setattr(
-      projection_coordinator.PimRegressionStore,
-      'read',
-      lambda: PimRegressionModel( [] ) )
 
    projection = ProjectionCoordinator.get_projection( player_id )
 
@@ -215,6 +214,7 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
    seasons = [ _season( 27.2 ) ]
    aged = SeasonPace( goal_pace, 40.0 )
    pim_pace = 18.7
+   shots_pace = 205.3
    games_played = 84
    last = 20.0
    implied = 16.0
@@ -238,13 +238,14 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
    monkeypatch.setattr(
       projection_coordinator.BaselinePaceResolver,
       'resolve',
-      lambda skater, target, leagues, pace_model, pim_model: PaceValues(
+      lambda skater, target, leagues, pace_model: PaceValues(
          even_strength_goals=aged.goals,
          even_strength_assists=aged.assists,
          power_play_goals=pp_pace,
          power_play_assists=0.0,
          short_handed_goals=sh_pace,
          short_handed_assists=0.0,
+         shots=shots_pace,
          penalty_minutes=pim_pace ) )
    monkeypatch.setattr(
       projection_coordinator.OtherLeagueSeasonProvider,
@@ -259,10 +260,6 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
       'read',
       lambda: PaceRegressionModel( [] ) )
    monkeypatch.setattr(
-      projection_coordinator.PimRegressionStore,
-      'read',
-      lambda: PimRegressionModel( [] ) )
-   monkeypatch.setattr(
       projection_coordinator.PaceGamesResolver,
       'resolve',
       lambda: games_played )
@@ -271,11 +268,12 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
 
    expected_pp = round( pp_pace * projected / last )
    expected_sh = round( sh_pace * projected / last )
-   assert projection == Projection(
+   assert replace( projection, shooting_percentage=None ) == Projection(
       even_strength_goals=round( aged.goals * projected / last ),
       even_strength_points=(
          round( aged.goals * projected / last )
          + round( aged.assists * projected / last ) ),
+      shots=round( shots_pace * projected / last ),
       penalty_minutes=round( pim_pace * projected / last ),
       games_played=games_played,
       power_play_goals=expected_pp,
@@ -283,6 +281,8 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
       short_handed_goals=expected_sh,
       short_handed_points=expected_sh,
       projected_toi=projected )
+   assert projection.shooting_percentage == pytest.approx(
+      100 * ( goal_pace + pp_pace + sh_pace ) / shots_pace )
 
 
 def Test_GetProjection_TestUnrosteredPlayer_ExpectNoneWithoutCalculation(

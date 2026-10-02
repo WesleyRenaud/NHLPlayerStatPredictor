@@ -39,6 +39,8 @@ function resultElement() {
       '[data-points]': { textContent: '' },
       '[data-penalty-minutes]': { textContent: '' },
       '[data-games-played]': { textContent: '' },
+      '[data-shots]': { textContent: '' },
+      '[data-shooting-percentage]': { textContent: '' },
       '[data-even-strength-goals]': { textContent: '' },
       '[data-even-strength-points]': { textContent: '' },
       '[data-power-play-goals]': { textContent: '' },
@@ -125,6 +127,8 @@ test('Test_Render_TestPlayerAndProjection_ExpectNameMetaAndStats', () => {
    };
    const projection = {
       goals: 12,
+      shots: 200,
+      shootingPercentage: 100 * 12 / 200,
       assists: 34,
       points: 46,
       penaltyMinutes: 18,
@@ -154,6 +158,8 @@ test('Test_Render_TestPlayerAndProjection_ExpectNameMetaAndStats', () => {
       projection.penaltyMinutes
    );
    assert.equal(result.nodes['[data-games-played]'].textContent, projection.gamesPlayed);
+   assert.equal(result.nodes['[data-shots]'].textContent, projection.shots);
+   assert.equal(result.nodes['[data-shooting-percentage]'].textContent, projection.shootingPercentage.toFixed(1));
    assert.equal(result.nodes['[data-even-strength-goals]'].textContent, projection.evenStrengthGoals);
    assert.equal(result.nodes['[data-even-strength-points]'].textContent, projection.evenStrengthPoints);
    assert.equal(
@@ -184,6 +190,26 @@ test('Test_Render_TestZeroEvenStrengthStats_ExpectZero', () => {
 
    assert.equal(result.nodes['[data-even-strength-goals]'].textContent, 0);
    assert.equal(result.nodes['[data-even-strength-points]'].textContent, 0);
+});
+
+
+test('Test_Render_TestUnavailableShotHistory_ExpectPlaceholders', () => {
+   const result = resultElement();
+
+   LookupFormController.render(result, {}, { shots: undefined, shootingPercentage: undefined });
+
+   assert.equal(result.nodes['[data-shots]'].textContent, '—');
+   assert.equal(result.nodes['[data-shooting-percentage]'].textContent, '—');
+});
+
+
+test('Test_Render_TestZeroShotsAndPercentage_ExpectZero', () => {
+   const result = resultElement();
+
+   LookupFormController.render(result, {}, { shots: 0, shootingPercentage: 0 });
+
+   assert.equal(result.nodes['[data-shots]'].textContent, 0);
+   assert.equal(result.nodes['[data-shooting-percentage]'].textContent, '0.0');
 });
 
 

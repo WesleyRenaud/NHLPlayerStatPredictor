@@ -10,3 +10,4 @@ class YearPace():
    penalty_minutes: float | None
    games: int
    nhl_games: int
+   shots: float | None = None

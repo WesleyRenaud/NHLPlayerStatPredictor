@@ -56,6 +56,7 @@ class PriorYearBuilder():
                pim_pace=combined.penalty_minutes,
                games=combined.games,
                nhl_games=combined.nhl_games,
-               age=max( season.age for season in year_seasons ) ) )
+               age=max( season.age for season in year_seasons ),
+               shots_pace=combined.shots ) )
 
       return qualified

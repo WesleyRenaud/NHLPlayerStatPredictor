@@ -11,7 +11,6 @@ from api.projections.scoring_component_shares import ScoringComponentShares
 from api.projections.scoring_stat import ScoringStat
 from api.recency.pace_regression import PaceRegression
 from api.recency.pace_regression_model import PaceRegressionModel
-from api.recency.pim_regression_model import PimRegressionModel
 from api.recency.prior_source import PriorSource
 from api.recency.production_coefficient import ProductionCoefficient
 from api.shared.enums.position import Position
@@ -55,6 +54,7 @@ def _nhl( season_id: int, g_pace: float, a_pace: float, age: float ) -> NhlSkate
       power_play_points=0,
       short_handed_goals=0,
       short_handed_points=0,
+      shots=0,
       penalty_minutes=0 )
 
 
@@ -81,33 +81,32 @@ def _model() -> PaceRegressionModel:
       ] )
       for source in PriorSource
       for stat in ScoringStat
-   ], [ OTHER_LEAGUE_SHARES ] )
-
-
-def _pim_model() -> PimRegressionModel:
-   return PimRegressionModel( [
+   ], [ OTHER_LEAGUE_SHARES ], pim_coefficients=[
       ProductionCoefficient( age, age + 1, PIM_MULTIPLIER, 0.8, 100 ) for age in range( 17, 40 )
+   ], shots_coefficients=[
+      ProductionCoefficient( age, age + 1, SCORING_MULTIPLIER, 0.8, 100 ) for age in range( 17, 40 )
    ] )
 
 
 def Test_Resolve_TestNhlSeason_ExpectMultiplicativePace() -> None:
-   season = replace( _nhl( 20242025, 20.0, 30.0, 27.4 ), penalty_minutes=20 )
+   season = replace( _nhl( 20242025, 20.0, 30.0, 27.4 ), penalty_minutes=20, shots=200 )
 
-   resolved = BaselinePaceResolver.resolve( Skater( [ season ] ), 20252026, [], _model(), _pim_model() )
+   resolved = BaselinePaceResolver.resolve( Skater( [ season ] ), 20252026, [], _model() )
 
    assert resolved is not None
    assert resolved.goals == pytest.approx( season.g_pace * SCORING_MULTIPLIER )
    assert resolved.assists == pytest.approx( season.a_pace * SCORING_MULTIPLIER )
    assert resolved.penalty_minutes == pytest.approx(
       season.penalty_minutes * season.pace_games / season.games_played * PIM_MULTIPLIER )
+   assert resolved.shots == pytest.approx( season.shots_pace() * SCORING_MULTIPLIER )
 
 
 def Test_Resolve_TestPlayoffSurplus_ExpectRegularSeasonWorkflow() -> None:
    regular = _nhl( 20242025, 20.0, 30.0, 27.4 )
    playoffs = replace( regular, playoff_games=10, playoff_goals=5, playoff_assists=3 )
 
-   without = BaselinePaceResolver.resolve( Skater( [ regular ] ), 20252026, [], _model(), _pim_model() )
-   resolved = BaselinePaceResolver.resolve( Skater( [ playoffs ] ), 20252026, [], _model(), _pim_model() )
+   without = BaselinePaceResolver.resolve( Skater( [ regular ] ), 20252026, [], _model() )
+   resolved = BaselinePaceResolver.resolve( Skater( [ playoffs ] ), 20252026, [], _model() )
 
    assert resolved == without
 
@@ -116,7 +115,7 @@ def Test_Resolve_TestOtherLeagueOnly_ExpectTranslatedMultiplicativePace() -> Non
    factor = LeagueFactor( 'AAA', 0.4 )
    season = _other( 20242025, 30.0, 50.0, factor.league )
 
-   resolved = BaselinePaceResolver.resolve( Skater( [ season ] ), 20252026, [ factor ], _model(), _pim_model() )
+   resolved = BaselinePaceResolver.resolve( Skater( [ season ] ), 20252026, [ factor ], _model() )
 
    assert resolved is not None
    assert resolved.goals == pytest.approx( season.g_pace * factor.rate * SCORING_MULTIPLIER )
@@ -127,6 +126,7 @@ def Test_Resolve_TestOtherLeagueOnly_ExpectTranslatedMultiplicativePace() -> Non
    assert resolved.short_handed_goals == pytest.approx(
       translated_goals * OTHER_LEAGUE_SHARES.short_handed_goals * SCORING_MULTIPLIER )
    assert resolved.penalty_minutes is None
+   assert resolved.shots is None
 
 
 def Test_Resolve_TestSmallNhlStint_ExpectObservedAndInferredComponents() -> None:
@@ -134,7 +134,7 @@ def Test_Resolve_TestSmallNhlStint_ExpectObservedAndInferredComponents() -> None
    nhl = replace( _nhl( 20242025, 20.0, 30.0, 18.4 ), games_played=9, power_play_goals=2, power_play_points=4 )
    other = _other( 20242025, 30.0, 50.0, factor.league )
 
-   resolved = BaselinePaceResolver.resolve( Skater( [ nhl, other ] ), 20252026, [ factor ], _model(), _pim_model() )
+   resolved = BaselinePaceResolver.resolve( Skater( [ nhl, other ] ), 20252026, [ factor ], _model() )
 
    assert resolved is not None
    assert resolved.goals > 0.0
@@ -145,12 +145,13 @@ def Test_Resolve_TestSmallNhlStint_ExpectObservedAndInferredComponents() -> None
    ) / ( nhl.games_played + other.games_played ) * SCORING_MULTIPLIER
    assert resolved.power_play_goals == pytest.approx( expected_pp )
    assert resolved.penalty_minutes is None
+   assert resolved.shots is None
 
 
 def Test_Resolve_TestMissedSeason_ExpectElapsedAgeGrowth() -> None:
    season = _nhl( 20232024, 20.0, 30.0, 27.4 )
 
-   resolved = BaselinePaceResolver.resolve( Skater( [ season ] ), 20252026, [], _model(), _pim_model() )
+   resolved = BaselinePaceResolver.resolve( Skater( [ season ] ), 20252026, [], _model() )
 
    assert resolved is not None
    elapsed_seasons = 2025 - 2023
@@ -162,7 +163,7 @@ def Test_Resolve_TestLatestOtherLeague_ExpectMixedComponentsAndNhlOnlyPim() -> N
    nhl = replace( _nhl( 20222023, 20.0, 30.0, 16.4 ), penalty_minutes=20, power_play_goals=2, power_play_points=4 )
    other = _other( 20242025, 30.0, 50.0, factor.league )
 
-   resolved = BaselinePaceResolver.resolve( Skater( [ nhl, other ] ), 20252026, [ factor ], _model(), _pim_model() )
+   resolved = BaselinePaceResolver.resolve( Skater( [ nhl, other ] ), 20252026, [ factor ], _model() )
 
    assert resolved is not None
    elapsed_nhl_seasons = 2025 - 2022
@@ -176,4 +177,4 @@ def Test_Resolve_TestLatestOtherLeague_ExpectMixedComponentsAndNhlOnlyPim() -> N
 
 
 def Test_Resolve_TestNoSeasons_ExpectNone() -> None:
-   assert BaselinePaceResolver.resolve( Skater( [] ), 20252026, [], _model(), _pim_model() ) is None
+   assert BaselinePaceResolver.resolve( Skater( [] ), 20252026, [], _model() ) is None

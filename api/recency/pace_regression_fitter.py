@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections import defaultdict
 
 from ..aging.league_factor import LeagueFactor
+from .nhl_production_regression import NhlProductionRegression
+from .nhl_production_stat import NhlProductionStat
 from .pace_regression import PaceRegression
 from .pace_regression_model import PaceRegressionModel
 from .pace_regression_training_data import PaceRegressionTrainingData
@@ -72,8 +74,13 @@ class PaceRegressionFitter():
                   following_pace=getattr( actual, dataset.stat.value ),
                   games=games ) )
 
+      nhl_history_by_player = (
+         NhlProductionRegression.history( nhl_seasons ) if other_seasons else history_by_player )
       return PaceRegressionModel( [
          PaceRegression( dataset.source, dataset.stat, ProductionCoefficientFitter.fit( dataset.samples ) )
          for dataset in training_datasets
          if dataset.samples
-      ], component_shares )
+      ],
+         component_shares,
+         pim_coefficients=NhlProductionRegression.fit( nhl_seasons, NhlProductionStat.PIM, nhl_history_by_player ),
+         shots_coefficients=NhlProductionRegression.fit( nhl_seasons, NhlProductionStat.SHOTS, nhl_history_by_player ) )

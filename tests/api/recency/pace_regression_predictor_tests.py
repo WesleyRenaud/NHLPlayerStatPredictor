@@ -7,7 +7,6 @@ from api.projections.scoring_stat import ScoringStat
 from api.recency.pace_regression import PaceRegression
 from api.recency.pace_regression_model import PaceRegressionModel
 from api.recency.pace_regression_predictor import PaceRegressionPredictor
-from api.recency.pim_regression_model import PimRegressionModel
 from api.recency.prior_source import PriorSource
 from api.recency.prior_year import PriorYear
 from api.recency.production_coefficient import ProductionCoefficient
@@ -40,7 +39,7 @@ def _model() -> PaceRegressionModel:
 def Test_Paces_TestWeightedHistory_ExpectAverageThenAgeGrowth() -> None:
    priors = [ _prior( 2024, 19, 20.0 ), _prior( 2023, 18, 10.0 ) ]
 
-   paced = PaceRegressionPredictor.paces( _model(), priors, 20252026, PimRegressionModel( [] ), [] )
+   paced = PaceRegressionPredictor.paces( _model(), priors, 20252026, [] )
 
    assert paced is not None
    latest, older = priors
@@ -58,7 +57,7 @@ def Test_Paces_TestWeightedHistory_ExpectAverageThenAgeGrowth() -> None:
 def Test_Paces_TestMissedSeason_ExpectActualElapsedAgeGrowth() -> None:
    priors = [ _prior( 2023, 18, 10.0 ) ]
 
-   paced = PaceRegressionPredictor.paces( _model(), priors, 20252026, PimRegressionModel( [] ), [] )
+   paced = PaceRegressionPredictor.paces( _model(), priors, 20252026, [] )
 
    assert paced is not None
    assert paced.goals == pytest.approx(
@@ -68,14 +67,14 @@ def Test_Paces_TestMissedSeason_ExpectActualElapsedAgeGrowth() -> None:
 def Test_Paces_TestTranslatedHistory_ExpectSameMultiplicativeWorkflow() -> None:
    priors = [ _prior( 2024, 19, 20.0, nhl_games=0 ) ]
 
-   paced = PaceRegressionPredictor.paces( _model(), priors, 20252026, PimRegressionModel( [] ), [] )
+   paced = PaceRegressionPredictor.paces( _model(), priors, 20252026, [] )
 
    assert paced is not None
    assert paced.goals == pytest.approx( priors[ 0 ].scoring.goals * AGE_19_TO_20_MULTIPLIER )
 
 
 def Test_Paces_TestNoHistory_ExpectNone() -> None:
-   assert PaceRegressionPredictor.paces( _model(), [], 20252026, PimRegressionModel( [] ), [] ) is None
+   assert PaceRegressionPredictor.paces( _model(), [], 20252026, [] ) is None
 
 
 def Test_Paces_TestMixedSources_ExpectEachPriorUsesItsSource() -> None:
@@ -92,7 +91,7 @@ def Test_Paces_TestMixedSources_ExpectEachPriorUsesItsSource() -> None:
    ] )
    priors = [ _prior( 2024, 19, 10.0 ), _prior( 2023, 18, 5.0, nhl_games=0 ) ]
 
-   paced = PaceRegressionPredictor.paces( model, priors, 20252026, PimRegressionModel( [] ), [] )
+   paced = PaceRegressionPredictor.paces( model, priors, 20252026, [] )
 
    assert paced is not None
    latest, older = priors

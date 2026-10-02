@@ -86,7 +86,8 @@ class SkaterSeasonBuilder():
             short_handed_goals=summary.short_handed_goals,
             short_handed_points=summary.short_handed_points,
             even_strength_goals=summary.even_strength_goals,
-            even_strength_points=summary.even_strength_points ) )
+            even_strength_points=summary.even_strength_points,
+            shots=summary.shots ) )
 
       return rows
 

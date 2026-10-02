@@ -8,7 +8,6 @@ from ...pace_games_resolver import PaceGamesResolver
 from ...paths import Paths
 from ..projection import Projection
 from ...recency.pace_regression_store import PaceRegressionStore
-from ...recency.pim_regression_store import PimRegressionStore
 from ...recency_target_resolver import RecencyTargetResolver
 from ...skaters.other_league_season_provider import OtherLeagueSeasonProvider
 from ...skaters.roster_skater_provider import RosterSkaterProvider
@@ -32,13 +31,11 @@ class ProjectionCoordinator():
       target_season = RecencyTargetResolver.resolve()
       league_factors = LeagueFactorStore.read()
       model = PaceRegressionStore.read()
-      pim_model = PimRegressionStore.read()
       paces = BaselinePaceResolver.resolve(
          skater,
          target_season,
          league_factors,
-         model,
-         pim_model )
+         model )
 
       if paces is None:
          return None
@@ -47,6 +44,7 @@ class ProjectionCoordinator():
       power_play_pace = paces.power_play_pace()
       short_handed_pace = paces.short_handed_pace()
       pim_pace = paces.penalty_minutes
+      shots_pace = paces.shots
 
       ice = SkaterIceStore.by_player().get( player_id )
 
@@ -67,6 +65,9 @@ class ProjectionCoordinator():
          if pim_pace is not None:
             pim_pace *= IcePaceScaler.ratio( ice.last_toi, ice.projected_toi )
 
+         if shots_pace is not None:
+            shots_pace *= IcePaceScaler.ratio( ice.last_toi, ice.projected_toi )
+
       power_play_goals = round( power_play_pace.goals )
       power_play_assists = round( power_play_pace.assists )
       short_handed_goals = round( short_handed_pace.goals )
@@ -82,4 +83,8 @@ class ProjectionCoordinator():
          power_play_goals=power_play_goals,
          power_play_points=power_play_goals + power_play_assists,
          short_handed_goals=short_handed_goals,
-         short_handed_points=short_handed_goals + short_handed_assists )
+         short_handed_points=short_handed_goals + short_handed_assists,
+         shots=None if shots_pace is None else round( shots_pace ),
+         shooting_percentage=(
+            None if shots_pace is None or shots_pace == 0.0 else
+            100 * ( even_strength_pace.goals + power_play_pace.goals + short_handed_pace.goals ) / shots_pace ) )

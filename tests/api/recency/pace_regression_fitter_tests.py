@@ -56,6 +56,7 @@ def _nhl(
       power_play_points=power_play_points,
       short_handed_goals=short_handed_goals,
       short_handed_points=short_handed_points,
+      shots=0,
       penalty_minutes=0 )
 
 
@@ -149,6 +150,30 @@ def Test_Fit_TestSmallNhlStints_ExpectExcludedSpecialTeamsTraining() -> None:
 
 def Test_Fit_TestNoSamples_ExpectEmptyModel() -> None:
    assert PaceRegressionFitter.fit( [], [], [] ) == PaceRegressionModel( [] )
+
+
+def Test_Fit_TestNhlProduction_ExpectSeparatePimAndShotsCoefficients() -> None:
+   pim_multiplier = 2
+   shots_multiplier = 3
+   seasons = [
+      replace(
+         _nhl( player_id, year, 10.0, 20.0, 18.4 + year - 2020 ),
+         penalty_minutes=player_id * pim_multiplier ** ( year - 2020 ),
+         shots=player_id * shots_multiplier ** ( year - 2020 ) )
+      for player_id in range( 1, 31 )
+      for year in range( 2020, 2023 )
+   ]
+
+   model = PaceRegressionFitter.fit( seasons, [], [] )
+
+   for coefficient in model.pim_coefficients:
+      assert coefficient.multiplier == pytest.approx(
+         pim_multiplier ** ( coefficient.to_age - coefficient.from_age ) )
+   for coefficient in model.shots_coefficients:
+      assert coefficient.multiplier == pytest.approx(
+         shots_multiplier ** ( coefficient.to_age - coefficient.from_age ) )
+   assert model.pim_coefficients
+   assert model.shots_coefficients
 
 
 def Test_Fit_TestMultipleYears_ExpectOneHistoryPreparationPerPlayer(
