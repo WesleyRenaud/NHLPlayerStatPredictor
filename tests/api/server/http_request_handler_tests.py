@@ -169,9 +169,8 @@ def Test_DoPost_TestProjection_ExpectJson(
       monkeypatch: pytest.MonkeyPatch ) -> None:
    player_id = 7
    projection = Projection(
-      goals=12,
-      assists=34,
-      points=46,
+      even_strength_goals=6,
+      even_strength_points=31,
       penalty_minutes=18,
       games_played=70,
       power_play_goals=5,

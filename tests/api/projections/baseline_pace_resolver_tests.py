@@ -7,6 +7,8 @@ import pytest
 
 from api.aging.league_factor import LeagueFactor
 from api.projections.baseline_pace_resolver import BaselinePaceResolver
+from api.projections.scoring_component_shares import ScoringComponentShares
+from api.projections.scoring_stat import ScoringStat
 from api.recency.pace_regression import PaceRegression
 from api.recency.pace_regression_model import PaceRegressionModel
 from api.recency.pim_regression_model import PimRegressionModel
@@ -22,6 +24,7 @@ from api.skaters.team import Team
 
 SCORING_MULTIPLIER = 1.2
 PIM_MULTIPLIER = 1.1
+OTHER_LEAGUE_SHARES = ScoringComponentShares( 18, 0.75, 0.68, 0.2, 0.3, 0.05, 0.02 )
 
 
 def _nhl( season_id: int, g_pace: float, a_pace: float, age: float ) -> NhlSkaterSeason:
@@ -34,9 +37,11 @@ def _nhl( season_id: int, g_pace: float, a_pace: float, age: float ) -> NhlSkate
       age=age,
       team=list( Team )[ Position.FIRST ],
       games_played=82,
-      goals=0,
-      assists=0,
-      points=0,
+      even_strength_goals=round( g_pace ),
+      even_strength_points=round( g_pace + a_pace ),
+      goals=round( g_pace ),
+      assists=round( a_pace ),
+      points=round( g_pace + a_pace ),
       schedule_games=82,
       pace_games=82,
       g_pace=g_pace,
@@ -75,8 +80,8 @@ def _model() -> PaceRegressionModel:
          for age in range( 17, 40 )
       ] )
       for source in PriorSource
-      for stat in ( 'goals', 'assists', 'power_play_goals', 'power_play_assists', 'short_handed_goals', 'short_handed_assists' )
-   ] )
+      for stat in ScoringStat
+   ], [ OTHER_LEAGUE_SHARES ] )
 
 
 def _pim_model() -> PimRegressionModel:
@@ -116,12 +121,15 @@ def Test_Resolve_TestOtherLeagueOnly_ExpectTranslatedMultiplicativePace() -> Non
    assert resolved is not None
    assert resolved.goals == pytest.approx( season.g_pace * factor.rate * SCORING_MULTIPLIER )
    assert resolved.assists == pytest.approx( season.a_pace * factor.rate * SCORING_MULTIPLIER )
-   assert resolved.power_play_goals == 0.0
-   assert resolved.short_handed_goals == 0.0
+   translated_goals = season.g_pace * factor.rate
+   assert resolved.power_play_goals == pytest.approx(
+      translated_goals * OTHER_LEAGUE_SHARES.power_play_goals * SCORING_MULTIPLIER )
+   assert resolved.short_handed_goals == pytest.approx(
+      translated_goals * OTHER_LEAGUE_SHARES.short_handed_goals * SCORING_MULTIPLIER )
    assert resolved.penalty_minutes is None
 
 
-def Test_Resolve_TestSmallNhlStint_ExpectNoUnsupportedSpecialTeamsProjection() -> None:
+def Test_Resolve_TestSmallNhlStint_ExpectObservedAndInferredComponents() -> None:
    factor = LeagueFactor( 'AAA', 0.4 )
    nhl = replace( _nhl( 20242025, 20.0, 30.0, 18.4 ), games_played=9, power_play_goals=2, power_play_points=4 )
    other = _other( 20242025, 30.0, 50.0, factor.league )
@@ -130,7 +138,12 @@ def Test_Resolve_TestSmallNhlStint_ExpectNoUnsupportedSpecialTeamsProjection() -
 
    assert resolved is not None
    assert resolved.goals > 0.0
-   assert resolved.power_play_goals == 0.0
+   observed_pp_pace = nhl.power_play_goals * nhl.pace_games / nhl.games_played
+   inferred_pp_pace = other.g_pace * factor.rate * OTHER_LEAGUE_SHARES.power_play_goals
+   expected_pp = (
+      observed_pp_pace * nhl.games_played + inferred_pp_pace * other.games_played
+   ) / ( nhl.games_played + other.games_played ) * SCORING_MULTIPLIER
+   assert resolved.power_play_goals == pytest.approx( expected_pp )
    assert resolved.penalty_minutes is None
 
 
@@ -144,27 +157,7 @@ def Test_Resolve_TestMissedSeason_ExpectElapsedAgeGrowth() -> None:
    assert resolved.goals == pytest.approx( season.g_pace * SCORING_MULTIPLIER ** elapsed_seasons )
 
 
-def Test_Resolve_TestSpecialTeamsExceedTotal_ExpectUnalteredCalculation() -> None:
-   season = replace(
-      _nhl( 20242025, 2.0, 3.0, 27.4 ),
-      power_play_goals=3, power_play_points=7, short_handed_goals=1, short_handed_points=2 )
-
-   resolved = BaselinePaceResolver.resolve( Skater( [ season ] ), 20252026, [], _model(), _pim_model() )
-
-   assert resolved is not None
-   special_teams_scale = season.pace_games / season.games_played * SCORING_MULTIPLIER
-   power_play_assists = season.power_play_points - season.power_play_goals
-   short_handed_assists = season.short_handed_points - season.short_handed_goals
-   assert resolved.goals == pytest.approx( season.g_pace * SCORING_MULTIPLIER )
-   assert resolved.power_play_goals == pytest.approx( season.power_play_goals * special_teams_scale )
-   assert resolved.short_handed_goals == pytest.approx( season.short_handed_goals * special_teams_scale )
-   assert resolved.power_play_assists == pytest.approx( power_play_assists * special_teams_scale )
-   assert resolved.short_handed_assists == pytest.approx( short_handed_assists * special_teams_scale )
-   assert resolved.power_play_goals / resolved.short_handed_goals == pytest.approx(
-      season.power_play_goals / season.short_handed_goals )
-
-
-def Test_Resolve_TestLatestOtherLeague_ExpectIndependentNhlSpecialTeamsAndPim() -> None:
+def Test_Resolve_TestLatestOtherLeague_ExpectMixedComponentsAndNhlOnlyPim() -> None:
    factor = LeagueFactor( 'AAA', 0.4 )
    nhl = replace( _nhl( 20222023, 20.0, 30.0, 16.4 ), penalty_minutes=20, power_play_goals=2, power_play_points=4 )
    other = _other( 20242025, 30.0, 50.0, factor.league )
@@ -174,8 +167,10 @@ def Test_Resolve_TestLatestOtherLeague_ExpectIndependentNhlSpecialTeamsAndPim() 
    assert resolved is not None
    elapsed_nhl_seasons = 2025 - 2022
    pace_scale = nhl.pace_games / nhl.games_played
-   assert resolved.power_play_goals == pytest.approx(
-      nhl.power_play_goals * pace_scale * SCORING_MULTIPLIER ** elapsed_nhl_seasons )
+   inferred_pp_pace = other.g_pace * factor.rate * OTHER_LEAGUE_SHARES.power_play_goals
+   # This fixture has no multi-year relationship weights, so scoring uses the latest season.
+   expected_pp = inferred_pp_pace * SCORING_MULTIPLIER
+   assert resolved.power_play_goals == pytest.approx( expected_pp )
    assert resolved.penalty_minutes == pytest.approx(
       nhl.penalty_minutes * pace_scale * PIM_MULTIPLIER ** elapsed_nhl_seasons )
 

@@ -22,6 +22,8 @@ def Test_InsertRows_TestInsertedPlayer_ExpectPersistedPoints( tmp_path: Path ) -
       age=28.7,
       team=list( Team )[ Position.FIRST ],
       games_played=82,
+      even_strength_goals=48 - 2,
+      even_strength_points=138 - 3,
       goals=48,
       assists=90,
       points=138,
@@ -44,10 +46,10 @@ def Test_InsertRows_TestInsertedPlayer_ExpectPersistedPoints( tmp_path: Path ) -
 
    try:
       row = conn.execute(
-         'SELECT POINTS, SHORT_HANDED_GOALS, SHORT_HANDED_POINTS FROM SkaterSeason' ).fetchone()
+         'SELECT POINTS, SHORT_HANDED_GOALS, SHORT_HANDED_POINTS, EV_GOALS, EV_POINTS FROM SkaterSeason' ).fetchone()
    finally:
       DatabaseConnectionProvider.close( conn )
 
-   assert row[ Position.FIRST ] == season.points
-   assert row[ Position.SECOND ] == season.short_handed_goals
-   assert row[ Position.LAST ] == season.short_handed_points
+   assert tuple( row ) == (
+      season.points, season.short_handed_goals, season.short_handed_points,
+      season.even_strength_goals, season.even_strength_points )

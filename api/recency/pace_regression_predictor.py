@@ -1,18 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import fields
-
 from .pace_regression import PaceRegression
 from .pace_regression_model import PaceRegressionModel
 from .pim_regression_model import PimRegressionModel
 from .pim_regression_predictor import PimRegressionPredictor
 from .prior_source import PriorSource
 from .prior_year import PriorYear
-from .prior_year_builder import PriorYearBuilder
 from .production_coefficient import ProductionCoefficient
 from .production_history_predictor import ProductionHistoryPredictor
 from ..projections.pace_values import PaceValues
-from ..projections.scoring_paces import ScoringPaces
 from ..projections.scoring_stat import ScoringStat
 from ..season import Season
 from ..shared.enums.position import Position
@@ -34,16 +30,13 @@ class PaceRegressionPredictor():
       year = Season.start_year( target_season_id )
       latest = priors[ Position.FIRST ]
       target_age = latest.age_in_year( year )
-      nhl_priors = PriorYearBuilder.build( nhl_seasons, [], year )
       projected_paces_by_stat: dict[ ScoringStat, float ] = {}
 
       for stat in ScoringStat:
-         history = priors if stat in ( ScoringStat.GOALS, ScoringStat.ASSISTS ) else nhl_priors
-         projected_paces_by_stat[ stat ] = cls._pace( model.regressions, history, target_age, stat )
+         projected_paces_by_stat[ stat ] = cls._pace( model.regressions, priors, target_age, stat )
 
-      scoring = ScoringPaces( **{ stat.value: pace for stat, pace in projected_paces_by_stat.items() } )
       return PaceValues(
-         **{ field.name: getattr( scoring, field.name ) for field in fields( ScoringPaces ) },
+         **{ stat.value: pace for stat, pace in projected_paces_by_stat.items() },
          penalty_minutes=PimRegressionPredictor.pace( pim_model, nhl_seasons, target_season_id ) )
 
 
@@ -64,7 +57,7 @@ class PaceRegressionPredictor():
          return cls._coefficient( regressions, source, stat, from_age, to_age )
 
       return ProductionHistoryPredictor.pace(
-         [ ( int( prior.age ), getattr( prior.scoring_paces(), stat.value ), prior.games ) for prior in priors ],
+         [ ( int( prior.age ), getattr( prior.scoring, stat.value ), prior.games ) for prior in priors ],
          target_age,
          lookup )
 

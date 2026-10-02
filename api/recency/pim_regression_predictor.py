@@ -17,7 +17,7 @@ class PimRegressionPredictor():
          seasons: list[ NhlSkaterSeason ],
          target_season_id: int ) -> float | None:
       year = Season.start_year( target_season_id )
-      priors = PriorYearBuilder.build( seasons, [], year )
+      priors = PriorYearBuilder.build( seasons, [], year, [] )
 
       if not priors:
          return None
