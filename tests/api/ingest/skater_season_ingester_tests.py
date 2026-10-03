@@ -17,7 +17,7 @@ import api.ingest.skater_season_ingester as skater_season_ingester
 from api.ingest.skater_season_ingester import SkaterSeasonIngester
 from api.paths import Paths
 from api.recency.pace_regression_fitter import PaceRegressionFitter
-from api.recency.pace_regression_store import PaceRegressionStore
+from api.recency.production_model_provider import ProductionModelProvider
 from api.season_length import SeasonLength
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
@@ -230,7 +230,7 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       lambda rows: None )
 
    SkaterSeasonIngester.main()
-   stored_model = PaceRegressionStore.read()
+   stored_model = ProductionModelProvider.read()
    stored_availability = AvailabilityWeightStore.read()
    stored_leagues = LeagueFactorStore.read()
    stored_teams = TeamFactorStore.read()

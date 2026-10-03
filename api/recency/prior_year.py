@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import ClassVar
 
-from .prior_source import PriorSource
 from ..projections.scoring_paces import ScoringPaces
 
 
@@ -18,13 +17,6 @@ class PriorYear():
    nhl_games: int
    age: float
    shots_pace: float | None = None
-
-
-   def source( self ) -> PriorSource:
-      if self.nhl_games >= PriorYear.MIN_GAMES:
-         return PriorSource.NHL
-
-      return PriorSource.TRANSLATED
 
 
    def age_in_year( self, year: int ) -> int:

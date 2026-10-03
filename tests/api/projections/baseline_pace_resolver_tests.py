@@ -9,10 +9,10 @@ from api.aging.league_factor import LeagueFactor
 from api.projections.baseline_pace_resolver import BaselinePaceResolver
 from api.projections.scoring_component_shares import ScoringComponentShares
 from api.projections.scoring_stat import ScoringStat
-from api.recency.pace_regression import PaceRegression
 from api.recency.pace_regression_model import PaceRegressionModel
-from api.recency.prior_source import PriorSource
 from api.recency.production_coefficient import ProductionCoefficient
+from api.recency.production_growth import ProductionGrowth
+from api.recency.production_weight import ProductionWeight
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
 from api.skaters.other_league_skater_season import OtherLeagueSkaterSeason
@@ -75,16 +75,14 @@ def _other( season_id: int, g_pace: float, a_pace: float, league: str ) -> Other
 
 def _model() -> PaceRegressionModel:
    return PaceRegressionModel( [
-      PaceRegression( source, stat, [
-         ProductionCoefficient( age, age + 1, SCORING_MULTIPLIER, 0.8, 100 )
-         for age in range( 17, 40 )
-      ] )
-      for source in PriorSource
-      for stat in ScoringStat
+      ProductionGrowth( age, age + 1, SCORING_MULTIPLIER, 100 )
+      for age in range( 17, 40 )
    ], [ OTHER_LEAGUE_SHARES ], pim_coefficients=[
       ProductionCoefficient( age, age + 1, PIM_MULTIPLIER, 0.8, 100 ) for age in range( 17, 40 )
    ], shots_coefficients=[
       ProductionCoefficient( age, age + 1, SCORING_MULTIPLIER, 0.8, 100 ) for age in range( 17, 40 )
+   ], history_weights=[
+      ProductionWeight( age, age + 1, 0.8, 100 ) for age in range( 17, 40 )
    ] )
 
 
@@ -132,15 +130,8 @@ def Test_Resolve_TestOtherLeagueOnly_ExpectTranslatedMultiplicativePace() -> Non
 def Test_Resolve_TestTranslatedSeason_ExpectLeagueConversionOnceThenNhlGrowth() -> None:
    factor = LeagueFactor( 'AAA', 0.4 )
    season = _other( 20242025, 30.0, 50.0, factor.league )
-   translated_multiplier = 3.0
    model = PaceRegressionModel( [
-      PaceRegression( source, stat, [
-         ProductionCoefficient( 18, 19, multiplier, 0.8, 100 )
-      ] )
-      for source, multiplier in (
-         ( PriorSource.NHL, SCORING_MULTIPLIER ),
-         ( PriorSource.TRANSLATED, translated_multiplier ) )
-      for stat in ScoringStat
+      ProductionGrowth( 18, 19, SCORING_MULTIPLIER, 100 )
    ], [ OTHER_LEAGUE_SHARES ] )
 
    resolved = BaselinePaceResolver.resolve( Skater( [ season ] ), 20252026, [ factor ], model )

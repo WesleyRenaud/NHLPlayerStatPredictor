@@ -126,7 +126,7 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
       'read',
       lambda: league_factors )
    monkeypatch.setattr(
-      projection_coordinator.PaceRegressionStore,
+      projection_coordinator.ProductionModelProvider,
       'read',
       lambda: model )
    monkeypatch.setattr(
@@ -191,7 +191,7 @@ def Test_GetProjection_TestMissingPace_ExpectNone(
       'read',
       lambda: [] )
    monkeypatch.setattr(
-      projection_coordinator.PaceRegressionStore,
+      projection_coordinator.ProductionModelProvider,
       'read',
       lambda: PaceRegressionModel( [] ) )
 
@@ -256,7 +256,7 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
       'read',
       lambda: [] )
    monkeypatch.setattr(
-      projection_coordinator.PaceRegressionStore,
+      projection_coordinator.ProductionModelProvider,
       'read',
       lambda: PaceRegressionModel( [] ) )
    monkeypatch.setattr(

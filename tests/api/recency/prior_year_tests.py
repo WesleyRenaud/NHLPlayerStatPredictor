@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from api.projections.scoring_paces import ScoringPaces
-from api.recency.prior_source import PriorSource
 from api.recency.prior_year import PriorYear
 
 
@@ -13,18 +12,6 @@ def _prior( year: int, nhl_games: int, age: float ) -> PriorYear:
       60,
       nhl_games,
       age )
-
-
-def Test_Source_TestNhlGames_ExpectNhl() -> None:
-   prior = _prior( 2024, PriorYear.MIN_GAMES, 24.3 )
-
-   assert prior.source() == PriorSource.NHL
-
-
-def Test_Source_TestFewNhlGames_ExpectTranslated() -> None:
-   prior = _prior( 2024, PriorYear.MIN_GAMES - 1, 24.3 )
-
-   assert prior.source() == PriorSource.TRANSLATED
 
 
 def Test_AgeInYear_TestYears_ExpectCompletedAgeWithElapsedSeasons() -> None:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -15,8 +16,9 @@ from api.ingest.github_cli_result import GithubCliResult
 import api.ingest.ingest_artifact_puller as ingest_artifact_puller
 from api.ingest.ingest_artifact_puller import IngestArtifactPuller
 from api.recency.pace_regression_model import PaceRegressionModel
-from api.recency.pace_regression_store import PaceRegressionStore
 from api.recency.production_coefficient import ProductionCoefficient
+from api.recency.production_model_provider import ProductionModelProvider
+from api.recency.production_model_recorder import ProductionModelRecorder
 from api.shared.enums.position import Position
 from api.team_factor.team_factor_store import TeamFactorStore
 
@@ -27,7 +29,6 @@ _REGRESSION_MODEL = PaceRegressionModel(
    [],
    pim_coefficients=[ ProductionCoefficient( 18, 19, 1.1, 0.8, 100 ) ],
    shots_coefficients=[ ProductionCoefficient( 18, 19, 1.2, 0.9, 100 ) ] )
-_REGRESSIONS_JSON = json.dumps( _REGRESSION_MODEL.to_dict() )
 
 
 def _bind_paths( monkeypatch: pytest.MonkeyPatch, root: Path ) -> None:
@@ -55,10 +56,9 @@ def _write_artifact( root: Path ) -> None:
    db_path.write_bytes( _SQLITE_BYTES )
    raw_path.mkdir( parents=True, exist_ok=True )
    ( raw_path / 'seasons.json' ).write_text( _EMPTY_JSON )
-   regressions_path = root / PaceRegressionStore.path().relative_to(
-      ingest_artifact_puller.Paths.ROOT )
-   regressions_path.parent.mkdir( parents=True, exist_ok=True )
-   regressions_path.write_text( _REGRESSIONS_JSON )
+   model_directory = db_path.parent
+   with patch.object( ingest_artifact_puller.Paths, 'PROCESSED_DIR', model_directory ):
+      ProductionModelRecorder.write( _REGRESSION_MODEL )
    availability_path = root / AvailabilityWeightStore.path().relative_to(
       ingest_artifact_puller.Paths.ROOT )
    availability_path.parent.mkdir( parents=True, exist_ok=True )
@@ -139,7 +139,6 @@ def Test_Install_TestArtifactTree_ExpectCopiedDbAndRaw(
    IngestArtifactPuller.install( artifact_root )
    stored_db = ingest_artifact_puller.Paths.DB_PATH.read_bytes()
    stored_seasons = ( ingest_artifact_puller.Paths.RAW_DIR / 'seasons.json' ).read_text()
-   stored_regressions = PaceRegressionStore.path().read_text()
    stored_availability = AvailabilityWeightStore.path().read_text()
    stored_leagues = LeagueFactorStore.path().read_text()
    stored_teams = TeamFactorStore.path().read_text()
@@ -149,8 +148,8 @@ def Test_Install_TestArtifactTree_ExpectCopiedDbAndRaw(
 
    assert stored_db == _SQLITE_BYTES
    assert stored_seasons == _EMPTY_JSON
-   assert stored_regressions == _REGRESSIONS_JSON
-   assert PaceRegressionStore.read() == _REGRESSION_MODEL
+   assert all( path.is_file() for path in ProductionModelProvider.paths() )
+   assert ProductionModelProvider.read() == _REGRESSION_MODEL
    assert stored_availability == _EMPTY_JSON
    assert stored_leagues == _EMPTY_JSON
    assert stored_teams == _EMPTY_JSON
@@ -200,6 +199,7 @@ def Test_Sync_TestMatchingStamp_ExpectDownloadSkipped(
    _bind_paths( monkeypatch, tmp_path / 'repo' )
    ingest_artifact_puller.Paths.PROCESSED_DIR.mkdir( parents=True, exist_ok=True )
    ingest_artifact_puller.Paths.DB_PATH.write_bytes( _SQLITE_BYTES )
+   ProductionModelRecorder.write( _REGRESSION_MODEL )
    IngestArtifactPuller._stamp_path().write_text( run_id )
    downloaded: list[ str ] = []
 
@@ -247,3 +247,44 @@ def Test_Sync_TestFailedList_ExpectSkipped( monkeypatch: pytest.MonkeyPatch ) ->
    IngestArtifactPuller.sync()
 
    assert pulled == []
+
+
+def Test_Sync_TestMatchingStampWithMissingModelFile_ExpectPulled(
+      monkeypatch: pytest.MonkeyPatch,
+      tmp_path: Path ) -> None:
+   _bind_paths( monkeypatch, tmp_path / 'repo' )
+   ingest_artifact_puller.Paths.PROCESSED_DIR.mkdir( parents=True, exist_ok=True )
+   ingest_artifact_puller.Paths.DB_PATH.write_bytes( _SQLITE_BYTES )
+   ProductionModelRecorder.write( _REGRESSION_MODEL )
+   ( ingest_artifact_puller.Paths.PROCESSED_DIR / 'shots_weights.json' ).unlink()
+   IngestArtifactPuller._stamp_path().write_text( '99' )
+   pulled: list[ str ] = []
+   monkeypatch.setattr( IngestArtifactPuller, '_listed_run_id', lambda: '99' )
+   monkeypatch.setattr( IngestArtifactPuller, '_pull', lambda run_id: pulled.append( run_id ) )
+
+   IngestArtifactPuller.sync()
+
+   assert pulled == [ '99' ]
+
+
+def Test_Pull_TestMissingModelFile_ExpectRejectedBeforeInstall(
+      monkeypatch: pytest.MonkeyPatch,
+      tmp_path: Path,
+      capsys: pytest.CaptureFixture[ str ] ) -> None:
+   _bind_paths( monkeypatch, tmp_path / 'repo' )
+
+   def fake_download( run_id: str, download_dir: Path ) -> bool:
+      _write_artifact( download_dir )
+      relative_path = ( ingest_artifact_puller.Paths.PROCESSED_DIR / 'pim_weights.json' ).relative_to(
+         ingest_artifact_puller.Paths.ROOT )
+      ( download_dir / relative_path ).unlink()
+      return True
+
+   installed: list[ Path ] = []
+   monkeypatch.setattr( IngestArtifactPuller, '_download', fake_download )
+   monkeypatch.setattr( IngestArtifactPuller, 'install', lambda root: installed.append( root ) )
+
+   assert not IngestArtifactPuller._pull( '99' )
+   assert installed == []
+   assert not IngestArtifactPuller._stamp_path().exists()
+   assert 'incomplete' in capsys.readouterr().out

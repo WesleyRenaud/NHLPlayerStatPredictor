@@ -4,12 +4,9 @@ from functools import partial
 
 from .nhl_production_regression import NhlProductionRegression
 from .nhl_production_stat import NhlProductionStat
-from .pace_regression import PaceRegression
 from .pace_regression_model import PaceRegressionModel
-from .prior_source import PriorSource
 from .prior_year import PriorYear
 from .prior_year_builder import PriorYearBuilder
-from .production_coefficient import ProductionCoefficient
 from .production_history_predictor import ProductionHistoryPredictor
 from ..projections.pace_values import PaceValues
 from ..projections.scoring_stat import ScoringStat
@@ -36,7 +33,7 @@ class PaceRegressionPredictor():
       nhl_priors = PriorYearBuilder.build( nhl_seasons, [], year, [] )
 
       for stat in ScoringStat:
-         projected_paces_by_stat[ stat ] = cls._pace( model.regressions, priors, target_age, stat )
+         projected_paces_by_stat[ stat ] = cls._pace( model, priors, target_age, stat )
 
       return PaceValues(
          **{ stat.value: pace for stat, pace in projected_paces_by_stat.items() },
@@ -49,51 +46,15 @@ class PaceRegressionPredictor():
    @classmethod
    def _pace(
          cls,
-         regressions: list[ PaceRegression ],
+         model: PaceRegressionModel,
          priors: list[ PriorYear ],
          target_age: int,
          stat: ScoringStat ) -> float:
       if not priors:
          return 0.0
 
-      sources = { int( prior.age ): prior.source() for prior in priors }
-
       return ProductionHistoryPredictor.pace(
          [ ( int( prior.age ), getattr( prior.scoring, stat.value ), prior.games ) for prior in priors ],
          target_age,
-         partial( cls._coefficient, regressions, PriorSource.NHL, stat ),
-         partial( cls._prior_coefficient, regressions, sources, stat ) )
-
-
-   @classmethod
-   def _prior_coefficient(
-         cls,
-         regressions: list[ PaceRegression ],
-         sources: dict[ int, PriorSource ],
-         stat: ScoringStat,
-         from_age: int,
-         to_age: int ) -> ProductionCoefficient:
-      return cls._coefficient( regressions, sources[ from_age ], stat, from_age, to_age )
-
-
-   @classmethod
-   def _coefficient(
-         cls,
-         regressions: list[ PaceRegression ],
-         source: PriorSource,
-         stat: ScoringStat,
-         from_age: int,
-         to_age: int ) -> ProductionCoefficient:
-      matching = [
-         regression for regression in regressions
-         if regression.source == source and regression.stat == stat
-      ]
-
-      if not matching:
-         matching = [
-            regression for regression in regressions
-            if regression.source == PriorSource.NHL and regression.stat == stat
-         ]
-
-      coefficients = [ coefficient for regression in matching for coefficient in regression.coefficients ]
-      return ProductionHistoryPredictor.coefficient( coefficients, from_age, to_age )
+         partial( ProductionHistoryPredictor.coefficient, model.scoring_growth ),
+         partial( ProductionHistoryPredictor.weight, model.history_weights ) )

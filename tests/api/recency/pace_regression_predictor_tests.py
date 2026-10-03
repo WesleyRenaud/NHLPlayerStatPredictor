@@ -4,12 +4,11 @@ import pytest
 
 from api.projections.scoring_paces import ScoringPaces
 from api.projections.scoring_stat import ScoringStat
-from api.recency.pace_regression import PaceRegression
 from api.recency.pace_regression_model import PaceRegressionModel
 from api.recency.pace_regression_predictor import PaceRegressionPredictor
-from api.recency.prior_source import PriorSource
 from api.recency.prior_year import PriorYear
-from api.recency.production_coefficient import ProductionCoefficient
+from api.recency.production_growth import ProductionGrowth
+from api.recency.production_weight import ProductionWeight
 
 
 AGE_18_TO_19_MULTIPLIER = 1.2
@@ -26,13 +25,13 @@ def _prior( year: int, age: int, goals: float, nhl_games: int = 82 ) -> PriorYea
 
 def _model() -> PaceRegressionModel:
    return PaceRegressionModel( [
-      PaceRegression( source, stat, [
-         ProductionCoefficient( 18, 19, AGE_18_TO_19_MULTIPLIER, 0.8, 100 ),
-         ProductionCoefficient( 19, 20, AGE_19_TO_20_MULTIPLIER, LATEST_RELATIONSHIP_WEIGHT, 100 ),
-         ProductionCoefficient( 18, 20, AGE_18_TO_19_MULTIPLIER * AGE_19_TO_20_MULTIPLIER, OLDER_RELATIONSHIP_WEIGHT, 100 )
-      ] )
-      for source in PriorSource
-      for stat in ( ScoringStat.EVEN_STRENGTH_GOALS, ScoringStat.EVEN_STRENGTH_ASSISTS )
+      ProductionGrowth( 18, 19, AGE_18_TO_19_MULTIPLIER, 100 ),
+      ProductionGrowth( 19, 20, AGE_19_TO_20_MULTIPLIER, 100 ),
+      ProductionGrowth( 18, 20, AGE_18_TO_19_MULTIPLIER * AGE_19_TO_20_MULTIPLIER, 100 )
+   ], history_weights=[
+      ProductionWeight( 18, 19, 0.8, 100 ),
+      ProductionWeight( 19, 20, LATEST_RELATIONSHIP_WEIGHT, 100 ),
+      ProductionWeight( 18, 20, OLDER_RELATIONSHIP_WEIGHT, 100 )
    ] )
 
 
@@ -77,22 +76,16 @@ def Test_Paces_TestNoHistory_ExpectNone() -> None:
    assert PaceRegressionPredictor.paces( _model(), [], 20252026, [] ) is None
 
 
-def Test_Paces_TestMixedSources_ExpectSharedGrowthAndSourceSpecificWeights() -> None:
+def Test_Paces_TestMixedSources_ExpectSameWeightsAndGrowthAsNhlHistory() -> None:
    nhl_multiplier = 1.2
-   translated_multiplier = 2.0
-   nhl_weight = 1.0
-   translated_weight = 0.5
+   latest_reliability = 1.0
+   older_reliability = 0.5
    model = PaceRegressionModel( [
-      PaceRegression( source, stat, [
-         ProductionCoefficient( 18, 19, multiplier, weight, 100 ),
-         ProductionCoefficient( 19, 20, multiplier, weight, 100 ),
-         ProductionCoefficient( 18, 20, multiplier ** 2, weight, 100 )
-      ] )
-      for source, multiplier, weight in (
-         ( PriorSource.NHL, nhl_multiplier, nhl_weight ),
-         ( PriorSource.TRANSLATED, translated_multiplier, translated_weight ) )
-      for stat in ( ScoringStat.EVEN_STRENGTH_GOALS, ScoringStat.EVEN_STRENGTH_ASSISTS )
-   ] )
+      ProductionGrowth( 18, 19, nhl_multiplier, 100 ),
+      ProductionGrowth( 19, 20, nhl_multiplier, 100 ),
+      ProductionGrowth( 18, 20, nhl_multiplier ** 2, 100 )
+   ], history_weights=[ ProductionWeight( 19, 20, latest_reliability, 100 ),
+      ProductionWeight( 18, 20, older_reliability, 100 ) ] )
    priors = [ _prior( 2024, 19, 10.0 ), _prior( 2023, 18, 5.0, nhl_games=0 ) ]
 
    paced = PaceRegressionPredictor.paces( model, priors, 20252026, [] )
@@ -100,28 +93,23 @@ def Test_Paces_TestMixedSources_ExpectSharedGrowthAndSourceSpecificWeights() -> 
    assert paced is not None
    latest, older = priors
    projected_older_goals = older.scoring.goals * nhl_multiplier ** 2
-   latest_weight = latest.games * nhl_weight
-   older_weight = older.games * translated_weight
+   latest_weight = latest.games * latest_reliability
+   older_weight = older.games * older_reliability
    expected_goals = (
       latest.scoring.goals * nhl_multiplier * latest_weight + projected_older_goals * older_weight
    ) / ( latest_weight + older_weight )
    assert paced.goals == pytest.approx( expected_goals )
+   nhl_priors = [ _prior( prior.year, int( prior.age ), prior.scoring.goals ) for prior in priors ]
+   assert paced == PaceRegressionPredictor.paces( model, nhl_priors, 20252026, [] )
 
 
 def Test_Paces_TestTranslatedMultiYearHistory_ExpectSameGrowthAsNhlHistory() -> None:
    annual_multiplier = 2.0
-   two_year_transition = 3.0
    model = PaceRegressionModel( [
-      PaceRegression( source, stat, [
-         ProductionCoefficient( 18, 19, annual_multiplier, 1.0, 100 ),
-         ProductionCoefficient( 19, 20, annual_multiplier, LATEST_RELATIONSHIP_WEIGHT, 100 ),
-         ProductionCoefficient( 18, 20, two_year_multiplier, OLDER_RELATIONSHIP_WEIGHT, 100 )
-      ] )
-      for source, two_year_multiplier in (
-         ( PriorSource.NHL, annual_multiplier ** 2 ),
-         ( PriorSource.TRANSLATED, two_year_transition ) )
-      for stat in ( ScoringStat.EVEN_STRENGTH_GOALS, ScoringStat.EVEN_STRENGTH_ASSISTS )
-   ] )
+      ProductionGrowth( 18, 19, annual_multiplier, 100 ),
+      ProductionGrowth( 19, 20, annual_multiplier, 100 ),
+      ProductionGrowth( 18, 20, annual_multiplier ** 2, 100 )
+   ], history_weights=_model().history_weights )
    priors = [ _prior( 2024, 19, 20.0, nhl_games=0 ), _prior( 2023, 18, 10.0, nhl_games=0 ) ]
 
    paced = PaceRegressionPredictor.paces( model, priors, 20252026, [] )
@@ -141,17 +129,11 @@ def Test_Paces_TestTranslatedMultiYearHistory_ExpectSameGrowthAsNhlHistory() -> 
 
 def Test_Paces_TestTranslatedMissedSeason_ExpectSharedAnnualAgeGrowth() -> None:
    annual_multiplier = 2.0
-   direct_multiplier = 3.0
    model = PaceRegressionModel( [
-      PaceRegression( source, ScoringStat.EVEN_STRENGTH_GOALS, [
-         ProductionCoefficient( 18, 19, annual_multiplier, 1.0, 100 ),
-         ProductionCoefficient( 19, 20, annual_multiplier, 1.0, 100 ),
-         ProductionCoefficient( 18, 20, two_year_multiplier, 1.0, 100 )
-      ] )
-      for source, two_year_multiplier in (
-         ( PriorSource.NHL, annual_multiplier ** 2 ),
-         ( PriorSource.TRANSLATED, direct_multiplier ) )
-   ] )
+      ProductionGrowth( 18, 19, annual_multiplier, 100 ),
+      ProductionGrowth( 19, 20, annual_multiplier, 100 ),
+      ProductionGrowth( 18, 20, annual_multiplier ** 2, 100 )
+   ], history_weights=[ ProductionWeight( 18, 20, 1.0, 100 ) ] )
    priors = [ _prior( 2023, 18, 10.0, nhl_games=0 ) ]
 
    paced = PaceRegressionPredictor.paces( model, priors, 20252026, [] )
@@ -162,16 +144,12 @@ def Test_Paces_TestTranslatedMissedSeason_ExpectSharedAnnualAgeGrowth() -> None:
 
 def Test_Paces_TestYoungTranslatedHistory_ExpectNoTransitionGrowth() -> None:
    annual_multiplier = 1.2
-   transition_by_age = { 17: 1.5, 16: 2.0, 15: 2.5 }
+   prior_ages = ( 15, 16, 17 )
    model = PaceRegressionModel( [
-      PaceRegression( PriorSource.NHL, ScoringStat.EVEN_STRENGTH_GOALS, [
-         ProductionCoefficient( age, age + 1, annual_multiplier, 1.0, 100 )
-         for age in transition_by_age
-      ] ),
-      PaceRegression( PriorSource.TRANSLATED, ScoringStat.EVEN_STRENGTH_GOALS, [
-         ProductionCoefficient( age, 18, multiplier, 1.0, 100 )
-         for age, multiplier in transition_by_age.items()
-      ] )
+      ProductionGrowth( age, age + 1, annual_multiplier, 100 )
+      for age in prior_ages
+   ], history_weights=[
+      ProductionWeight( age, 18, 1.0, 100 ) for age in prior_ages
    ] )
    priors = [
       _prior( 2025, 17, 20.0, nhl_games=0 ),
@@ -186,3 +164,30 @@ def Test_Paces_TestYoungTranslatedHistory_ExpectNoTransitionGrowth() -> None:
       prior.scoring.goals * annual_multiplier ** ( 18 - int( prior.age ) ) * prior.games
       for prior in priors ) / sum( prior.games for prior in priors )
    assert paced.goals == pytest.approx( expected )
+
+
+def Test_Paces_TestAllScoringComponents_ExpectSharedGrowthAndHistoryBlend() -> None:
+   latest_scoring = ScoringPaces( 20.0, 30.0, 5.0, 10.0, 1.0, 2.0 )
+   older_scoring = ScoringPaces( 10.0, 15.0, 4.0, 8.0, 2.0, 1.0 )
+   priors = [ PriorYear( 2024, latest_scoring, 0.0, 82, 82, 19.4 ),
+      PriorYear( 2023, older_scoring, 0.0, 41, 0, 18.4 ) ]
+
+   paced = PaceRegressionPredictor.paces( _model(), priors, 20252026, [] )
+
+   assert paced is not None
+   latest_weight = priors[ 0 ].games * LATEST_RELATIONSHIP_WEIGHT
+   older_weight = priors[ 1 ].games * OLDER_RELATIONSHIP_WEIGHT
+
+   for stat in ScoringStat:
+      expected = (
+         getattr( latest_scoring, stat.value ) * latest_weight
+         + getattr( older_scoring, stat.value ) * AGE_18_TO_19_MULTIPLIER * older_weight
+      ) / ( latest_weight + older_weight ) * AGE_19_TO_20_MULTIPLIER
+      assert getattr( paced, stat.value ) == pytest.approx( expected )
+
+   latest_points = latest_scoring.goals + latest_scoring.assists
+   older_points = older_scoring.goals + older_scoring.assists
+   expected_points = (
+      latest_points * latest_weight + older_points * AGE_18_TO_19_MULTIPLIER * older_weight
+   ) / ( latest_weight + older_weight ) * AGE_19_TO_20_MULTIPLIER
+   assert paced.goals + paced.assists == pytest.approx( expected_points )

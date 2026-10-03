@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from functools import partial
 
 from .nhl_production_stat import NhlProductionStat
 from .prior_year import PriorYear
 from .prior_year_builder import PriorYearBuilder
 from .production_coefficient import ProductionCoefficient
 from .production_coefficient_fitter import ProductionCoefficientFitter
+from .production_growth import ProductionGrowth
 from .production_history_predictor import ProductionHistoryPredictor
 from .production_pair import ProductionPair
+from .production_weight import ProductionWeight
 from ..season import Season
 from ..shared.enums.position import Position
 from ..skaters.nhl_skater_season import NhlSkaterSeason
@@ -77,10 +80,13 @@ class NhlProductionRegression():
 
       target_age = priors[ Position.FIRST ].age_in_year( year )
 
-      def lookup( from_age: int, to_age: int ) -> ProductionCoefficient:
-         return ProductionHistoryPredictor.coefficient( coefficients, from_age, to_age )
+      growth = [ ProductionGrowth( coefficient.from_age, coefficient.to_age,
+         coefficient.multiplier, coefficient.samples ) for coefficient in coefficients ]
+      weights = [ ProductionWeight( coefficient.from_age, coefficient.to_age,
+         coefficient.weight, coefficient.samples ) for coefficient in coefficients ]
 
       return ProductionHistoryPredictor.pace(
          [ ( int( prior.age ), getattr( prior, stat.value ), prior.games ) for prior in priors ],
          target_age,
-         lookup )
+         partial( ProductionHistoryPredictor.coefficient, growth ),
+         partial( ProductionHistoryPredictor.weight, weights ) )

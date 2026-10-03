@@ -11,7 +11,6 @@ from api.projections.scoring_component_shares import ScoringComponentShares
 from api.projections.scoring_paces import ScoringPaces
 from api.projections.translated_pace_averager import TranslatedPaceAverager
 from api.projections.year_pace import YearPace
-from api.recency.prior_source import PriorSource
 from api.recency.prior_year import PriorYear
 from api.recency.prior_year_builder import PriorYearBuilder
 from api.season import Season
@@ -119,7 +118,6 @@ def Test_Build_TestMixedYear_ExpectCombinedTranslatedPace() -> None:
    prior = priors[ Position.FIRST ]
    assert prior.games == games
    assert prior.nhl_games == nhl.games_played
-   assert prior.source() == PriorSource.TRANSLATED
    assert prior.age == other.age
    assert prior.scoring.goals == pytest.approx(
       ( nhl.games_played * nhl.g_pace + other.games_played * other.g_pace * factor.rate )
