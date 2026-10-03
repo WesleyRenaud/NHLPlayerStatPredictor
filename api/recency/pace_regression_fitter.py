@@ -48,7 +48,7 @@ class PaceRegressionFitter():
          for prior in priors:
             lag = year - prior.year
 
-            if not 0 < lag <= PriorYearBuilder.WIDTH:
+            if prior.games < PriorYear.MIN_GAMES or not 0 < lag <= PriorYearBuilder.WIDTH:
                continue
 
             age = int( prior.age )

@@ -41,7 +41,7 @@ class NhlProductionRegression():
          for prior in history_by_player[ current.player_id ]:
             lag = year - prior.year
 
-            if not 0 < lag <= PriorYearBuilder.WIDTH:
+            if prior.games < PriorYear.MIN_GAMES or not 0 < lag <= PriorYearBuilder.WIDTH:
                continue
 
             age = int( prior.age )

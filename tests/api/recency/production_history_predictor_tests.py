@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from api.recency.prior_year import PriorYear
 from api.recency.production_growth import ProductionGrowth
 from api.recency.production_history_predictor import ProductionHistoryPredictor
 from api.recency.production_weight import ProductionWeight
@@ -29,12 +30,45 @@ def Test_Pace_TestAgeNormalizedHistory_ExpectAverageThenMultiplier() -> None:
    latest_age, latest_pace, latest_games = history[ 0 ]
    older_age, older_pace, older_games = history[ 1 ]
    normalized_older_pace = older_pace * ANNUAL_MULTIPLIER ** ( latest_age - older_age )
-   latest_weight = latest_games * LATEST_WEIGHT
-   older_weight = older_games * OLDER_WEIGHT
+   latest_weight = min( latest_games, PriorYear.MIN_GAMES ) * LATEST_WEIGHT
+   older_weight = min( older_games, PriorYear.MIN_GAMES ) * OLDER_WEIGHT
    weighted_average = (
       latest_pace * latest_weight + normalized_older_pace * older_weight
    ) / ( latest_weight + older_weight )
    assert pace == pytest.approx( weighted_average * ANNUAL_MULTIPLIER )
+
+
+@pytest.mark.parametrize( 'latest_games, older_games', [
+   ( 20, 20 ),
+   ( 20, 60 ),
+   ( 35, 61 ),
+   ( 82, 20 ),
+] )
+def Test_Pace_TestQualifiedSeasonLengths_ExpectSameProjection(
+      latest_games: int,
+      older_games: int ) -> None:
+   history = [ ( 20, 20.0, latest_games ), ( 19, 5.0, older_games ) ]
+
+   pace = ProductionHistoryPredictor.pace( history, 21, _lookup, _weight_lookup )
+
+   assert pace == pytest.approx(
+      ( 20.0 * ANNUAL_MULTIPLIER * LATEST_WEIGHT
+         + 5.0 * ANNUAL_MULTIPLIER ** 2 * OLDER_WEIGHT )
+      / ( LATEST_WEIGHT + OLDER_WEIGHT ) )
+
+
+@pytest.mark.parametrize( 'games', [ 0, 5, 10, 19 ] )
+def Test_Pace_TestSmallSample_ExpectReducedSeasonWeight( games: int ) -> None:
+   history = [ ( 20, 20.0, 60 ), ( 19, 5.0, games ) ]
+   latest_weight = PriorYear.MIN_GAMES * LATEST_WEIGHT
+   older_weight = games * OLDER_WEIGHT
+
+   pace = ProductionHistoryPredictor.pace( history, 21, _lookup, _weight_lookup )
+
+   assert pace == pytest.approx(
+      ( 20.0 * ANNUAL_MULTIPLIER * latest_weight
+         + 5.0 * ANNUAL_MULTIPLIER ** 2 * older_weight )
+      / ( latest_weight + older_weight ) )
 
 
 def Test_Pace_TestMissedSeason_ExpectCompoundedAgeMultipliers() -> None:

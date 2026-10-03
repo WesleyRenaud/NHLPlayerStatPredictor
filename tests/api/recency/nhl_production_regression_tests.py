@@ -147,10 +147,12 @@ def Test_Pace_TestNoHistory_ExpectNone( stat: NhlProductionStat ) -> None:
    assert _pace( [], [], 20212022, stat ) is None
 
 
-def Test_Pace_TestSmallNhlStint_ExpectNone() -> None:
+@pytest.mark.parametrize( 'stat', list( NhlProductionStat ) )
+def Test_Pace_TestSmallNhlStint_ExpectIncluded( stat: NhlProductionStat ) -> None:
    season = replace( _season( 1, 2020, 18.4, 20 ), games_played=9 )
 
-   assert _pace( [], [ season ], 20212022, NhlProductionStat.SHOTS ) is None
+   expected = season.penalty_minutes_pace() if stat == NhlProductionStat.PIM else season.shots_pace()
+   assert _pace( [], [ season ], 20212022, stat ) == pytest.approx( expected )
 
 
 def Test_Pace_TestZeroShots_ExpectZeroNotMissing() -> None:
@@ -159,17 +161,18 @@ def Test_Pace_TestZeroShots_ExpectZeroNotMissing() -> None:
    assert _pace( [], [ season ], 20212022, NhlProductionStat.SHOTS ) == 0.0
 
 
-def Test_Pace_TestWeightedShotHistory_ExpectNormalizedAverageThenGrowth() -> None:
+@pytest.mark.parametrize( 'older_games', [ 1, 5, 19, 20, 41 ] )
+def Test_Pace_TestWeightedShotHistory_ExpectNormalizedAverageThenGrowth( older_games: int ) -> None:
    latest = _season( 1, 2021, 19.4, 160 )
-   older = replace( _season( 1, 2020, 18.4, 50 ), games_played=41 )
+   older = replace( _season( 1, 2020, 18.4, 50 ), games_played=older_games )
    coefficients = [
       ProductionCoefficient( 18, 19, 1.2, 0.8, 100 ),
       ProductionCoefficient( 19, 20, 1.1, 0.9, 100 ),
       ProductionCoefficient( 18, 20, 1.32, 0.5, 100 ),
    ]
    older_to_latest, latest_relationship, older_relationship = coefficients
-   latest_weight = latest.games_played * latest_relationship.weight
-   older_weight = older.games_played * older_relationship.weight
+   latest_weight = latest_relationship.weight
+   older_weight = older_relationship.weight * min( older_games / 20, 1.0 )
    expected = (
       latest.shots_pace() * latest_weight
       + older.shots_pace() * older_to_latest.multiplier * older_weight
