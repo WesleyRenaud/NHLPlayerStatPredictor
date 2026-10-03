@@ -175,8 +175,8 @@ def Test_Paces_TestAllScoringComponents_ExpectSharedGrowthAndHistoryBlend() -> N
    paced = PaceRegressionPredictor.paces( _model(), priors, 20252026, [] )
 
    assert paced is not None
-   latest_weight = priors[ 0 ].games * LATEST_RELATIONSHIP_WEIGHT
-   older_weight = priors[ 1 ].games * OLDER_RELATIONSHIP_WEIGHT
+   latest_weight = LATEST_RELATIONSHIP_WEIGHT
+   older_weight = OLDER_RELATIONSHIP_WEIGHT
 
    for stat in ScoringStat:
       expected = (

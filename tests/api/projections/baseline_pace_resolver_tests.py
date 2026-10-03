@@ -166,8 +166,8 @@ def Test_Resolve_TestSmallNhlStint_ExpectObservedAndInferredComponents() -> None
       observed_pp_pace * nhl.games_played + inferred_pp_pace * other.games_played
    ) / ( nhl.games_played + other.games_played ) * SCORING_MULTIPLIER
    assert resolved.power_play_goals == pytest.approx( expected_pp )
-   assert resolved.penalty_minutes is None
-   assert resolved.shots is None
+   assert resolved.penalty_minutes == 0.0
+   assert resolved.shots == 0.0
 
 
 def Test_Resolve_TestMissedSeason_ExpectElapsedAgeGrowth() -> None:

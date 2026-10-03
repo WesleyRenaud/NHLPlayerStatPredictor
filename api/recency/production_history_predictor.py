@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from .prior_year import PriorYear
 from .production_growth import ProductionGrowth
 from .production_weight import ProductionWeight
 from ..shared.enums.position import Position
@@ -64,7 +65,8 @@ class ProductionHistoryPredictor():
       total_weight = 0.0
 
       for age, value, games in history:
-         weight = weight_lookup( age, target_age ).weight * games
+         # Qualified seasons are equally reliable regardless of league schedule length.
+         weight = weight_lookup( age, target_age ).weight * min( games, PriorYear.MIN_GAMES )
          weighted += weight * value * cls.multiplier( lookup, age, target_age )
          total_weight += weight
 

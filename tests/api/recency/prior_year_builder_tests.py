@@ -89,20 +89,34 @@ def Test_Build_TestTargetYearSeason_ExpectExcluded() -> None:
    assert [ prior.year for prior in priors ] == [ 2024 ]
 
 
-def Test_Build_TestMissedLatestSeason_ExpectEarlierRun() -> None:
+def Test_Build_TestSmallLatestSeason_ExpectIncluded() -> None:
    seasons = [ _nhl( 2021, 82 ), _nhl( 2022, 82 ), _nhl( 2023, 10 ) ]
 
    priors = PriorYearBuilder.build( seasons, [], 2025, [] )
 
-   assert [ prior.year for prior in priors ] == [ 2022, 2021 ]
+   assert [ prior.year for prior in priors ] == [ 2023, 2022, 2021 ]
 
 
-def Test_Build_TestGapInsideRun_ExpectOlderQualifiedSeasonsIncluded() -> None:
+def Test_Build_TestSmallSeasonInsideRun_ExpectIncluded() -> None:
    seasons = [ _nhl( 2021, 82 ), _nhl( 2022, PriorYear.MIN_GAMES - 1 ), _nhl( 2023, 82 ) ]
 
    priors = PriorYearBuilder.build( seasons, [], 2024, [] )
 
-   assert [ prior.year for prior in priors ] == [ 2023, 2021 ]
+   assert [ prior.year for prior in priors ] == [ 2023, 2022, 2021 ]
+
+
+@pytest.mark.parametrize( 'games', [ 1, 5, 10, 19, 20, 60 ] )
+def Test_Build_TestPositiveGameCount_ExpectHistoryPreserved( games: int ) -> None:
+   priors = PriorYearBuilder.build( [ _nhl( 2024, games ) ], [], 2025, [] )
+
+   assert len( priors ) == 1
+   assert priors[ 0 ].games == games
+
+
+def Test_Build_TestZeroGames_ExpectExcluded() -> None:
+   season = replace( _nhl( 2024, 1 ), games_played=0 )
+
+   assert PriorYearBuilder.build( [ season ], [], 2025, [] ) == []
 
 
 def Test_Build_TestMixedYear_ExpectCombinedTranslatedPace() -> None:

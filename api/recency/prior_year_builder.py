@@ -46,7 +46,7 @@ class PriorYearBuilder():
       for start_year, year_seasons in by_year.items():
          combined = TranslatedPaceAverager.year( year_seasons, factors, component_shares )
 
-         if combined is None or combined.games < PriorYear.MIN_GAMES:
+         if combined is None or not combined.games:
             continue
 
          qualified.append(
