@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from .production_coefficient import ProductionCoefficient
+from .production_growth import ProductionGrowth
+from .production_weight import ProductionWeight
 from ..shared.enums.position import Position
 
 
@@ -10,24 +11,38 @@ class ProductionHistoryPredictor():
    @classmethod
    def coefficient(
          cls,
-         coefficients: list[ ProductionCoefficient ],
+         coefficients: list[ ProductionGrowth ],
          from_age: int,
-         to_age: int ) -> ProductionCoefficient:
+         to_age: int ) -> ProductionGrowth:
       matching = [
          coefficient for coefficient in coefficients
          if coefficient.to_age - coefficient.from_age == to_age - from_age
       ]
 
       if not matching:
-         return ProductionCoefficient( from_age, to_age, 1.0, 0.0, 0 )
+         return ProductionGrowth( from_age, to_age, 1.0, 0 )
 
       return min( matching, key=lambda coefficient: abs( coefficient.from_age - from_age ) )
 
 
    @classmethod
+   def weight(
+         cls,
+         weights: list[ ProductionWeight ],
+         from_age: int,
+         to_age: int ) -> ProductionWeight:
+      matching = [ weight for weight in weights if weight.to_age - weight.from_age == to_age - from_age ]
+
+      if not matching:
+         return ProductionWeight( from_age, to_age, 0.0, 0 )
+
+      return min( matching, key=lambda weight: abs( weight.from_age - from_age ) )
+
+
+   @classmethod
    def multiplier(
          cls,
-         lookup: Callable[ [ int, int ], ProductionCoefficient ],
+         lookup: Callable[ [ int, int ], ProductionGrowth ],
          from_age: int,
          to_age: int ) -> float:
       multiplier = 1.0
@@ -43,11 +58,8 @@ class ProductionHistoryPredictor():
          cls,
          history: list[ tuple[ int, float, int ] ],
          target_age: int,
-         lookup: Callable[ [ int, int ], ProductionCoefficient ],
-         weight_lookup: Callable[ [ int, int ], ProductionCoefficient ] | None = None ) -> float:
-      if weight_lookup is None:
-         weight_lookup = lookup
-
+         lookup: Callable[ [ int, int ], ProductionGrowth ],
+         weight_lookup: Callable[ [ int, int ], ProductionWeight ] ) -> float:
       weighted = 0.0
       total_weight = 0.0
 

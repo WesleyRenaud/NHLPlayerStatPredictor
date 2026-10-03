@@ -10,7 +10,6 @@ from api.recency.nhl_production_regression import NhlProductionRegression
 from api.recency.nhl_production_stat import NhlProductionStat
 from api.recency.prior_year_builder import PriorYearBuilder
 from api.recency.production_coefficient import ProductionCoefficient
-from api.recency.production_history_predictor import ProductionHistoryPredictor
 from api.season import Season
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
@@ -77,12 +76,39 @@ def Test_Fit_TestMultiplicativeProduction_ExpectAgeMultipliers( stat: NhlProduct
 
    assert next( coefficient for coefficient in coefficients if coefficient.from_age == 18 and coefficient.to_age == 19 ).multiplier == pytest.approx( ANNUAL_MULTIPLIER )
    assert next( coefficient for coefficient in coefficients if coefficient.from_age == 18 and coefficient.to_age == 20 ).multiplier == pytest.approx( ANNUAL_MULTIPLIER ** 2 )
-   assert next( coefficient for coefficient in coefficients if coefficient.from_age == 18 and coefficient.to_age == 20 ).weight == pytest.approx( 1.0 )
+   assert next( coefficient for coefficient in coefficients if coefficient.from_age == 18 and coefficient.to_age == 20 ).weight == pytest.approx( 1 / 17 )
+   assert sum( coefficient.weight for coefficient in coefficients if coefficient.to_age == 20 ) == pytest.approx( 1.0 )
 
 
 @pytest.mark.parametrize( 'stat', list( NhlProductionStat ) )
 def Test_Fit_TestNoPairs_ExpectEmptyCoefficients( stat: NhlProductionStat ) -> None:
    assert NhlProductionRegression.fit( [], stat ) == []
+
+
+@pytest.mark.parametrize( 'stat', list( NhlProductionStat ) )
+def Test_Fit_TestDifferentCohorts_ExpectCompoundedAnnualGrowth( stat: NhlProductionStat ) -> None:
+   seasons = [
+      _season( player_id, year, age, production )
+      for player_id in range( 1, 31 )
+      for year, age, production in ( ( 2020, 25.4, 100 ), ( 2021, 26.4, 90 ) )
+   ] + [
+      _season( player_id, year, age, production )
+      for player_id in range( 31, 61 )
+      for year, age, production in ( ( 2020, 26.4, 100 ), ( 2021, 27.4, 80 ) )
+   ] + [
+      _season( player_id, year, age, production )
+      for player_id in range( 61, 91 )
+      for year, age, production in ( ( 2020, 25.4, 100 ), ( 2022, 27.4, 200 ) )
+   ]
+
+   coefficients = NhlProductionRegression.fit( seasons, stat )
+   by_transition = { ( item.from_age, item.to_age ): item for item in coefficients }
+
+   assert by_transition[ ( 25, 26 ) ].multiplier == pytest.approx( 0.9 )
+   assert by_transition[ ( 26, 27 ) ].multiplier == pytest.approx( 0.8 )
+   assert by_transition[ ( 25, 27 ) ].multiplier == pytest.approx( 0.9 * 0.8 )
+   assert by_transition[ ( 25, 27 ) ].weight > 0.0
+   assert sum( item.weight for item in coefficients if item.to_age == 27 ) == pytest.approx( 1.0 )
 
 
 def Test_Fit_TestMultipleYears_ExpectOneHistoryPreparationPerPlayer(
@@ -141,9 +167,7 @@ def Test_Pace_TestWeightedShotHistory_ExpectNormalizedAverageThenGrowth() -> Non
       ProductionCoefficient( 19, 20, 1.1, 0.9, 100 ),
       ProductionCoefficient( 18, 20, 1.32, 0.5, 100 ),
    ]
-   latest_relationship = ProductionHistoryPredictor.coefficient( coefficients, 19, 20 )
-   older_relationship = ProductionHistoryPredictor.coefficient( coefficients, 18, 20 )
-   older_to_latest = ProductionHistoryPredictor.coefficient( coefficients, 18, 19 )
+   older_to_latest, latest_relationship, older_relationship = coefficients
    latest_weight = latest.games_played * latest_relationship.weight
    older_weight = older.games_played * older_relationship.weight
    expected = (

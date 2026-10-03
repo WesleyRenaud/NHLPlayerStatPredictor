@@ -13,7 +13,7 @@ from ..depth.skater_ice_store import SkaterIceStore
 from ..depth.slot_average_store import SlotAverageStore
 from .github_cli import GithubCli
 from ..paths import Paths
-from ..recency.pace_regression_store import PaceRegressionStore
+from ..recency.production_model_provider import ProductionModelProvider
 from ..shared.enums.position import Position
 from ..team_factor.team_factor_store import TeamFactorStore
 
@@ -46,7 +46,8 @@ class IngestArtifactPuller():
    def install( cls, artifact_root: Path ) -> None:
       Paths.PROCESSED_DIR.mkdir( parents=True, exist_ok=True )
       shutil.copy2( cls._source_db( artifact_root ), Paths.DB_PATH )
-      shutil.copy2( cls._source_regressions( artifact_root ), PaceRegressionStore.path() )
+      for path in ProductionModelProvider.paths():
+         shutil.copy2( artifact_root / path.relative_to( Paths.ROOT ), path )
       shutil.copy2(
          cls._source_availability( artifact_root ),
          AvailabilityWeightStore.path() )
@@ -77,7 +78,9 @@ class IngestArtifactPuller():
          if (
                not cls._source_db( artifact_root ).is_file()
                or not cls._source_raw( artifact_root ).is_dir()
-               or not cls._source_regressions( artifact_root ).is_file()
+               or any(
+                  not ( artifact_root / path.relative_to( Paths.ROOT ) ).is_file()
+                  for path in ProductionModelProvider.paths() )
                or not cls._source_availability( artifact_root ).is_file()
                or not cls._source_leagues( artifact_root ).is_file()
                or not cls._source_teams( artifact_root ).is_file()
@@ -85,6 +88,7 @@ class IngestArtifactPuller():
                or not cls._source_slots( artifact_root ).is_file()
                or not cls._source_ice( artifact_root ).is_file()
                or not cls._source_chosen( artifact_root ).is_file() ):
+            print( 'Ingest artifact is incomplete; run the current Ingest workflow to generate all required files.' )
             return False
 
          cls.install( artifact_root )
@@ -150,7 +154,7 @@ class IngestArtifactPuller():
 
    @classmethod
    def _needs_pull( cls, run_id: str ) -> bool:
-      if not Paths.DB_PATH.is_file():
+      if not Paths.DB_PATH.is_file() or any( not path.is_file() for path in ProductionModelProvider.paths() ):
          return True
 
       stamp_path = cls._stamp_path()
@@ -185,11 +189,6 @@ class IngestArtifactPuller():
    @classmethod
    def _source_raw( cls, artifact_root: Path ) -> Path:
       return artifact_root / Paths.RAW_DIR.relative_to( Paths.ROOT )
-
-
-   @classmethod
-   def _source_regressions( cls, artifact_root: Path ) -> Path:
-      return artifact_root / PaceRegressionStore.path().relative_to( Paths.ROOT )
 
 
    @classmethod

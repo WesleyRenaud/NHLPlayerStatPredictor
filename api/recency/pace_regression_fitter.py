@@ -5,15 +5,11 @@ from collections import defaultdict
 from ..aging.league_factor import LeagueFactor
 from .nhl_production_regression import NhlProductionRegression
 from .nhl_production_stat import NhlProductionStat
-from .pace_regression import PaceRegression
 from .pace_regression_model import PaceRegressionModel
-from .pace_regression_training_data import PaceRegressionTrainingData
-from .prior_source import PriorSource
 from .prior_year import PriorYear
 from .prior_year_builder import PriorYearBuilder
 from .production_coefficient_fitter import ProductionCoefficientFitter
 from .production_pair import ProductionPair
-from ..projections.scoring_stat import ScoringStat
 from .scoring_component_share_fitter import ScoringComponentShareFitter
 from ..season import Season
 from ..skaters.nhl_skater_season import NhlSkaterSeason
@@ -39,11 +35,7 @@ class PaceRegressionFitter():
          for player_id, seasons in by_player.items()
       }
 
-      training_datasets = [
-         PaceRegressionTrainingData( source, stat )
-         for source in sorted( PriorSource )
-         for stat in sorted( ScoringStat )
-      ]
+      points_pairs: list[ ProductionPair ] = []
 
       for current in nhl_seasons:
          if current.games_played < PriorYear.MIN_GAMES:
@@ -59,28 +51,20 @@ class PaceRegressionFitter():
             if not 0 < lag <= PriorYearBuilder.WIDTH:
                continue
 
-            source = prior.source()
             age = int( prior.age )
             games = float( min( prior.games, current.games_played ) )
-
-            for dataset in training_datasets:
-               if dataset.source != source:
-                  continue
-
-               dataset.samples.append( ProductionPair(
-                  from_age=age,
-                  to_age=age + lag,
-                  prior_pace=getattr( prior.scoring, dataset.stat.value ),
-                  following_pace=getattr( actual, dataset.stat.value ),
-                  games=games ) )
+            points_pairs.append( ProductionPair(
+               from_age=age,
+               to_age=age + lag,
+               prior_pace=prior.scoring.goals + prior.scoring.assists,
+               following_pace=actual.goals + actual.assists,
+               games=games ) )
 
       nhl_history_by_player = (
          NhlProductionRegression.history( nhl_seasons ) if other_seasons else history_by_player )
-      return PaceRegressionModel( [
-         PaceRegression( dataset.source, dataset.stat, ProductionCoefficientFitter.fit( dataset.samples ) )
-         for dataset in training_datasets
-         if dataset.samples
-      ],
+      return PaceRegressionModel(
+         ProductionCoefficientFitter.fit_growth( points_pairs ),
          component_shares,
          pim_coefficients=NhlProductionRegression.fit( nhl_seasons, NhlProductionStat.PIM, nhl_history_by_player ),
-         shots_coefficients=NhlProductionRegression.fit( nhl_seasons, NhlProductionStat.SHOTS, nhl_history_by_player ) )
+         shots_coefficients=NhlProductionRegression.fit( nhl_seasons, NhlProductionStat.SHOTS, nhl_history_by_player ),
+         history_weights=ProductionCoefficientFitter.fit_weights( points_pairs ) )

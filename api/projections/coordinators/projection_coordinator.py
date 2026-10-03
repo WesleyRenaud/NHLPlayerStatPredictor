@@ -7,7 +7,7 @@ from ...depth.skater_ice_store import SkaterIceStore
 from ...pace_games_resolver import PaceGamesResolver
 from ...paths import Paths
 from ..projection import Projection
-from ...recency.pace_regression_store import PaceRegressionStore
+from ...recency.production_model_provider import ProductionModelProvider
 from ...recency_target_resolver import RecencyTargetResolver
 from ...skaters.other_league_season_provider import OtherLeagueSeasonProvider
 from ...skaters.roster_skater_provider import RosterSkaterProvider
@@ -31,7 +31,7 @@ class ProjectionCoordinator():
       skater = Skater( seasons )
       target_season = RecencyTargetResolver.resolve()
       league_factors = LeagueFactorStore.read()
-      model = PaceRegressionStore.read()
+      model = ProductionModelProvider.read()
       paces = BaselinePaceResolver.resolve(
          skater,
          target_season,
