@@ -16,9 +16,9 @@ from api.ingest.github_cli_result import GithubCliResult
 import api.ingest.ingest_artifact_puller as ingest_artifact_puller
 from api.ingest.ingest_artifact_puller import IngestArtifactPuller
 from api.recency.pace_regression_model import PaceRegressionModel
+from api.recency.production_coefficient import ProductionCoefficient
 from api.recency.production_model_provider import ProductionModelProvider
 from api.recency.production_model_recorder import ProductionModelRecorder
-from api.recency.production_coefficient import ProductionCoefficient
 from api.shared.enums.position import Position
 from api.team_factor.team_factor_store import TeamFactorStore
 

@@ -1,5 +1,5 @@
-from .production_list_store import ProductionListStore
 from .production_growth import ProductionGrowth
+from .production_list_store import ProductionListStore
 
 
 class ProductionMultiplierStore( ProductionListStore ):
