@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -15,6 +15,8 @@ from api.depth.slot_average_store import SlotAverageStore
 from api.ingest.github_cli_result import GithubCliResult
 import api.ingest.ingest_artifact_puller as ingest_artifact_puller
 from api.ingest.ingest_artifact_puller import IngestArtifactPuller
+from api.projections.prospect_calibration_model import ProspectCalibrationModel
+from api.projections.prospect_calibration_store import ProspectCalibrationStore
 from api.recency.pace_regression_model import PaceRegressionModel
 from api.recency.production_coefficient import ProductionCoefficient
 from api.recency.production_model_provider import ProductionModelProvider
@@ -59,6 +61,7 @@ def _write_artifact( root: Path ) -> None:
    model_directory = db_path.parent
    with patch.object( ingest_artifact_puller.Paths, 'PROCESSED_DIR', model_directory ):
       ProductionModelRecorder.write( _REGRESSION_MODEL )
+      ProspectCalibrationStore.write( ProspectCalibrationModel( 20262027, [], [] ) )
    availability_path = root / AvailabilityWeightStore.path().relative_to(
       ingest_artifact_puller.Paths.ROOT )
    availability_path.parent.mkdir( parents=True, exist_ok=True )
@@ -200,6 +203,7 @@ def Test_Sync_TestMatchingStamp_ExpectDownloadSkipped(
    ingest_artifact_puller.Paths.PROCESSED_DIR.mkdir( parents=True, exist_ok=True )
    ingest_artifact_puller.Paths.DB_PATH.write_bytes( _SQLITE_BYTES )
    ProductionModelRecorder.write( _REGRESSION_MODEL )
+   ProspectCalibrationStore.write( ProspectCalibrationModel( 20262027, [], [] ) )
    IngestArtifactPuller._stamp_path().write_text( run_id )
    downloaded: list[ str ] = []
 
@@ -288,3 +292,36 @@ def Test_Pull_TestMissingModelFile_ExpectRejectedBeforeInstall(
    assert installed == []
    assert not IngestArtifactPuller._stamp_path().exists()
    assert 'incomplete' in capsys.readouterr().out
+
+
+def Test_Pull_TestMissingCalibration_ExpectRejectedBeforeInstall(
+      monkeypatch: pytest.MonkeyPatch, tmp_path: Path ) -> None:
+   _bind_paths( monkeypatch, tmp_path / 'repo' )
+
+   def fake_download( run_id: str, download_dir: Path ) -> bool:
+      _write_artifact( download_dir )
+      source = download_dir / ProspectCalibrationStore.path().relative_to( ingest_artifact_puller.Paths.ROOT )
+      source.unlink()
+      return True
+
+   installed = Mock()
+   monkeypatch.setattr( IngestArtifactPuller, '_download', fake_download )
+   monkeypatch.setattr( IngestArtifactPuller, 'install', installed )
+
+   assert not IngestArtifactPuller._pull( '99' )
+   installed.assert_not_called()
+
+
+def Test_Sync_TestMissingCalibration_ExpectPulled( monkeypatch: pytest.MonkeyPatch, tmp_path: Path ) -> None:
+   _bind_paths( monkeypatch, tmp_path / 'repo' )
+   ingest_artifact_puller.Paths.PROCESSED_DIR.mkdir( parents=True, exist_ok=True )
+   ingest_artifact_puller.Paths.DB_PATH.write_bytes( _SQLITE_BYTES )
+   ProductionModelRecorder.write( _REGRESSION_MODEL )
+   IngestArtifactPuller._stamp_path().write_text( '99' )
+   pulled = []
+   monkeypatch.setattr( IngestArtifactPuller, '_listed_run_id', lambda: '99' )
+   monkeypatch.setattr( IngestArtifactPuller, '_pull', lambda run_id: pulled.append( run_id ) )
+
+   IngestArtifactPuller.sync()
+
+   assert pulled == [ '99' ]

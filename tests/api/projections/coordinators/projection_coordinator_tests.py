@@ -13,9 +13,14 @@ from api.ingest.nhl_client import NhlClient
 from api.paths import Paths
 import api.projections.coordinators.projection_coordinator as projection_coordinator
 from api.projections.coordinators.projection_coordinator import ProjectionCoordinator
+from api.projections.draft_pick import DraftPick
 from api.projections.pace_values import PaceValues
 from api.projections.power_play_pace import PowerPlayPace
 from api.projections.projection import Projection
+from api.projections.prospect_calibration_model import ProspectCalibrationModel
+from api.projections.prospect_calibration_sample import ProspectCalibrationSample
+from api.projections.prospect_calibration_store import ProspectCalibrationStore
+from api.projections.prospect_profile import ProspectProfile
 from api.projections.season_pace import SeasonPace
 from api.recency.pace_regression_model import PaceRegressionModel
 from api.recency.production_coefficient import ProductionCoefficient
@@ -30,6 +35,8 @@ from api.skaters.team import Team
 
 
 def _stub_ice( monkeypatch: pytest.MonkeyPatch ) -> None:
+   monkeypatch.setattr( ProspectCalibrationStore, 'read',
+      Mock( side_effect=AssertionError( 'Non-prospect projections must not read calibration.' ) ) )
    monkeypatch.setattr(
       projection_coordinator.SkaterIceStore,
       'by_player',
@@ -73,6 +80,60 @@ def _season( age: float ) -> NhlSkaterSeason:
       short_handed_points=0,
       shots=0,
       penalty_minutes=0 )
+
+
+def Test_GetProjection_TestProspectCurve_ExpectCalibrationBeforeIceAndRounding(
+      monkeypatch: pytest.MonkeyPatch ) -> None:
+   scoring_factor = 1.5
+   baseline_toi = 10.0
+   projected_toi = 20.0
+   ice_scale = projected_toi / baseline_toi
+   pace_games = 84
+   source = OtherLeagueSkaterSeason(
+      player_id=1, season_id=20252026, age=18.0, games_played=40,
+      goals=10, assists=20, points=30, g_pace=21.0, a_pace=42.0,
+      position=SkaterPosition.CENTER, league='SHL' )
+   calibration = ProspectCalibrationModel(
+      20262027, [ ProspectProfile( 1, 2025, DraftPick( 3 ), [] ) ],
+      [
+         ProspectCalibrationSample( 2, 20242025, DraftPick( 1 ), 20.0, 20.0 * scoring_factor, 'SHL' ),
+         ProspectCalibrationSample( 3, 20242025, DraftPick( 20 ), 40.0, 40.0 * scoring_factor, 'OHL' ),
+      ] )
+   paces = PaceValues( 1.2, 2.4, 0.6, 1.4, 0.2, 0.4, 30.0, 200.0 )
+   _stub_roster( monkeypatch )
+   _stub_ice( monkeypatch )
+   monkeypatch.setattr( projection_coordinator.SkaterSeasonProvider, 'seasons_for_player_id',
+      lambda player_id, path: [] )
+   monkeypatch.setattr( projection_coordinator.OtherLeagueSeasonProvider, 'seasons_for_player_id',
+      lambda player_id, path: [ source ] )
+   monkeypatch.setattr( projection_coordinator.RecencyTargetResolver, 'resolve', lambda: 20262027 )
+   monkeypatch.setattr( projection_coordinator.LeagueFactorStore, 'read', lambda: [ LeagueFactor( 'SHL', 0.5 ) ] )
+   monkeypatch.setattr( projection_coordinator.ProductionModelProvider, 'read', lambda: PaceRegressionModel( [] ) )
+   monkeypatch.setattr( projection_coordinator.BaselinePaceResolver, 'resolve',
+      lambda skater, target, leagues, model, player_ice_scales: paces )
+   monkeypatch.setattr( ProspectCalibrationStore, 'read', lambda: calibration )
+   monkeypatch.setattr( projection_coordinator.SkaterIceStore, 'by_player',
+      lambda: { 1: SkaterIce( 1, baseline_toi, baseline_toi, projected_toi ) } )
+   monkeypatch.setattr( projection_coordinator.PaceGamesResolver, 'resolve', lambda: pace_games )
+
+   projection = ProjectionCoordinator.get_projection( 1 )
+
+   assert projection is not None
+   assert projection.even_strength_goals == round( paces.even_strength_goals * scoring_factor * ice_scale )
+   assert projection.even_strength_points == (
+      round( paces.even_strength_goals * scoring_factor * ice_scale )
+      + round( paces.even_strength_assists * scoring_factor * ice_scale ) )
+   assert projection.power_play_points == (
+      round( paces.power_play_goals * scoring_factor * ice_scale )
+      + round( paces.power_play_assists * scoring_factor * ice_scale ) )
+   assert projection.short_handed_points == (
+      round( paces.short_handed_goals * scoring_factor * ice_scale )
+      + round( paces.short_handed_assists * scoring_factor * ice_scale ) )
+   assert projection.shots == round( paces.shots * ice_scale )
+   assert projection.penalty_minutes == round( paces.penalty_minutes * ice_scale )
+   assert projection.games_played == pace_games
+   assert projection.projected_toi == projected_toi
+   assert projection.shooting_percentage == pytest.approx( 100 * paces.goals * scoring_factor / paces.shots )
 
 
 @pytest.mark.parametrize( 'shots_pace', [ None, 0.0, 205.3 ] )
@@ -312,6 +373,8 @@ def Test_GetProjection_TestUnrosteredPlayer_ExpectNoneWithoutCalculation(
 def Test_GetProjection_TestHistoricalRates_ExpectNormalizedThenProjectedStats(
       monkeypatch: pytest.MonkeyPatch,
       projected_toi: float ) -> None:
+   latest_toi = 20.0
+   older_toi = 10.0
    latest = replace( _season( 27.2 ), season_id=20242025, games_played=82,
       pace_games=82, even_strength_goals=20, even_strength_points=40,
       shots=200, penalty_minutes=20 )
@@ -328,20 +391,24 @@ def Test_GetProjection_TestHistoricalRates_ExpectNormalizedThenProjectedStats(
    monkeypatch.setattr( projection_coordinator.OtherLeagueSeasonProvider, 'seasons_for_player_id',
       lambda player_id, path: [] )
    monkeypatch.setattr( projection_coordinator.SkaterIceStore, 'by_player',
-      lambda: { 1: SkaterIce( 1, 20.0, 20.0, projected_toi ) } )
+      lambda: { 1: SkaterIce( 1, latest_toi, latest_toi, projected_toi ) } )
    monkeypatch.setattr( projection_coordinator.RecencyTargetResolver, 'resolve', lambda: 20252026 )
    monkeypatch.setattr( projection_coordinator.ProductionModelProvider, 'read', lambda: model )
    monkeypatch.setattr( projection_coordinator.LeagueFactorStore, 'read', lambda: [] )
    monkeypatch.setattr( projection_coordinator.PaceGamesResolver, 'resolve', lambda: 82 )
    monkeypatch.setattr( NhlClient, 'skater_timeonice', lambda season_id: [
-      { 'playerId': 1, 'timeOnIcePerGame': 1200 if season_id == latest.season_id else 600,
-         'gamesPlayed': 82, 'teamAbbrevs': 'COL', 'positionCode': 'C' } ] )
+      { 'playerId': 1, 'timeOnIcePerGame': ( latest_toi if season_id == latest.season_id else older_toi ) * 60,
+         'gamesPlayed': latest.games_played, 'teamAbbrevs': 'COL', 'positionCode': 'C' } ] )
 
    projection = ProjectionCoordinator.get_projection( 1 )
 
    assert projection is not None
    result = projection.to_dict()
-   ratio = projected_toi / 20.0
-   assert result[ 'points' ] == 60 * ratio
-   assert result[ 'shots' ] == 300 * ratio
-   assert result[ 'penaltyMinutes' ] == 30 * ratio
+   ratio = projected_toi / latest_toi
+   older_ice_scale = latest_toi / older_toi
+   expected_points = ( latest.even_strength_points + older.even_strength_points * older_ice_scale ) / 2
+   expected_shots = ( latest.shots + older.shots * older_ice_scale ) / 2
+   expected_pim = ( latest.penalty_minutes + older.penalty_minutes * older_ice_scale ) / 2
+   assert result[ 'points' ] == expected_points * ratio
+   assert result[ 'shots' ] == expected_shots * ratio
+   assert result[ 'penaltyMinutes' ] == expected_pim * ratio

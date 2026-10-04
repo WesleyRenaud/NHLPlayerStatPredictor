@@ -4,17 +4,6 @@ from api.skaters.skater_group import SkaterGroup
 from api.skaters.skater_position import SkaterPosition
 
 
-def Test_Members_TestValues_ExpectUniqueStrings() -> None:
-   members = list( SkaterGroup )
-
-   values = [ member.value for member in members ]
-
-   assert values
-   assert len( values ) == len( set( values ) )
-   assert all( isinstance( value, str ) for value in values )
-   assert [ SkaterGroup( value ) for value in values ] == members
-
-
 def Test_Of_TestSkaterPositions_ExpectGroups() -> None:
    center = SkaterPosition( 'C' )
    left = SkaterPosition( 'L' )

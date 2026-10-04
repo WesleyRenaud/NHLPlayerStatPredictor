@@ -101,11 +101,17 @@ def Test_Resolve_TestNhlSeason_ExpectMultiplicativePace() -> None:
 
 
 def Test_Resolve_TestDifferentHistoricalToi_ExpectRateBlendForAllStats() -> None:
+   older_production_scale = 2
+   older_ice_scale = 1 / older_production_scale
    latest = replace( _nhl( 20242025, 20.0, 30.0, 27.4 ), penalty_minutes=20, shots=200,
       power_play_goals=5, power_play_points=10, even_strength_goals=15, even_strength_points=40 )
    older = replace( latest, season_id=20232024, age=26.4,
-      even_strength_goals=30, even_strength_points=80, power_play_goals=10,
-      power_play_points=20, penalty_minutes=40, shots=400 )
+      even_strength_goals=latest.even_strength_goals * older_production_scale,
+      even_strength_points=latest.even_strength_points * older_production_scale,
+      power_play_goals=latest.power_play_goals * older_production_scale,
+      power_play_points=latest.power_play_points * older_production_scale,
+      penalty_minutes=latest.penalty_minutes * older_production_scale,
+      shots=latest.shots * older_production_scale )
    model = PaceRegressionModel( [ ProductionGrowth( 27, 28, 1.0, 100 ) ],
       history_weights=[ ProductionWeight( 27, 28, 1.0, 100 ), ProductionWeight( 26, 28, 1.0, 100 ) ],
       pim_coefficients=[ ProductionCoefficient( 27, 28, 1.0, 1.0, 100 ),
@@ -116,27 +122,33 @@ def Test_Resolve_TestDifferentHistoricalToi_ExpectRateBlendForAllStats() -> None
    resolved = BaselinePaceResolver.resolve(
       Skater( [ latest, older ] ), 20252026, [], model,
       [ NhlPlayerSeasonIceScale( latest.player_id, latest.season_id, 1.0 ),
-         NhlPlayerSeasonIceScale( older.player_id, older.season_id, 0.5 ) ] )
+         NhlPlayerSeasonIceScale( older.player_id, older.season_id, older_ice_scale ) ] )
 
    assert resolved is not None
-   assert resolved.goals == pytest.approx( 20.0 )
-   assert resolved.assists == pytest.approx( 30.0 )
-   assert resolved.power_play_goals == pytest.approx( 5.0 )
-   assert resolved.penalty_minutes == pytest.approx( 20.0 )
-   assert resolved.shots == pytest.approx( 200.0 )
+   pace_scale = latest.pace_games / latest.games_played
+   assert resolved.goals == pytest.approx( ( latest.even_strength_goals + latest.power_play_goals ) * pace_scale )
+   assert resolved.assists == pytest.approx(
+      ( latest.even_strength_points - latest.even_strength_goals
+         + latest.power_play_points - latest.power_play_goals ) * pace_scale )
+   assert resolved.power_play_goals == pytest.approx( latest.power_play_goals * pace_scale )
+   assert resolved.penalty_minutes == pytest.approx( latest.penalty_minutes * pace_scale )
+   assert resolved.shots == pytest.approx( latest.shots * pace_scale )
 
 
 def Test_Resolve_TestMixedLeagueIceScale_ExpectOnlyNhlAdjusted() -> None:
+   nhl_ice_scale = 0.5
    nhl = _nhl( 20242025, 20.0, 30.0, 18.4 )
    other = _other( 20242025, 30.0, 50.0, 'AAA' )
    factor = LeagueFactor( 'AAA', 0.4 )
 
    resolved = BaselinePaceResolver.resolve(
       Skater( [ nhl, other ] ), 20252026, [ factor ], _model(),
-      [ NhlPlayerSeasonIceScale( nhl.player_id, nhl.season_id, 0.5 ) ] )
+      [ NhlPlayerSeasonIceScale( nhl.player_id, nhl.season_id, nhl_ice_scale ) ] )
 
    assert resolved is not None
-   expected = ( 50.0 * 0.5 * nhl.games_played + 80.0 * factor.rate * other.games_played )
+   expected = (
+      ( nhl.g_pace + nhl.a_pace ) * nhl_ice_scale * nhl.games_played
+      + ( other.g_pace + other.a_pace ) * factor.rate * other.games_played )
    expected /= nhl.games_played + other.games_played
    assert resolved.goals + resolved.assists == pytest.approx( expected * SCORING_MULTIPLIER )
 

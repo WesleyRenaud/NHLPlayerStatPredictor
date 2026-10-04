@@ -8,6 +8,7 @@ from ...depth.skater_ice_store import SkaterIceStore
 from ...pace_games_resolver import PaceGamesResolver
 from ...paths import Paths
 from ..projection import Projection
+from ..prospect_calibration_resolver import ProspectCalibrationResolver
 from ...recency.production_model_provider import ProductionModelProvider
 from ...recency_target_resolver import RecencyTargetResolver
 from ...skaters.other_league_season_provider import OtherLeagueSeasonProvider
@@ -47,6 +48,7 @@ class ProjectionCoordinator():
       if paces is None:
          return None
 
+      paces = ProspectCalibrationResolver.adjust( skater, target_season, paces, league_factors )
       even_strength_pace = paces.even_strength_pace()
       power_play_pace = paces.power_play_pace()
       short_handed_pace = paces.short_handed_pace()

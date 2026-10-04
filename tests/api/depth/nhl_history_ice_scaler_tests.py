@@ -11,6 +11,7 @@ from api.ingest.nhl_client import NhlClient
 from api.skaters.nhl_skater_season import NhlSkaterSeason
 from api.skaters.skater_position import SkaterPosition
 from api.skaters.team import Team
+from api.time import Time
 from api.types import Types
 
 
@@ -29,22 +30,38 @@ def _season() -> NhlSkaterSeason:
 def Test_Scales_TestHistory_ExpectEachSeasonMinutesAndLimitedWindow(
       monkeypatch: pytest.MonkeyPatch ) -> None:
    calls = []
+   reference_season_id = 20242025
+   reference_toi = 20.0
+   full_toi_seconds = reference_toi * Time.SECONDS_PER_MINUTE
+   half_toi_seconds = full_toi_seconds / 2
 
    def _rows( season_id: int ) -> Types.JsonObjectList:
       calls.append( season_id )
-      return [ { 'playerId': 1, 'timeOnIcePerGame': 1200 if season_id == 20242025 else 600,
+      return [ {
+         'playerId': 1,
+         'timeOnIcePerGame': (
+            full_toi_seconds if season_id == reference_season_id else half_toi_seconds ),
          'gamesPlayed': 82, 'teamAbbrevs': 'COL', 'positionCode': 'C' } ]
 
    monkeypatch.setattr( NhlClient, 'skater_timeonice', _rows )
    seasons = [ replace( _season(), season_id=year * 10000 + year + 1 )
       for year in range( 2020, 2026 ) ]
 
-   scales = NhlHistoryIceScaler.scales( seasons, 20252026, 20.0 )
+   scales = NhlHistoryIceScaler.scales( seasons, 20252026, reference_toi )
 
    assert scales == [
-      NhlPlayerSeasonIceScale( 1, 20242025, 1.0 ),
-      NhlPlayerSeasonIceScale( 1, 20232024, 2.0 ),
-      NhlPlayerSeasonIceScale( 1, 20222023, 2.0 ),
+      NhlPlayerSeasonIceScale(
+         1,
+         20242025,
+         reference_toi / ( full_toi_seconds / Time.SECONDS_PER_MINUTE ) ),
+      NhlPlayerSeasonIceScale(
+         1,
+         20232024,
+         reference_toi / ( half_toi_seconds / Time.SECONDS_PER_MINUTE ) ),
+      NhlPlayerSeasonIceScale(
+         1,
+         20222023,
+         reference_toi / ( half_toi_seconds / Time.SECONDS_PER_MINUTE ) ),
    ]
    assert calls == [ 20242025, 20232024, 20222023 ]
 

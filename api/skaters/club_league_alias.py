@@ -5,6 +5,7 @@ from .club_league import ClubLeague
 
 class ClubLeagueAlias():
    LABELS: dict[ ClubLeague, list[ str ] ] = {
+      ClubLeague.ALLSVENSKAN: [ 'HockeyAllsvenskan' ],
       ClubLeague.CZECHIA: [ 'Czech', 'CZE', 'CzRep' ],
       ClubLeague.DEL: [ 'Germany' ],
       ClubLeague.KHL: [ 'Rus-KHL', 'Russia' ],

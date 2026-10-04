@@ -87,26 +87,40 @@ def Test_Fit_TestNoPairs_ExpectEmptyCoefficients( stat: NhlProductionStat ) -> N
 
 @pytest.mark.parametrize( 'stat', list( NhlProductionStat ) )
 def Test_Fit_TestDifferentCohorts_ExpectCompoundedAnnualGrowth( stat: NhlProductionStat ) -> None:
+   base_production = 100
+   first_annual_multiplier = 0.9
+   second_annual_multiplier = 0.8
+   long_gap_multiplier = 2.0
    seasons = [
       _season( player_id, year, age, production )
       for player_id in range( 1, 31 )
-      for year, age, production in ( ( 2020, 25.4, 100 ), ( 2021, 26.4, 90 ) )
+      for year, age, production in (
+         ( 2020, 25.4, base_production ),
+         ( 2021, 26.4, base_production * first_annual_multiplier ),
+      )
    ] + [
       _season( player_id, year, age, production )
       for player_id in range( 31, 61 )
-      for year, age, production in ( ( 2020, 26.4, 100 ), ( 2021, 27.4, 80 ) )
+      for year, age, production in (
+         ( 2020, 26.4, base_production ),
+         ( 2021, 27.4, base_production * second_annual_multiplier ),
+      )
    ] + [
       _season( player_id, year, age, production )
       for player_id in range( 61, 91 )
-      for year, age, production in ( ( 2020, 25.4, 100 ), ( 2022, 27.4, 200 ) )
+      for year, age, production in (
+         ( 2020, 25.4, base_production ),
+         ( 2022, 27.4, base_production * long_gap_multiplier ),
+      )
    ]
 
    coefficients = NhlProductionRegression.fit( seasons, stat )
    by_transition = { ( item.from_age, item.to_age ): item for item in coefficients }
 
-   assert by_transition[ ( 25, 26 ) ].multiplier == pytest.approx( 0.9 )
-   assert by_transition[ ( 26, 27 ) ].multiplier == pytest.approx( 0.8 )
-   assert by_transition[ ( 25, 27 ) ].multiplier == pytest.approx( 0.9 * 0.8 )
+   assert by_transition[ ( 25, 26 ) ].multiplier == pytest.approx( first_annual_multiplier )
+   assert by_transition[ ( 26, 27 ) ].multiplier == pytest.approx( second_annual_multiplier )
+   assert by_transition[ ( 25, 27 ) ].multiplier == pytest.approx(
+      first_annual_multiplier * second_annual_multiplier )
    assert by_transition[ ( 25, 27 ) ].weight > 0.0
    assert sum( item.weight for item in coefficients if item.to_age == 27 ) == pytest.approx( 1.0 )
 

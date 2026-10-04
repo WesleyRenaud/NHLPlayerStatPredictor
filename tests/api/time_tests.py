@@ -22,11 +22,19 @@ def Test_Clock_TestMinutesAndSeconds_ExpectMinutes() -> None:
 
 
 def Test_ClockString_TestDecimalMinutes_ExpectMinutesAndSeconds() -> None:
-   assert Time.clock_string( 18.5 ) == '18:30'
+   minutes = 18
+   seconds = 30
+   decimal_minutes = minutes + seconds / Time.SECONDS_PER_MINUTE
+
+   assert Time.clock_string( decimal_minutes ) == '%d:%02d' % ( minutes, seconds )
 
 
 def Test_ClockString_TestRoundingSeconds_ExpectMinuteCarry() -> None:
-   assert Time.clock_string( 18.999 ) == '19:00'
+   minutes = 18
+   seconds = 59.94
+   decimal_minutes = minutes + seconds / Time.SECONDS_PER_MINUTE
+
+   assert Time.clock_string( decimal_minutes ) == f'{ minutes + 1 }:00'
 
 
 def Test_ClockStringFromSeconds_TestMinutesAndSeconds_ExpectFormattedClock() -> None:

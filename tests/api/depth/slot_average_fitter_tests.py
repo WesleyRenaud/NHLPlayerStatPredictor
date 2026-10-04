@@ -25,6 +25,8 @@ def Test_Fit_TestSeventhAndEighth_ExpectLeagueMeans() -> None:
    first = list( Team )[ Position.FIRST ]
    second = list( Team )[ Position.SECOND ]
    spare = DepthGroup.defense().spare_slot
+   team_count = len( [ first, second ] )
+   assists_per_goal = 2.0
    usages = {}
    paces = {}
    first_toi = [ 24.0, 22.0, 21.0, 20.0, 18.0, 16.0, 15.0, 13.0 ]
@@ -35,12 +37,16 @@ def Test_Fit_TestSeventhAndEighth_ExpectLeagueMeans() -> None:
    for index, toi in enumerate( first_toi ):
       player_id, usage = _usage( index + 1, toi, first )
       usages[ player_id ] = usage
-      paces[ player_id ] = SeasonPace( first_goals[ index ], first_goals[ index ] * 2.0 )
+      paces[ player_id ] = SeasonPace(
+         first_goals[ index ],
+         first_goals[ index ] * assists_per_goal )
 
    for index, toi in enumerate( second_toi ):
       player_id, usage = _usage( index + 11, toi, second )
       usages[ player_id ] = usage
-      paces[ player_id ] = SeasonPace( second_goals[ index ], second_goals[ index ] * 2.0 )
+      paces[ player_id ] = SeasonPace(
+         second_goals[ index ],
+         second_goals[ index ] * assists_per_goal )
 
    slots = SlotAverageFitter.fit( usages, paces, spare )
 
@@ -48,15 +54,20 @@ def Test_Fit_TestSeventhAndEighth_ExpectLeagueMeans() -> None:
    eighth = next( slot for slot in slots if slot.slot == spare + 1 )
    index = spare + Position.LAST
    assert abs(
-      seventh.toi - ( first_toi[ index ] + second_toi[ index ] ) / 2 ) < 0.001
+      seventh.toi
+      - ( first_toi[ index ] + second_toi[ index ] ) / team_count ) < 0.001
    assert abs(
-      seventh.goals - ( first_goals[ index ] + second_goals[ index ] ) / 2 ) < 0.001
+      seventh.goals
+      - ( first_goals[ index ] + second_goals[ index ] ) / team_count ) < 0.001
    assert abs(
       seventh.assists
-      - ( first_goals[ index ] * 2.0 + second_goals[ index ] * 2.0 ) / 2 ) < 0.001
+      - (
+         first_goals[ index ] * assists_per_goal
+         + second_goals[ index ] * assists_per_goal
+      ) / team_count ) < 0.001
    assert abs(
       eighth.toi
-      - ( first_toi[ index + 1 ] + second_toi[ index + 1 ] ) / 2 ) < 0.001
+      - ( first_toi[ index + 1 ] + second_toi[ index + 1 ] ) / team_count ) < 0.001
 
 
 def Test_Fit_TestLowGamesHighToi_ExpectInDepth() -> None:
