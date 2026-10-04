@@ -162,7 +162,7 @@ def Test_Pace_TestZeroShots_ExpectZeroNotMissing() -> None:
 
 
 @pytest.mark.parametrize( 'older_games', [ 1, 5, 19, 20, 41 ] )
-def Test_Pace_TestWeightedShotHistory_ExpectNormalizedAverageThenGrowth( older_games: int ) -> None:
+def Test_Pace_TestWeightedShotHistory_ExpectRawAverageThenGrowth( older_games: int ) -> None:
    latest = _season( 1, 2021, 19.4, 160 )
    older = replace( _season( 1, 2020, 18.4, 50 ), games_played=older_games )
    coefficients = [
@@ -170,12 +170,12 @@ def Test_Pace_TestWeightedShotHistory_ExpectNormalizedAverageThenGrowth( older_g
       ProductionCoefficient( 19, 20, 1.1, 0.9, 100 ),
       ProductionCoefficient( 18, 20, 1.32, 0.5, 100 ),
    ]
-   older_to_latest, latest_relationship, older_relationship = coefficients
+   _older_to_latest, latest_relationship, older_relationship = coefficients
    latest_weight = latest_relationship.weight
    older_weight = older_relationship.weight * min( older_games / 20, 1.0 )
    expected = (
       latest.shots_pace() * latest_weight
-      + older.shots_pace() * older_to_latest.multiplier * older_weight
+      + older.shots_pace() * older_weight
    ) / ( latest_weight + older_weight ) * latest_relationship.multiplier
 
    projected = _pace(

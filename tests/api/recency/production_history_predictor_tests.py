@@ -22,18 +22,17 @@ def _weight_lookup( from_age: int, to_age: int ) -> ProductionWeight:
    return ProductionWeight( from_age, to_age, weight, 100 )
 
 
-def Test_Pace_TestAgeNormalizedHistory_ExpectAverageThenMultiplier() -> None:
+def Test_Pace_TestHistory_ExpectRawAverageThenLatestAgeMultiplier() -> None:
    history = [ ( 20, 20.0, 80 ), ( 19, 5.0, 40 ) ]
 
    pace = ProductionHistoryPredictor.pace( history, 21, _lookup, _weight_lookup )
 
-   latest_age, latest_pace, latest_games = history[ 0 ]
-   older_age, older_pace, older_games = history[ 1 ]
-   normalized_older_pace = older_pace * ANNUAL_MULTIPLIER ** ( latest_age - older_age )
+   _latest_age, latest_pace, latest_games = history[ 0 ]
+   _older_age, older_pace, older_games = history[ 1 ]
    latest_weight = min( latest_games, PriorYear.MIN_GAMES ) * LATEST_WEIGHT
    older_weight = min( older_games, PriorYear.MIN_GAMES ) * OLDER_WEIGHT
    weighted_average = (
-      latest_pace * latest_weight + normalized_older_pace * older_weight
+      latest_pace * latest_weight + older_pace * older_weight
    ) / ( latest_weight + older_weight )
    assert pace == pytest.approx( weighted_average * ANNUAL_MULTIPLIER )
 
@@ -52,9 +51,8 @@ def Test_Pace_TestQualifiedSeasonLengths_ExpectSameProjection(
    pace = ProductionHistoryPredictor.pace( history, 21, _lookup, _weight_lookup )
 
    assert pace == pytest.approx(
-      ( 20.0 * ANNUAL_MULTIPLIER * LATEST_WEIGHT
-         + 5.0 * ANNUAL_MULTIPLIER ** 2 * OLDER_WEIGHT )
-      / ( LATEST_WEIGHT + OLDER_WEIGHT ) )
+      ( 20.0 * LATEST_WEIGHT + 5.0 * OLDER_WEIGHT )
+      / ( LATEST_WEIGHT + OLDER_WEIGHT ) * ANNUAL_MULTIPLIER )
 
 
 @pytest.mark.parametrize( 'games', [ 0, 5, 10, 19 ] )
@@ -66,9 +64,8 @@ def Test_Pace_TestSmallSample_ExpectReducedSeasonWeight( games: int ) -> None:
    pace = ProductionHistoryPredictor.pace( history, 21, _lookup, _weight_lookup )
 
    assert pace == pytest.approx(
-      ( 20.0 * ANNUAL_MULTIPLIER * latest_weight
-         + 5.0 * ANNUAL_MULTIPLIER ** 2 * older_weight )
-      / ( latest_weight + older_weight ) )
+      ( 20.0 * latest_weight + 5.0 * older_weight )
+      / ( latest_weight + older_weight ) * ANNUAL_MULTIPLIER )
 
 
 def Test_Pace_TestMissedSeason_ExpectCompoundedAgeMultipliers() -> None:
