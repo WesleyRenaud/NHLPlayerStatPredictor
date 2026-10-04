@@ -67,9 +67,10 @@ class ProductionHistoryPredictor():
       for age, value, games in history:
          # Qualified seasons are equally reliable regardless of league schedule length.
          weight = weight_lookup( age, target_age ).weight * min( games, PriorYear.MIN_GAMES )
-         weighted += weight * value * cls.multiplier( lookup, age, target_age )
+         weighted += weight * value
          total_weight += weight
 
+      # Average raw production first, then grow once from the latest season's age.
       latest_age, latest_value, _ = history[ Position.FIRST ]
-      return max( 0.0, weighted / total_weight if total_weight else
-         latest_value * cls.multiplier( lookup, latest_age, target_age ) )
+      average = weighted / total_weight if total_weight else latest_value
+      return max( 0.0, average * cls.multiplier( lookup, latest_age, target_age ) )
