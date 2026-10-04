@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from api.depth.depth_group import DepthGroup
 from api.depth.dressed_lineup_builder import DressedLineupBuilder
 from api.depth.ice_skater import IceSkater
@@ -66,3 +68,51 @@ def Test_Build_TestTwoMissing_ExpectExtraThenSlotEight() -> None:
    eighth = SlotFiller.implied( slots, slots[ Position.FIRST ].slot )
    assert abs(
       lineup.implied - ( implied * len( present ) + extra_implied + eighth ) ) < 0.001
+
+
+@pytest.mark.parametrize( 'group', [ DepthGroup.defense(), DepthGroup.forwards() ] )
+def Test_Build_TestZeroRegular_ExpectReplacementSlot( group: DepthGroup ) -> None:
+   implied = 20.0
+   replacement = SlotAverage( group.spare_slot, 12.0, 0.0, 0.0 )
+   present = [
+      *[ _skater( index, implied ) for index in range( 1, group.dressed_count ) ],
+      _skater( group.dressed_count, 0.0 ),
+   ]
+
+   lineup = DressedLineupBuilder.build( present, [], [ replacement ], group )
+
+   assert lineup.ice == [ *[ implied ] * ( group.dressed_count - 1 ), replacement.toi ]
+
+
+def Test_Build_TestZeroExtraBeforeUsableExtra_ExpectUsableThenReplacement() -> None:
+   group = DepthGroup.defense()
+   implied = 20.0
+   extra_implied = 16.0
+   first_spare = SlotAverage( group.spare_slot, 14.0, 0.0, 0.0 )
+   next_spare = SlotAverage( group.spare_slot + 1, 12.0, 0.0, 0.0 )
+   present = [ _skater( index, implied ) for index in range( 1, group.dressed_count - 1 ) ]
+   extras = [ _skater( 7, 0.0 ), _skater( 8, extra_implied ) ]
+
+   lineup = DressedLineupBuilder.build( present, extras, [ first_spare, next_spare ], group )
+
+   assert lineup.ice == [ *[ implied ] * len( present ), extra_implied, next_spare.toi ]
+
+
+def Test_Build_TestZeroRegularAndExtra_ExpectConsecutiveReplacementSlots() -> None:
+   group = DepthGroup.defense()
+   implied = 20.0
+   replacements = [
+      SlotAverage( group.spare_slot, 14.0, 0.0, 0.0 ),
+      SlotAverage( group.spare_slot + 1, 12.0, 0.0, 0.0 ),
+   ]
+   present = [
+      *[ _skater( index, implied ) for index in range( 1, group.dressed_count - 1 ) ],
+      _skater( group.dressed_count - 1, 0.0 ),
+   ]
+
+   lineup = DressedLineupBuilder.build( present, [ _skater( 7, 0.0 ) ], replacements, group )
+
+   assert lineup.ice == [
+      *[ implied ] * ( group.dressed_count - 2 ),
+      *[ average.toi for average in replacements ],
+   ]
