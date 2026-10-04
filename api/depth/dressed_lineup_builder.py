@@ -16,8 +16,8 @@ class DressedLineupBuilder():
          extras: list[ IceSkater ],
          slot_averages: list[ SlotAverage ],
          group: DepthGroup ) -> DressedLineup:
-      claims = [ skater.implied for skater in present ]
-      extra_claims = [ skater.implied for skater in extras ]
+      claims = [ skater.implied for skater in present if skater.implied > 0.0 ]
+      extra_claims = [ skater.implied for skater in extras if skater.implied > 0.0 ]
       return DressedLineup(
          DressedFiller.fill(
             claims,

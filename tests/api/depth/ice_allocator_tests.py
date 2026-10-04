@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import pytest
+
 from api.availability.games_share import GamesShare
 from api.depth.depth_group import DepthGroup
 from api.depth.ice_allocator import IceAllocator
 from api.depth.ice_skater import IceSkater
+from api.depth.slot_average import SlotAverage
 from api.projections.nhl_lineup_selector import NhlLineupSelector
 from api.shared.enums.position import Position
 from api.skaters.skater_position import SkaterPosition
@@ -173,3 +176,42 @@ def Test_Project_TestForwardPie_ExpectOneEighty() -> None:
 
    total = sum( toi for _skater_row, toi in projected )
    assert abs( total - DepthGroup.FORWARD_ICE_MINUTES ) < 0.001
+
+
+def Test_Project_TestZeroExtra_ExpectSameMinutesAsReplacement() -> None:
+   group = DepthGroup.defense()
+   implied = 20.0
+   replacement = SlotAverage( group.spare_slot, 12.0, 0.0, 0.0 )
+   injured_availability = 0.5
+   regulars = [
+      _skater( 1, implied ),
+      _skater( 2, implied, injured_availability ),
+      *_six()[ Position.THIRD: ],
+   ]
+
+   projected = IceAllocator.project(
+      regulars, [ _skater( 7, 0.0 ) ], [ replacement ], group )
+
+   full_lineup_demand = group.dressed_count * implied
+   missing_lineup_demand = ( group.dressed_count - 1 ) * implied + replacement.toi
+   expected = group.ice_minutes * implied * (
+      injured_availability / full_lineup_demand
+      + ( 1.0 - injured_availability ) / missing_lineup_demand )
+   assert _toi( projected, 1 ) == pytest.approx( expected )
+
+
+@pytest.mark.parametrize( 'group', [ DepthGroup.defense(), DepthGroup.forwards() ] )
+def Test_Project_TestZeroRegular_ExpectReplacementDemandWithoutPersonalClaim( group: DepthGroup ) -> None:
+   implied = 20.0
+   unknown_id = group.dressed_count
+   replacement = SlotAverage( group.spare_slot, 12.0, 0.0, 0.0 )
+   regulars = [
+      *[ _skater( index, implied ) for index in range( 1, unknown_id ) ],
+      _skater( unknown_id, 0.0 ),
+   ]
+
+   projected = IceAllocator.project( regulars, [], [ replacement ], group )
+
+   demand = ( group.dressed_count - 1 ) * implied + replacement.toi
+   assert _toi( projected, 1 ) == pytest.approx( group.ice_minutes * implied / demand )
+   assert _toi( projected, unknown_id ) == 0.0
