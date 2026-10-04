@@ -9,6 +9,7 @@ import pytest
 
 from api.aging.league_factor import LeagueFactor
 from api.depth.skater_ice import SkaterIce
+from api.ingest.nhl_client import NhlClient
 from api.paths import Paths
 import api.projections.coordinators.projection_coordinator as projection_coordinator
 from api.projections.coordinators.projection_coordinator import ProjectionCoordinator
@@ -17,6 +18,9 @@ from api.projections.power_play_pace import PowerPlayPace
 from api.projections.projection import Projection
 from api.projections.season_pace import SeasonPace
 from api.recency.pace_regression_model import PaceRegressionModel
+from api.recency.production_coefficient import ProductionCoefficient
+from api.recency.production_growth import ProductionGrowth
+from api.recency.production_weight import ProductionWeight
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
 from api.skaters.other_league_skater_season import OtherLeagueSkaterSeason
@@ -107,7 +111,7 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
    monkeypatch.setattr(
       projection_coordinator.BaselinePaceResolver,
       'resolve',
-      lambda skater, target, leagues, pace_model: resolved.append(
+      lambda skater, target, leagues, pace_model, player_ice_scales=None: resolved.append(
          ( skater, target, leagues, pace_model ) ) or PaceValues(
             even_strength_goals=aged.goals,
             even_strength_assists=aged.assists,
@@ -185,7 +189,7 @@ def Test_GetProjection_TestMissingPace_ExpectNone(
    monkeypatch.setattr(
       projection_coordinator.BaselinePaceResolver,
       'resolve',
-      lambda skater, target, leagues, pace_model: None )
+      lambda skater, target, leagues, pace_model, player_ice_scales=None: None )
    monkeypatch.setattr(
       projection_coordinator.LeagueFactorStore,
       'read',
@@ -238,7 +242,7 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
    monkeypatch.setattr(
       projection_coordinator.BaselinePaceResolver,
       'resolve',
-      lambda skater, target, leagues, pace_model: PaceValues(
+      lambda skater, target, leagues, pace_model, player_ice_scales=None: PaceValues(
          even_strength_goals=aged.goals,
          even_strength_assists=aged.assists,
          power_play_goals=pp_pace,
@@ -302,3 +306,42 @@ def Test_GetProjection_TestUnrosteredPlayer_ExpectNoneWithoutCalculation(
    roster_team.assert_called_once_with( player_id, str( db_path ) )
    season_lookup.assert_not_called()
    baseline.assert_not_called()
+
+
+@pytest.mark.parametrize( 'projected_toi', [ 10.0, 20.0 ] )
+def Test_GetProjection_TestHistoricalRates_ExpectNormalizedThenProjectedStats(
+      monkeypatch: pytest.MonkeyPatch,
+      projected_toi: float ) -> None:
+   latest = replace( _season( 27.2 ), season_id=20242025, games_played=82,
+      pace_games=82, even_strength_goals=20, even_strength_points=40,
+      shots=200, penalty_minutes=20 )
+   older = replace( latest, season_id=20232024, age=26.2 )
+   model = PaceRegressionModel( [ ProductionGrowth( 27, 28, 1.0, 100 ) ],
+      history_weights=[ ProductionWeight( 27, 28, 1.0, 100 ), ProductionWeight( 26, 28, 1.0, 100 ) ],
+      pim_coefficients=[ ProductionCoefficient( 27, 28, 1.0, 1.0, 100 ),
+         ProductionCoefficient( 26, 28, 1.0, 1.0, 100 ) ],
+      shots_coefficients=[ ProductionCoefficient( 27, 28, 1.0, 1.0, 100 ),
+         ProductionCoefficient( 26, 28, 1.0, 1.0, 100 ) ] )
+   _stub_roster( monkeypatch )
+   monkeypatch.setattr( projection_coordinator.SkaterSeasonProvider, 'seasons_for_player_id',
+      lambda player_id, path: [ latest, older ] )
+   monkeypatch.setattr( projection_coordinator.OtherLeagueSeasonProvider, 'seasons_for_player_id',
+      lambda player_id, path: [] )
+   monkeypatch.setattr( projection_coordinator.SkaterIceStore, 'by_player',
+      lambda: { 1: SkaterIce( 1, 20.0, 20.0, projected_toi ) } )
+   monkeypatch.setattr( projection_coordinator.RecencyTargetResolver, 'resolve', lambda: 20252026 )
+   monkeypatch.setattr( projection_coordinator.ProductionModelProvider, 'read', lambda: model )
+   monkeypatch.setattr( projection_coordinator.LeagueFactorStore, 'read', lambda: [] )
+   monkeypatch.setattr( projection_coordinator.PaceGamesResolver, 'resolve', lambda: 82 )
+   monkeypatch.setattr( NhlClient, 'skater_timeonice', lambda season_id: [
+      { 'playerId': 1, 'timeOnIcePerGame': 1200 if season_id == latest.season_id else 600,
+         'gamesPlayed': 82, 'teamAbbrevs': 'COL', 'positionCode': 'C' } ] )
+
+   projection = ProjectionCoordinator.get_projection( 1 )
+
+   assert projection is not None
+   result = projection.to_dict()
+   ratio = projected_toi / 20.0
+   assert result[ 'points' ] == 60 * ratio
+   assert result[ 'shots' ] == 300 * ratio
+   assert result[ 'penaltyMinutes' ] == 30 * ratio

@@ -122,7 +122,7 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    other_rows = []
    merged_rows = [ replace( row, playoff_games=12, playoff_goals=3, playoff_assists=4 ) for row in rows ]
    merged: list[ tuple[ list[ NhlSkaterSeason ], dict ] ] = []
-   previous_rates: list[ dict ] = []
+   recorded_pace_games: list[ int ] = []
    previous_seasons: list[ int ] = []
    recorded: list[ bool ] = []
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
@@ -212,9 +212,9 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    monkeypatch.setattr(
       skater_season_ingester.DepthChartRecorder,
       'record',
-      lambda pace_games, team_rates, force=False: (
+      lambda pace_games, force=False: (
          recorded.append( force )
-         or previous_rates.append( team_rates )
+         or recorded_pace_games.append( pace_games )
          or [] ) )
    monkeypatch.setattr(
       skater_season_ingester.DepthChartStore,
@@ -258,5 +258,5 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    assert stored_teams == team_factors
    assert previous_seasons == last_played_ids
    assert recorded == [ False ]
-   assert previous_rates == [ { team: previous_rate } ]
+   assert recorded_pace_games == [ pace_games ]
    assert stored_ice_shares == []

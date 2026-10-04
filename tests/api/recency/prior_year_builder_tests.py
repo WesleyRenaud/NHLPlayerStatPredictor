@@ -167,7 +167,7 @@ def Test_History_TestPreparedYear_ExpectReuseOfScoringAndGameCounts(
 
    history = PriorYearBuilder.history( [ season ], [], [] )
 
-   averaging.assert_called_once_with( [ season ], [], [] )
+   averaging.assert_called_once_with( [ season ], [], [], None )
    prior = history[ Position.FIRST ]
    assert prior.scoring is scoring
    assert prior.games == prepared.games

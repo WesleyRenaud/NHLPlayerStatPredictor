@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from ..aging.league_factor import LeagueFactor
+from ..depth.nhl_player_season_ice_scale import NhlPlayerSeasonIceScale
 from .scoring_component_shares import ScoringComponentShares
 from .scoring_paces import ScoringPaces
 from .scoring_stat import ScoringStat
@@ -17,7 +18,8 @@ class TranslatedPaceAverager():
          cls,
          seasons: list[ SkaterSeason ],
          factors: list[ LeagueFactor ],
-         component_shares: list[ ScoringComponentShares ] ) -> YearPace | None:
+         component_shares: list[ ScoringComponentShares ],
+         player_ice_scales: list[ NhlPlayerSeasonIceScale ] | None = None ) -> YearPace | None:
       games = 0
       weighted_paces_by_stat = { stat: 0.0 for stat in ScoringStat }
       nhl_games = 0
@@ -34,13 +36,17 @@ class TranslatedPaceAverager():
             continue
 
          games += season.games_played
+         scale = (
+            next( ( scale.multiplier for scale in player_ice_scales
+               if scale.player_id == season.player_id and scale.season_id == season.season_id ), 1.0 )
+            if player_ice_scales is not None and isinstance( season, NhlSkaterSeason ) else 1.0 )
          for stat in ScoringStat:
-            weighted_paces_by_stat[ stat ] += season.games_played * getattr( scoring, stat.value )
+            weighted_paces_by_stat[ stat ] += season.games_played * getattr( scoring, stat.value ) * scale
 
          if isinstance( season, NhlSkaterSeason ):
             nhl_games += season.games_played
-            penalty_minutes += season.games_played * season.penalty_minutes_pace()
-            shots += season.games_played * season.shots_pace()
+            penalty_minutes += season.games_played * season.penalty_minutes_pace() * scale
+            shots += season.games_played * season.shots_pace() * scale
 
       if not games:
          return None

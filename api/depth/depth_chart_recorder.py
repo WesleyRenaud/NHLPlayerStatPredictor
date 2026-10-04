@@ -25,7 +25,6 @@ from ..skaters.skater_season_years import SkaterSeasonYears
 from ..skaters.team import Team
 from .slot_average import SlotAverage
 from .slot_average_store import SlotAverageStore
-from ..team_factor.team_factor_store import TeamFactorStore
 from .usable_nhl_ice import UsableNhlIce
 
 
@@ -36,7 +35,6 @@ class DepthChartRecorder():
       DepthChartStore.write(
          cls.record(
             Season.pace_games( seasons ),
-            cls._team_rates(),
             force ) )
 
 
@@ -44,7 +42,6 @@ class DepthChartRecorder():
    def record(
          cls,
          pace_games: int,
-         team_rates: dict[ Team, float ],
          force: bool = False ) -> list[ DepthChart ]:
       roster = RosterSkaterIngester.build_rows( force=force )
       statuses = PlayerStatusStore.read( str( Paths.DB_PATH ) )
@@ -65,8 +62,7 @@ class DepthChartRecorder():
                availabilities,
                slot_averages,
                chosen_shares,
-               pace_games,
-               team_rates ) )
+               pace_games ) )
 
       return charts
 
@@ -80,8 +76,7 @@ class DepthChartRecorder():
          availabilities: dict[ int, float ],
          slot_averages: list[ SlotAverage ],
          chosen_shares: list[ IceChosenShare ],
-         pace_games: int,
-         team_rates: dict[ Team, float ] ) -> list[ DepthChart ]:
+         pace_games: int ) -> list[ DepthChart ]:
       charts = []
 
       for group in ( DepthGroup.forwards(), DepthGroup.defense() ):
@@ -94,8 +89,7 @@ class DepthChartRecorder():
                IceSkaterAssembler.build(
                   group.skaters( roster, team ),
                   ices_by_player,
-                  availabilities,
-                  team_rates ),
+                  availabilities ),
                slot_averages,
                chosen_shares,
                group,
@@ -149,13 +143,3 @@ class DepthChartRecorder():
          teams.append( row.team )
 
       return sorted( teams, key=lambda team: team.value )
-
-
-   @classmethod
-   def _team_rates( cls ) -> dict[ Team, float ]:
-      prior = RecencyTargetResolver.prior()
-      return {
-         factor.team: factor.rate
-         for factor in TeamFactorStore.read()
-         if factor.season == prior
-      }

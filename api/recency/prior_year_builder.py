@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 
 from ..aging.league_factor import LeagueFactor
+from ..depth.nhl_player_season_ice_scale import NhlPlayerSeasonIceScale
 from .prior_year import PriorYear
 from ..projections.scoring_component_shares import ScoringComponentShares
 from ..projections.translated_pace_averager import TranslatedPaceAverager
@@ -20,9 +21,10 @@ class PriorYearBuilder():
          seasons: list[ SkaterSeason ],
          factors: list[ LeagueFactor ],
          year: int,
-         component_shares: list[ ScoringComponentShares ] ) -> list[ PriorYear ]:
+         component_shares: list[ ScoringComponentShares ],
+         player_ice_scales: list[ NhlPlayerSeasonIceScale ] | None = None ) -> list[ PriorYear ]:
       qualified = sorted(
-         ( prior for prior in cls.history( seasons, factors, component_shares ) if prior.year < year ),
+         ( prior for prior in cls.history( seasons, factors, component_shares, player_ice_scales ) if prior.year < year ),
          key=lambda prior: prior.year,
          reverse=True )
       return qualified[ :PriorYearBuilder.WIDTH ]
@@ -33,7 +35,8 @@ class PriorYearBuilder():
          cls,
          seasons: list[ SkaterSeason ],
          factors: list[ LeagueFactor ],
-         component_shares: list[ ScoringComponentShares ] ) -> list[ PriorYear ]:
+         component_shares: list[ ScoringComponentShares ],
+         player_ice_scales: list[ NhlPlayerSeasonIceScale ] | None = None ) -> list[ PriorYear ]:
       by_year: dict[ int, list[ SkaterSeason ] ] = defaultdict( list )
 
       for season in seasons:
@@ -44,7 +47,7 @@ class PriorYearBuilder():
       qualified: list[ PriorYear ] = []
 
       for start_year, year_seasons in by_year.items():
-         combined = TranslatedPaceAverager.year( year_seasons, factors, component_shares )
+         combined = TranslatedPaceAverager.year( year_seasons, factors, component_shares, player_ice_scales )
 
          if combined is None or not combined.games:
             continue

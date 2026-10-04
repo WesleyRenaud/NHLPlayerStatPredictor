@@ -30,7 +30,6 @@ from api.skaters.roster_skater import RosterSkater
 from api.skaters.skater_group import SkaterGroup
 from api.skaters.skater_position import SkaterPosition
 from api.skaters.team import Team
-from api.team_factor.team_factor import TeamFactor
 
 
 def _seasons() -> list[ SeasonLength ]:
@@ -102,7 +101,7 @@ def Test_Record_TestRosterAndUsage_ExpectStoredChart(
       'api.depth.depth_chart_recorder.NhlClient.seasons',
       lambda force=False: _seasons() )
 
-   charts = DepthChartRecorder.record( Position.SECOND, {} )
+   charts = DepthChartRecorder.record( Position.SECOND )
 
    defense = next(
       chart
@@ -111,7 +110,6 @@ def Test_Record_TestRosterAndUsage_ExpectStoredChart(
    assert len( charts ) == 2
    assert defense.team == team
    assert len( defense.regulars ) == 2
-   monkeypatch.setattr( DepthChartRecorder, '_team_rates', lambda: {} )
    DepthChartRecorder.main()
    assert ( tmp_path / DepthChartStore.FILE_NAME ).exists()
 
@@ -143,7 +141,7 @@ def Test_Record_TestForwardAndDefense_ExpectBothCharts(
       'api.depth.depth_chart_recorder.PlayerStatusStore.read',
       lambda db_path: [] )
 
-   charts = DepthChartRecorder.record( Position.SECOND, {} )
+   charts = DepthChartRecorder.record( Position.SECOND )
 
    assert len( charts ) == 2
    assert charts[ Position.FIRST ].skater_group is SkaterGroup( 'F' )
@@ -297,7 +295,7 @@ def Test_Record_TestInactiveUsage_ExpectOmitted(
       'api.depth.depth_chart_recorder.PlayerStatusStore.read',
       lambda db_path: [ PlayerStatus( retired_id, False ) ] )
 
-   charts = DepthChartRecorder.record( Position.SECOND, {} )
+   charts = DepthChartRecorder.record( Position.SECOND )
 
    defense = next(
       chart
@@ -309,21 +307,3 @@ def Test_Record_TestInactiveUsage_ExpectOmitted(
    ] + [ skater.player_id for skater in defense.extras ]
    assert retired_id not in ids
    assert defense.regulars[ Position.FIRST ][ Position.FIRST ].player_id == first_id
-
-
-def Test_TeamRates_TestPriorSeason_ExpectPriorRates(
-      monkeypatch: pytest.MonkeyPatch ) -> None:
-   team = list( Team )[ Position.FIRST ]
-   prior_rate = 0.8
-   current_rate = 1.2
-   monkeypatch.setattr( RecencyTargetResolver, 'prior', lambda: 20242025 )
-   monkeypatch.setattr(
-      'api.depth.depth_chart_recorder.TeamFactorStore.read',
-      lambda: [
-         TeamFactor( 20242025, team, prior_rate ),
-         TeamFactor( 20252026, team, current_rate ),
-      ] )
-
-   rates = DepthChartRecorder._team_rates()
-
-   assert rates == { team: prior_rate }

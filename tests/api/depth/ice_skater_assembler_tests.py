@@ -27,8 +27,7 @@ def Test_Build_TestUsage_ExpectLastToi() -> None:
    skaters = IceSkaterAssembler.build(
       roster,
       { 1: _ice( toi, last ) },
-      { 1: GamesShare.FULL, 2: GamesShare.FULL },
-      {} )
+      { 1: GamesShare.FULL, 2: GamesShare.FULL } )
 
    assert skaters[ Position.FIRST ].implied == toi
    assert skaters[ Position.FIRST ].last_toi == toi
@@ -36,19 +35,17 @@ def Test_Build_TestUsage_ExpectLastToi() -> None:
    assert skaters[ Position.SECOND ].last_toi is None
 
 
-def Test_Build_TestTeamRate_ExpectScaledClaim() -> None:
+def Test_Build_TestNewTeam_ExpectUnscaledClaim() -> None:
    now = list( Team )[ Position.FIRST ]
    last = list( Team )[ Position.SECOND ]
    toi = 22.0
-   rate = 0.8
 
    skaters = IceSkaterAssembler.build(
       [ RosterSkater( 1, 'Bowen Byram', SkaterPosition( 'D' ), now ) ],
       { 1: _ice( toi, last ) },
-      { 1: GamesShare.FULL },
-      { last: rate } )
+      { 1: GamesShare.FULL } )
 
-   assert skaters[ Position.FIRST ].implied == toi * rate
+   assert skaters[ Position.FIRST ].implied == toi
    assert skaters[ Position.FIRST ].last_toi == toi
 
 
@@ -59,8 +56,7 @@ def Test_Build_TestAvailability_ExpectProjectedShare() -> None:
    skaters = IceSkaterAssembler.build(
       [ RosterSkater( 1, 'A', SkaterPosition( 'D' ), team ) ],
       {},
-      { 1: availability },
-      {} )
+      { 1: availability } )
 
    assert skaters[ Position.FIRST ].availability == availability
 
@@ -73,8 +69,6 @@ def Test_Build_TestSplitClubs_ExpectMixedClaim() -> None:
    second_games = 22
    first_toi = 14.0
    second_toi = 12.0
-   first_rate = 0.8
-   second_rate = 1.2
    clubs = [
       ClubIce( first, first_games, first_toi ),
       ClubIce( second, second_games, second_toi ),
@@ -82,13 +76,11 @@ def Test_Build_TestSplitClubs_ExpectMixedClaim() -> None:
    last_toi = (
       first_toi * first_games + second_toi * second_games
    ) / ( first_games + second_games )
-   rates = { first: first_rate, second: second_rate }
 
    skaters = IceSkaterAssembler.build(
       [ RosterSkater( 1, 'A', SkaterPosition( 'C' ), now ) ],
       { 1: UsableNhlIce( 20252026, last_toi, clubs ) },
-      { 1: GamesShare.FULL },
-      rates )
+      { 1: GamesShare.FULL } )
 
-   assert skaters[ Position.FIRST ].implied == IceClaim.resolve( clubs, rates )
+   assert skaters[ Position.FIRST ].implied == IceClaim.resolve( clubs )
    assert skaters[ Position.FIRST ].last_toi == last_toi

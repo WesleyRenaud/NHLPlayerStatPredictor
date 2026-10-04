@@ -3,6 +3,7 @@ from __future__ import annotations
 from ...aging.league_factor_store import LeagueFactorStore
 from ..baseline_pace_resolver import BaselinePaceResolver
 from ...depth.ice_pace_scaler import IcePaceScaler
+from ...depth.nhl_history_ice_scaler import NhlHistoryIceScaler
 from ...depth.skater_ice_store import SkaterIceStore
 from ...pace_games_resolver import PaceGamesResolver
 from ...paths import Paths
@@ -32,11 +33,16 @@ class ProjectionCoordinator():
       target_season = RecencyTargetResolver.resolve()
       league_factors = LeagueFactorStore.read()
       model = ProductionModelProvider.read()
+      ice = SkaterIceStore.by_player().get( player_id )
+      player_ice_scales = (
+         NhlHistoryIceScaler.scales( skater.nhl_seasons(), target_season, ice.last_toi )
+         if ice is not None and ice.last_toi else None )
       paces = BaselinePaceResolver.resolve(
          skater,
          target_season,
          league_factors,
-         model )
+         model,
+         player_ice_scales )
 
       if paces is None:
          return None
@@ -46,8 +52,6 @@ class ProjectionCoordinator():
       short_handed_pace = paces.short_handed_pace()
       pim_pace = paces.penalty_minutes
       shots_pace = paces.shots
-
-      ice = SkaterIceStore.by_player().get( player_id )
 
       if ice is not None and ice.last_toi:
          even_strength_pace = IcePaceScaler.adjust(

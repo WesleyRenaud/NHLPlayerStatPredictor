@@ -125,11 +125,6 @@ class SkaterSeasonIngester():
          Season.pace_games( seasons ) )
       charts = DepthChartRecorder.record(
          Season.pace_games( seasons ),
-         {
-            factor.team: factor.rate
-            for factor in previous_factors
-            if factor.season == previous_season_id
-         },
          force=force )
       DepthChartStore.write( charts )
       SkaterIceStore.write( SkaterIceRecorder.record( charts ) )

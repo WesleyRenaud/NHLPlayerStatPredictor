@@ -6,23 +6,22 @@ from api.shared.enums.position import Position
 from api.skaters.team import Team
 
 
-def Test_Resolve_TestMissingRate_ExpectLastToi() -> None:
+def Test_Resolve_TestSingleClub_ExpectLastToi() -> None:
    team = list( Team )[ Position.FIRST ]
    toi = 22.0
 
-   claim = IceClaim.resolve( [ ClubIce( team, 82, toi ) ], {} )
+   claim = IceClaim.resolve( [ ClubIce( team, 82, toi ) ] )
 
    assert claim == toi
 
 
-def Test_Resolve_TestTeamRate_ExpectScaledToi() -> None:
+def Test_Resolve_TestDifferentClub_ExpectUnscaledToi() -> None:
    team = list( Team )[ Position.FIRST ]
    toi = 22.0
-   rate = 0.8
 
-   claim = IceClaim.resolve( [ ClubIce( team, 82, toi ) ], { team: rate } )
+   claim = IceClaim.resolve( [ ClubIce( team, 82, toi ) ] )
 
-   assert claim == toi * rate
+   assert claim == toi
 
 
 def Test_Resolve_TestSplitClubs_ExpectGamesWeightedClaim() -> None:
@@ -32,17 +31,14 @@ def Test_Resolve_TestSplitClubs_ExpectGamesWeightedClaim() -> None:
    second_games = 22
    first_toi = 14.0
    second_toi = 12.0
-   first_rate = 0.8
-   second_rate = 1.2
    clubs = [
       ClubIce( first, first_games, first_toi ),
       ClubIce( second, second_games, second_toi ),
    ]
-   rates = { first: first_rate, second: second_rate }
 
-   claim = IceClaim.resolve( clubs, rates )
+   claim = IceClaim.resolve( clubs )
 
    assert claim == (
-      first_toi * first_rate * first_games
-      + second_toi * second_rate * second_games
+      first_toi * first_games
+      + second_toi * second_games
    ) / ( first_games + second_games )
