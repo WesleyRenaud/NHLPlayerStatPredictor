@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from functools import partial
 
+from ..depth.nhl_player_season_ice_scale import NhlPlayerSeasonIceScale
 from .nhl_production_regression import NhlProductionRegression
 from .nhl_production_stat import NhlProductionStat
 from .pace_regression_model import PaceRegressionModel
@@ -22,7 +23,8 @@ class PaceRegressionPredictor():
          model: PaceRegressionModel,
          priors: list[ PriorYear ],
          target_season_id: int,
-         nhl_seasons: list[ NhlSkaterSeason ] ) -> PaceValues | None:
+         nhl_seasons: list[ NhlSkaterSeason ],
+         player_ice_scales: list[ NhlPlayerSeasonIceScale ] | None = None ) -> PaceValues | None:
       if not priors:
          return None
 
@@ -30,7 +32,7 @@ class PaceRegressionPredictor():
       latest = priors[ Position.FIRST ]
       target_age = latest.age_in_year( year )
       projected_paces_by_stat: dict[ ScoringStat, float ] = {}
-      nhl_priors = PriorYearBuilder.build( nhl_seasons, [], year, [] )
+      nhl_priors = PriorYearBuilder.build( nhl_seasons, [], year, [], player_ice_scales )
 
       for stat in ScoringStat:
          projected_paces_by_stat[ stat ] = cls._pace( model, priors, target_age, stat )

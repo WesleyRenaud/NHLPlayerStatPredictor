@@ -3,7 +3,6 @@ from __future__ import annotations
 from .ice_claim import IceClaim
 from .ice_skater import IceSkater
 from ..skaters.roster_skater import RosterSkater
-from ..skaters.team import Team
 from .usable_nhl_ice import UsableNhlIce
 
 
@@ -13,8 +12,7 @@ class IceSkaterAssembler():
          cls,
          roster: list[ RosterSkater ],
          ices_by_player: dict[ int, UsableNhlIce | None ],
-         availabilities: dict[ int, float ],
-         team_rates: dict[ Team, float ] ) -> list[ IceSkater ]:
+         availabilities: dict[ int, float ] ) -> list[ IceSkater ]:
       skaters = []
 
       for row in roster:
@@ -39,7 +37,7 @@ class IceSkaterAssembler():
                row.player_name,
                row.position,
                row.team,
-               IceClaim.resolve( ice.clubs, team_rates ),
+               IceClaim.resolve( ice.clubs ),
                ice.toi,
                availability ) )
 
