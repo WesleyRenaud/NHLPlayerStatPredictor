@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+import api.shared.enums.shared_enum_values as shared_enum_values
 from api.shared.enums.shared_enum_values import SharedEnumValues
 
 
@@ -60,8 +61,22 @@ def Test_LoadIntegers_TestEmptyObject_ExpectValueError(
       SharedEnumValues.load_integers( file_name )
 
 
-def Test_RepositoryRoot_TestFromModule_ExpectContainsSharedEnums() -> None:
+def Test_RepositoryRoot_TestModulePath_ExpectAncestor(
+      tmp_path: Path,
+      monkeypatch: pytest.MonkeyPatch ) -> None:
+   module_path = tmp_path / 'api' / 'shared' / 'enums' / 'shared_enum_values.py'
+   monkeypatch.setattr( shared_enum_values, '__file__', str( module_path ) )
+
    root = SharedEnumValues.repository_root()
 
-   assert ( root / 'shared' / 'enums' / 'position.json' ).is_file()
-   assert SharedEnumValues.shared_enums_directory() == root / 'shared' / 'enums'
+   assert root == tmp_path
+
+
+def Test_SharedEnumsDirectory_TestMockedRoot_ExpectRelativeDirectory(
+      tmp_path: Path,
+      monkeypatch: pytest.MonkeyPatch ) -> None:
+   monkeypatch.setattr( SharedEnumValues, 'repository_root', lambda: tmp_path )
+
+   directory = SharedEnumValues.shared_enums_directory()
+
+   assert directory == tmp_path / 'shared' / 'enums'

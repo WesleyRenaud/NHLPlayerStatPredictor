@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from datetime import date
 
+import pytest
+
 from api.ingest.nhl_client import NhlClient
 from api.ingest.other_league_season_builder import OtherLeagueSeasonBuilder
 from api.season import Season
@@ -14,11 +16,15 @@ from api.skaters.skater_position import SkaterPosition
 
 
 def _league() -> str:
-   return list( ClubLeague )[ Position.FIRST ].value
+   return ClubLeague.OHL.value
 
 
-def _aliased() -> tuple[ ClubLeague, list[ str ] ]:
-   return list( ClubLeagueAlias.LABELS.items() )[ Position.FIRST ]
+@pytest.fixture
+def aliases( monkeypatch: pytest.MonkeyPatch ) -> tuple[ ClubLeague, list[ str ] ]:
+   league = ClubLeague.OHL
+   labels = [ 'Test league alpha', 'Test league beta' ]
+   monkeypatch.setattr( ClubLeagueAlias, 'LABELS', { league: labels } )
+   return league, labels
 
 
 def _landing(
@@ -88,8 +94,8 @@ def Test_Build_TestClubSeason_ExpectPacedRow() -> None:
    ]
 
 
-def Test_Build_TestAliasLabel_ExpectCanonicalLeague() -> None:
-   league, labels = _aliased()
+def Test_Build_TestAliasLabel_ExpectCanonicalLeague( aliases: tuple[ ClubLeague, list[ str ] ] ) -> None:
+   league, labels = aliases
    season_id = 20252026
    landing = _landing( 1, labels[ Position.FIRST ], season_id, 46, 6, 13 )
    seasons = [ SeasonLength( season_id, 82, date( 2025, 10, 8 ), date( 2026, 4, 17 ) ) ]
@@ -99,8 +105,8 @@ def Test_Build_TestAliasLabel_ExpectCanonicalLeague() -> None:
    assert [ row.league for row in rows ] == [ league.value ]
 
 
-def Test_Build_TestAliasAndCanonicalLabels_ExpectCanonicalOnly() -> None:
-   league, labels = _aliased()
+def Test_Build_TestAliasAndCanonicalLabels_ExpectCanonicalOnly( aliases: tuple[ ClubLeague, list[ str ] ] ) -> None:
+   league, labels = aliases
    season_id = 20252026
    games_played = 46
    landing = _landing(
@@ -139,6 +145,49 @@ def Test_Build_TestUnknownLeague_ExpectEmpty() -> None:
    rows = OtherLeagueSeasonBuilder.build( landing, [], pace_games )
 
    assert rows == []
+
+
+def Test_Build_TestAliasSeason_ExpectCanonicalPacedSeason( aliases: tuple[ ClubLeague, list[ str ] ] ) -> None:
+   league, labels = aliases
+   season_id = 20242025
+   games_played = 42
+   goals = 19
+   assists = 12
+   pace_games = 84
+   landing = _landing(
+      1, labels[ Position.FIRST ], season_id, games_played, goals, assists )
+   seasons = [ SeasonLength( season_id, 82, date( 2024, 10, 4 ), date( 2025, 4, 17 ) ) ]
+
+   rows = OtherLeagueSeasonBuilder.build( landing, seasons, pace_games )
+
+   assert len( rows ) == 1
+   row = rows[ Position.FIRST ]
+   assert row.league == league.value
+   assert row.games_played == games_played
+   assert row.points == goals + assists
+   assert row.g_pace + row.a_pace == pace_games * ( goals + assists ) / games_played
+
+
+def Test_Build_TestMultipleAliases_ExpectPreferredAliasOnly( aliases: tuple[ ClubLeague, list[ str ] ] ) -> None:
+   league, labels = aliases
+   season_id = 20242025
+   games_played = 42
+   goals = 19
+   assists = 12
+   landing = _landing(
+      1, labels[ Position.SECOND ], season_id, games_played + 1, goals, assists,
+      extra_totals=[ {
+         'leagueAbbrev': labels[ Position.FIRST ], 'season': season_id,
+         'gameTypeId': NhlClient.REGULAR_SEASON_GAME_TYPE_ID,
+         'gamesPlayed': games_played, 'goals': goals, 'assists': assists,
+         'points': goals + assists,
+      } ] )
+   seasons = [ SeasonLength( season_id, 82, date( 2024, 10, 4 ), date( 2025, 4, 17 ) ) ]
+
+   rows = OtherLeagueSeasonBuilder.build( landing, seasons, 84 )
+
+   assert [ ( row.league, row.games_played, row.points ) for row in rows ] == [
+      ( league.value, games_played, goals + assists ) ]
 
 
 def Test_Build_TestPlayoffs_ExpectEmpty() -> None:

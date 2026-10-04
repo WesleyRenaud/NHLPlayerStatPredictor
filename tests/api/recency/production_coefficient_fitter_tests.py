@@ -53,14 +53,18 @@ def Test_Fit_TestSparseAge_ExpectNoNeighborOrAllAgePooling() -> None:
 
 @pytest.mark.parametrize( 'sample_count', [ 19, 20 ] )
 def Test_FitGrowth_TestSupportThreshold_ExpectOnlySupportedTransitions( sample_count: int ) -> None:
-   pairs = [ ProductionPair( 42, 43, 10.0, 9.0, 82.0 ) ] * sample_count
+   prior_pace = 10.0
+   multiplier = 0.9
+   pairs = [
+      ProductionPair( 42, 43, prior_pace, prior_pace * multiplier, 82.0 )
+   ] * sample_count
 
    growth = ProductionCoefficientFitter.fit_growth( pairs )
 
    assert len( growth ) == ( 1 if sample_count == 20 else 0 )
    if growth:
       assert growth[ 0 ].samples == sample_count
-      assert growth[ 0 ].multiplier == pytest.approx( 0.9 )
+      assert growth[ 0 ].multiplier == pytest.approx( multiplier )
 
 
 def Test_Fit_TestConstantAndReversedRelationship_ExpectNormalizedWeights() -> None:
@@ -206,16 +210,24 @@ def Test_Fit_TestUnequalGames_ExpectMeasuredSimilarityInBothFits() -> None:
 
 
 def Test_FitWeights_TestDifferentReliabilityAtSameTargetAge_ExpectNormalizedSimilarityShares() -> None:
+   lower_pace = 10.0
+   higher_pace = 20.0
+   similarity_power = 4
+   lower_similarity = ( lower_pace / higher_pace ) ** similarity_power
+   higher_similarity = 1.0
+   total_similarity = lower_similarity + higher_similarity
+   expected_lower_weight = lower_similarity / total_similarity
+   expected_higher_weight = higher_similarity / total_similarity
    pairs = [
-      ProductionPair( 16, 18, 10.0, 20.0, 82.0 ),
-      ProductionPair( 17, 18, 10.0, 10.0, 82.0 ),
+      ProductionPair( 16, 18, lower_pace, higher_pace, 82.0 ),
+      ProductionPair( 17, 18, lower_pace, lower_pace, 82.0 ),
    ] * 20
 
    weights = ProductionCoefficientFitter.fit_weights( pairs )
 
    by_from_age = { weight.from_age: weight.weight for weight in weights }
-   assert by_from_age[ 16 ] == pytest.approx( 1 / 17 )
-   assert by_from_age[ 17 ] == pytest.approx( 16 / 17 )
+   assert by_from_age[ 16 ] == pytest.approx( expected_lower_weight )
+   assert by_from_age[ 17 ] == pytest.approx( expected_higher_weight )
 
 
 def Test_FitGrowth_TestUnsortedTransitions_ExpectTargetAgeThenSourceAgeOrder() -> None:
@@ -233,18 +245,22 @@ def Test_FitGrowth_TestUnsortedTransitions_ExpectTargetAgeThenSourceAgeOrder() -
 
 
 def Test_FitGrowth_TestContradictoryMultiYearPairs_ExpectOnlyAnnualFits() -> None:
+   base_pace = 100.0
+   annual_multipliers = ( 0.9, 0.8, 0.7 )
    annual_pairs = [
-      ProductionPair( 25, 26, 100.0, 90.0, 82.0 ),
-      ProductionPair( 26, 27, 100.0, 80.0, 82.0 ),
-      ProductionPair( 27, 28, 100.0, 70.0, 82.0 ),
+      ProductionPair( 25, 26, base_pace, base_pace * annual_multipliers[ 0 ], 82.0 ),
+      ProductionPair( 26, 27, base_pace, base_pace * annual_multipliers[ 1 ], 82.0 ),
+      ProductionPair( 27, 28, base_pace, base_pace * annual_multipliers[ 2 ], 82.0 ),
    ] * ProductionCoefficientFitter.MIN_SUPPORT
+   conflicting_two_year_multiplier = 2.0
+   conflicting_three_year_multiplier = 3.0
    longer_pairs = [
-      ProductionPair( 25, 27, 100.0, 200.0, 82.0 ),
-      ProductionPair( 25, 28, 100.0, 300.0, 82.0 ),
+      ProductionPair( 25, 27, base_pace, base_pace * conflicting_two_year_multiplier, 82.0 ),
+      ProductionPair( 25, 28, base_pace, base_pace * conflicting_three_year_multiplier, 82.0 ),
    ] * ProductionCoefficientFitter.MIN_SUPPORT
 
    growth = ProductionCoefficientFitter.fit_growth( annual_pairs + longer_pairs )
 
    assert growth == ProductionCoefficientFitter.fit_growth( annual_pairs )
-   assert [ coefficient.multiplier for coefficient in growth ] == pytest.approx( [ 0.9, 0.8, 0.7 ] )
+   assert [ coefficient.multiplier for coefficient in growth ] == pytest.approx( annual_multipliers )
    assert ProductionCoefficientFitter.fit_growth( longer_pairs ) == []

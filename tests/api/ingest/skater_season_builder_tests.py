@@ -23,6 +23,7 @@ def Test_BuildRows_TestRegularSeason_ExpectPacedTotals() -> None:
    goals = 44
    assists = 79
    points = 123
+   penalty_minutes = 12
    power_play_goals = 20
    power_play_points = 60
    short_handed_goals = 2
@@ -42,7 +43,7 @@ def Test_BuildRows_TestRegularSeason_ExpectPacedTotals() -> None:
          goals,
          assists,
          points,
-         12,
+         penalty_minutes,
          power_play_goals,
          power_play_points,
          short_handed_goals,
@@ -61,7 +62,7 @@ def Test_BuildRows_TestRegularSeason_ExpectPacedTotals() -> None:
    assert row.g_pace == Season.pace( float( goals ), float( games_played ), pace_games )
    assert row.a_pace == Season.pace( float( assists ), float( games_played ), pace_games )
    assert row.p_pace == Season.pace( float( points ), float( games_played ), pace_games )
-   assert row.penalty_minutes == 12
+   assert row.penalty_minutes == penalty_minutes
    assert row.power_play_goals == power_play_goals
    assert row.power_play_points == power_play_points
    assert row.short_handed_goals == short_handed_goals

@@ -13,6 +13,7 @@ from ..depth.skater_ice_store import SkaterIceStore
 from ..depth.slot_average_store import SlotAverageStore
 from .github_cli import GithubCli
 from ..paths import Paths
+from ..projections.prospect_calibration_store import ProspectCalibrationStore
 from ..recency.production_model_provider import ProductionModelProvider
 from ..shared.enums.position import Position
 from ..team_factor.team_factor_store import TeamFactorStore
@@ -57,6 +58,9 @@ class IngestArtifactPuller():
       shutil.copy2( cls._source_slots( artifact_root ), SlotAverageStore.path() )
       shutil.copy2( cls._source_ice( artifact_root ), SkaterIceStore.path() )
       shutil.copy2( cls._source_chosen( artifact_root ), IceChosenShareStore.path() )
+      shutil.copy2(
+         artifact_root / ProspectCalibrationStore.path().relative_to( Paths.ROOT ),
+         ProspectCalibrationStore.path() )
 
       if Paths.RAW_DIR.exists():
          shutil.rmtree( Paths.RAW_DIR )
@@ -87,7 +91,8 @@ class IngestArtifactPuller():
                or not cls._source_charts( artifact_root ).is_file()
                or not cls._source_slots( artifact_root ).is_file()
                or not cls._source_ice( artifact_root ).is_file()
-               or not cls._source_chosen( artifact_root ).is_file() ):
+               or not cls._source_chosen( artifact_root ).is_file()
+               or not ( artifact_root / ProspectCalibrationStore.path().relative_to( Paths.ROOT ) ).is_file() ):
             print( 'Ingest artifact is incomplete; run the current Ingest workflow to generate all required files.' )
             return False
 
@@ -154,7 +159,9 @@ class IngestArtifactPuller():
 
    @classmethod
    def _needs_pull( cls, run_id: str ) -> bool:
-      if not Paths.DB_PATH.is_file() or any( not path.is_file() for path in ProductionModelProvider.paths() ):
+      if (
+            not Paths.DB_PATH.is_file() or not ProspectCalibrationStore.path().is_file()
+            or any( not path.is_file() for path in ProductionModelProvider.paths() ) ):
          return True
 
       stamp_path = cls._stamp_path()

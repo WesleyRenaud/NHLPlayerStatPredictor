@@ -16,6 +16,9 @@ from api.depth.ice_chosen_share_store import IceChosenShareStore
 import api.ingest.skater_season_ingester as skater_season_ingester
 from api.ingest.skater_season_ingester import SkaterSeasonIngester
 from api.paths import Paths
+from api.projections.prospect_calibration_model import ProspectCalibrationModel
+from api.projections.prospect_calibration_store import ProspectCalibrationStore
+from api.projections.prospect_profile import ProspectProfile
 from api.recency.pace_regression_fitter import PaceRegressionFitter
 from api.recency.production_model_provider import ProductionModelProvider
 from api.season_length import SeasonLength
@@ -103,12 +106,19 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       'playerId': season_player_id,
       'position': position.value,
       'isActive': True,
+      'seasonTotals': [],
    }
    roster_landing = {
       'playerId': roster_player_id,
       'position': position.value,
       'isActive': True,
+      'seasonTotals': [],
    }
+   landings = {
+      player_id: { **landing, 'playerId': player_id }
+      for player_id in range( 1, AvailabilityDecayFitter.WINDOW + 1 )
+   }
+   landings[ roster_player_id ] = roster_landing
    statuses: list[ tuple[ list[ object ], str ] ] = []
    fetched: list[ list[ int ] ] = []
    roster_rows = [
@@ -148,7 +158,7 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       'fetch',
       lambda player_ids, force=False: (
          fetched.append( player_ids )
-         or { season_player_id: landing, roster_player_id: roster_landing } ) )
+         or landings ) )
    monkeypatch.setattr(
       skater_season_ingester.OtherLeagueSeasonIngester,
       'build_rows',
@@ -201,6 +211,10 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       'prior',
       lambda: previous_season_id )
    monkeypatch.setattr(
+      skater_season_ingester.RecencyTargetResolver,
+      'resolve',
+      lambda: 20262027 )
+   monkeypatch.setattr(
       skater_season_ingester.NhlClient,
       'skater_timeonice',
       lambda season_id, force=False: [] )
@@ -237,13 +251,16 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    stored_ice_shares = IceChosenShareStore.read()
 
    assert inserted == [ ( merged_rows, str( db_path ) ) ]
+   assert ProspectCalibrationStore.read() == ProspectCalibrationModel(
+      20262027,
+      [ ProspectProfile.from_landing( landings[ player_id ] ) for player_id in sorted( landings ) ],
+      [] )
    assert roster_inserted == [ ( roster_rows, str( db_path ) ) ]
    assert fetched == [ list( range( season_player_id, AvailabilityDecayFitter.WINDOW + 1 ) ) ]
    assert statuses == [
       (
          [
-            PlayerStatus( season_player_id, True ),
-            PlayerStatus( roster_player_id, True ),
+            PlayerStatus( player_id, True ) for player_id in sorted( landings )
          ],
          str( db_path ) )
    ]
@@ -253,7 +270,7 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       merged_rows,
       other_rows,
       AgingCurveFitter.fit( merged_rows, other_rows ) )
-   assert merged == [ ( rows, { season_player_id: landing, roster_player_id: roster_landing } ) ]
+   assert merged == [ ( rows, landings ) ]
    assert stored_model == PaceRegressionFitter.fit( merged_rows, other_rows, stored_leagues )
    assert stored_teams == team_factors
    assert previous_seasons == last_played_ids

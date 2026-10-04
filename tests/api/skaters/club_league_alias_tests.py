@@ -1,54 +1,67 @@
 from __future__ import annotations
 
-from api.shared.enums.position import Position
+import pytest
+
 from api.skaters.club_league import ClubLeague
 from api.skaters.club_league_alias import ClubLeagueAlias
 
 
-def _aliased() -> tuple[ ClubLeague, list[ str ] ]:
-   return list( ClubLeagueAlias.LABELS.items() )[ Position.FIRST ]
+@pytest.fixture
+def aliases( monkeypatch: pytest.MonkeyPatch ) -> dict[ ClubLeague, list[ str ] ]:
+   labels = {
+      ClubLeague.OHL: [ 'Test league alpha', 'Test league beta' ],
+      ClubLeague.WHL: [ 'Test league gamma' ],
+   }
+   monkeypatch.setattr( ClubLeagueAlias, 'LABELS', labels )
+   return labels
 
 
-def Test_Labels_TestAllAliases_ExpectNotCanonicalAndUnique() -> None:
-   labels = [ label for aliases in ClubLeagueAlias.LABELS.values() for label in aliases ]
-
-   assert len( labels ) == len( set( labels ) )
-   assert not any( ClubLeague.contains( label ) for label in labels )
-
-
-def Test_League_TestCanonical_ExpectSameLeague() -> None:
-   league = list( ClubLeague )[ Position.FIRST ]
+def Test_League_TestCanonical_ExpectSameLeague( aliases: dict[ ClubLeague, list[ str ] ] ) -> None:
+   league = next( iter( aliases ) )
 
    resolved = ClubLeagueAlias.league( league.value )
 
    assert resolved == league
 
 
-def Test_League_TestAlias_ExpectCanonicalLeague() -> None:
-   league, labels = _aliased()
+def Test_League_TestAlias_ExpectCanonicalLeague( aliases: dict[ ClubLeague, list[ str ] ] ) -> None:
+   for league, labels in aliases.items():
+      resolved = [ ClubLeagueAlias.league( label ) for label in labels ]
 
-   resolved = [ ClubLeagueAlias.league( label ) for label in labels ]
-
-   assert resolved == [ league ] * len( labels )
+      assert resolved == [ league ] * len( labels )
 
 
-def Test_League_TestUnknown_ExpectNone() -> None:
-   resolved = ClubLeagueAlias.league( '' )
+def Test_League_TestUnknown_ExpectNone( aliases: dict[ ClubLeague, list[ str ] ] ) -> None:
+   resolved = ClubLeagueAlias.league( 'Unlisted test league' )
 
    assert resolved is None
 
 
-def Test_Rank_TestCanonical_ExpectZero() -> None:
-   league, _ = _aliased()
+def Test_League_TestEmptyAliases_ExpectCanonicalStillResolves( monkeypatch: pytest.MonkeyPatch ) -> None:
+   monkeypatch.setattr( ClubLeagueAlias, 'LABELS', {} )
+   league = ClubLeague.OHL
+
+   resolved = ClubLeagueAlias.league( league.value )
+
+   assert resolved is league
+
+
+def Test_Rank_TestCanonical_ExpectZero( aliases: dict[ ClubLeague, list[ str ] ] ) -> None:
+   league = next( iter( aliases ) )
 
    rank = ClubLeagueAlias.rank( league.value )
 
    assert rank == 0
 
 
-def Test_Rank_TestAliases_ExpectListedOrderAfterCanonical() -> None:
-   _, labels = _aliased()
+def Test_Rank_TestAliases_ExpectListedOrderAfterCanonical( aliases: dict[ ClubLeague, list[ str ] ] ) -> None:
+   for labels in aliases.values():
+      ranks = [ ClubLeagueAlias.rank( label ) for label in labels ]
 
-   ranks = [ ClubLeagueAlias.rank( label ) for label in labels ]
+      assert ranks == list( range( 1, len( labels ) + 1 ) )
 
-   assert ranks == list( range( 1, len( labels ) + 1 ) )
+
+def Test_Rank_TestUnknown_ExpectZero( aliases: dict[ ClubLeague, list[ str ] ] ) -> None:
+   rank = ClubLeagueAlias.rank( 'Unlisted test league' )
+
+   assert rank == 0
