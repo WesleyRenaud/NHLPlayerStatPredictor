@@ -2,6 +2,7 @@ from .pace_regression_model import PaceRegressionModel
 from .pim_multiplier_store import PimMultiplierStore
 from .pim_weight_store import PimWeightStore
 from .production_growth import ProductionGrowth
+from .production_trajectory_store import ProductionTrajectoryStore
 from .production_weight import ProductionWeight
 from .scoring_component_share_store import ScoringComponentShareStore
 from .scoring_multiplier_store import ScoringMultiplierStore
@@ -17,6 +18,7 @@ class ProductionModelRecorder():
    def write( cls, model: PaceRegressionModel ) -> None:
       ScoringMultiplierStore.write( model.scoring_growth )
       ScoringWeightStore.write( model.history_weights )
+      ProductionTrajectoryStore.write( model.trajectory )
       ScoringComponentShareStore.write( model.component_shares )
 
       for coefficients, multiplier_store, weight_store in (

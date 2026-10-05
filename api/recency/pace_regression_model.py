@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 
 from .production_coefficient import ProductionCoefficient
 from .production_growth import ProductionGrowth
+from .production_trajectory_fit import ProductionTrajectoryFit
 from .production_weight import ProductionWeight
 from ..projections.scoring_component_shares import ScoringComponentShares
 from ..types import Types
@@ -16,6 +17,7 @@ class PaceRegressionModel():
    pim_coefficients: list[ ProductionCoefficient ] = field( default_factory=list )
    shots_coefficients: list[ ProductionCoefficient ] = field( default_factory=list )
    history_weights: list[ ProductionWeight ] = field( default_factory=list )
+   trajectory: ProductionTrajectoryFit = field( default_factory=ProductionTrajectoryFit.empty )
 
 
    @classmethod
@@ -25,11 +27,12 @@ class PaceRegressionModel():
          [ ScoringComponentShares.from_row( item ) for item in row[ 'component_shares' ] ],
          [ ProductionCoefficient.from_row( item ) for item in row[ 'pim' ][ 'coefficients' ] ],
          [ ProductionCoefficient.from_row( item ) for item in row[ 'shots' ][ 'coefficients' ] ],
-         [ ProductionWeight.from_row( item ) for item in row[ 'scoring' ][ 'history_weights' ] ] )
+         [ ProductionWeight.from_row( item ) for item in row[ 'scoring' ][ 'history_weights' ] ],
+         ProductionTrajectoryFit.from_row( row[ 'trajectory' ] ) )
 
 
    def to_dict( self ) -> Types.JsonObject:
-      return {
+      payload: Types.JsonObject = {
          'scoring': {
             'growth': [ growth.to_dict() for growth in self.scoring_growth ],
             'history_weights': [ weight.to_dict() for weight in self.history_weights ],
@@ -37,4 +40,6 @@ class PaceRegressionModel():
          'component_shares': [ shares.to_dict() for shares in self.component_shares ],
          'pim': { 'coefficients': [ coefficient.to_dict() for coefficient in self.pim_coefficients ] },
          'shots': { 'coefficients': [ coefficient.to_dict() for coefficient in self.shots_coefficients ] },
+         'trajectory': self.trajectory.to_dict(),
       }
+      return payload

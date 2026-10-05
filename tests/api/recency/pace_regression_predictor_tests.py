@@ -8,6 +8,10 @@ from api.recency.pace_regression_model import PaceRegressionModel
 from api.recency.pace_regression_predictor import PaceRegressionPredictor
 from api.recency.prior_year import PriorYear
 from api.recency.production_growth import ProductionGrowth
+from api.recency.production_season import ProductionSeason
+from api.recency.production_trajectory import ProductionTrajectory
+from api.recency.production_trajectory_fit import ProductionTrajectoryFit
+from api.recency.production_trajectory_share import ProductionTrajectoryShare
 from api.recency.production_weight import ProductionWeight
 
 
@@ -23,6 +27,12 @@ def _prior( year: int, age: int, goals: float, nhl_games: int = 82 ) -> PriorYea
       0.0, 82, nhl_games, age + 0.4 )
 
 
+def _fit() -> ProductionTrajectoryFit:
+   return ProductionTrajectoryFit( 0.15, [
+      ProductionTrajectoryShare( age, 0.65, 0.40 ) for age in range( 15, 35 )
+   ] )
+
+
 def _model() -> PaceRegressionModel:
    return PaceRegressionModel( [
       ProductionGrowth( 18, 19, AGE_18_TO_19_MULTIPLIER, 100 ),
@@ -32,7 +42,27 @@ def _model() -> PaceRegressionModel:
       ProductionWeight( 18, 19, 0.8, 100 ),
       ProductionWeight( 19, 20, LATEST_RELATIONSHIP_WEIGHT, 100 ),
       ProductionWeight( 18, 20, OLDER_RELATIONSHIP_WEIGHT, 100 )
-   ] )
+   ], trajectory=_fit() )
+
+
+def _trajectory_average(
+      latest: PriorYear,
+      older: PriorYear,
+      latest_weight: float,
+      older_weight: float,
+      latest_value: float,
+      older_value: float,
+      fit: ProductionTrajectoryFit ) -> float:
+   history = [
+      ProductionSeason( int( latest.age ), latest_value, latest.games ),
+      ProductionSeason( int( older.age ), older_value, older.games ),
+   ]
+   bases = [
+      latest_weight * PriorYear.reliability( latest.games ),
+      older_weight * PriorYear.reliability( older.games ),
+   ]
+   shares = ProductionTrajectory.shares( history, bases, fit )
+   return ( latest_value * shares[ 0 ] + older_value * shares[ 1 ] ) / sum( shares )
 
 
 def Test_Paces_TestWeightedHistory_ExpectAverageThenAgeGrowth() -> None:
@@ -42,11 +72,9 @@ def Test_Paces_TestWeightedHistory_ExpectAverageThenAgeGrowth() -> None:
 
    assert paced is not None
    latest, older = priors
-   latest_weight = latest.games * LATEST_RELATIONSHIP_WEIGHT
-   older_weight = older.games * OLDER_RELATIONSHIP_WEIGHT
-   weighted_goals = (
-      latest.scoring.goals * latest_weight + older.scoring.goals * older_weight
-   ) / ( latest_weight + older_weight )
+   weighted_goals = _trajectory_average(
+      latest, older, LATEST_RELATIONSHIP_WEIGHT, OLDER_RELATIONSHIP_WEIGHT,
+      latest.scoring.goals, older.scoring.goals, _fit() )
    assert paced.goals == pytest.approx( weighted_goals * AGE_19_TO_20_MULTIPLIER )
    assert paced.power_play_goals == 0.0
    assert paced.penalty_minutes is None
@@ -114,11 +142,9 @@ def Test_Paces_TestTranslatedMultiYearHistory_ExpectSameGrowthAsNhlHistory() -> 
 
    assert paced is not None
    latest, older = priors
-   latest_weight = latest.games * LATEST_RELATIONSHIP_WEIGHT
-   older_weight = older.games * OLDER_RELATIONSHIP_WEIGHT
-   expected = (
-      latest.scoring.goals * latest_weight + older.scoring.goals * older_weight
-   ) / ( latest_weight + older_weight ) * annual_multiplier
+   expected = _trajectory_average(
+      latest, older, LATEST_RELATIONSHIP_WEIGHT, OLDER_RELATIONSHIP_WEIGHT,
+      latest.scoring.goals, older.scoring.goals, model.trajectory ) * annual_multiplier
    assert paced.goals == pytest.approx( expected )
    nhl_priors = [ _prior( prior.year, int( prior.age ), prior.scoring.goals ) for prior in priors ]
    assert paced == PaceRegressionPredictor.paces( model, nhl_priors, 20252026, [] )
@@ -139,15 +165,18 @@ def Test_Paces_TestTranslatedMissedSeason_ExpectSharedAnnualAgeGrowth() -> None:
    assert paced.goals == pytest.approx( priors[ 0 ].scoring.goals * annual_multiplier ** 2 )
 
 
-def Test_Paces_TestYoungTranslatedHistory_ExpectLatestAgeGrowthOnly() -> None:
+def Test_Paces_TestSteadyIncline_ExpectOldestSeasonFaded() -> None:
    annual_multiplier = 1.2
    prior_ages = ( 15, 16, 17 )
+   rise = 0.65
    model = PaceRegressionModel( [
       ProductionGrowth( age, age + 1, annual_multiplier, 100 )
       for age in prior_ages
    ], history_weights=[
       ProductionWeight( age, 18, 1.0, 100 ) for age in prior_ages
-   ] )
+   ], trajectory=ProductionTrajectoryFit( 0.15, [
+      ProductionTrajectoryShare( age, rise, None ) for age in prior_ages
+   ] ) )
    priors = [
       _prior( 2025, 17, 20.0, nhl_games=0 ),
       _prior( 2024, 16, 15.0, nhl_games=0 ),
@@ -157,9 +186,8 @@ def Test_Paces_TestYoungTranslatedHistory_ExpectLatestAgeGrowthOnly() -> None:
    paced = PaceRegressionPredictor.paces( model, priors, 20262027, [] )
 
    assert paced is not None
-   expected = sum(
-      prior.scoring.goals * prior.games
-      for prior in priors ) / sum( prior.games for prior in priors ) * annual_multiplier
+   rest = ( 1.0 - rise ) / 2.0
+   expected = ( 20.0 * rise + 15.0 * rest + 10.0 * rest ) * annual_multiplier
    assert paced.goals == pytest.approx( expected )
 
 
@@ -172,19 +200,13 @@ def Test_Paces_TestAllScoringComponents_ExpectSharedGrowthAndHistoryBlend() -> N
    paced = PaceRegressionPredictor.paces( _model(), priors, 20252026, [] )
 
    assert paced is not None
-   latest_weight = LATEST_RELATIONSHIP_WEIGHT
-   older_weight = OLDER_RELATIONSHIP_WEIGHT
+   expected_by_stat = {}
 
    for stat in ScoringStat:
-      expected = (
-         getattr( latest_scoring, stat.value ) * latest_weight
-         + getattr( older_scoring, stat.value ) * older_weight
-      ) / ( latest_weight + older_weight ) * AGE_19_TO_20_MULTIPLIER
-      assert getattr( paced, stat.value ) == pytest.approx( expected )
+      expected_by_stat[ stat ] = _trajectory_average(
+         priors[ 0 ], priors[ 1 ], LATEST_RELATIONSHIP_WEIGHT, OLDER_RELATIONSHIP_WEIGHT,
+         getattr( latest_scoring, stat.value ), getattr( older_scoring, stat.value ), _fit()
+      ) * AGE_19_TO_20_MULTIPLIER
+      assert getattr( paced, stat.value ) == pytest.approx( expected_by_stat[ stat ] )
 
-   latest_points = latest_scoring.goals + latest_scoring.assists
-   older_points = older_scoring.goals + older_scoring.assists
-   expected_points = (
-      latest_points * latest_weight + older_points * older_weight
-   ) / ( latest_weight + older_weight ) * AGE_19_TO_20_MULTIPLIER
-   assert paced.goals + paced.assists == pytest.approx( expected_points )
+   assert paced.goals + paced.assists == pytest.approx( sum( expected_by_stat.values() ) )
