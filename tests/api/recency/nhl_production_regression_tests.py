@@ -8,8 +8,13 @@ import pytest
 
 from api.recency.nhl_production_regression import NhlProductionRegression
 from api.recency.nhl_production_stat import NhlProductionStat
+from api.recency.prior_year import PriorYear
 from api.recency.prior_year_builder import PriorYearBuilder
 from api.recency.production_coefficient import ProductionCoefficient
+from api.recency.production_season import ProductionSeason
+from api.recency.production_trajectory import ProductionTrajectory
+from api.recency.production_trajectory_fit import ProductionTrajectoryFit
+from api.recency.production_trajectory_share import ProductionTrajectoryShare
 from api.season import Season
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
@@ -64,10 +69,11 @@ def _pace(
       coefficients: list[ ProductionCoefficient ],
       seasons: list[ NhlSkaterSeason ],
       target_season_id: int,
-      stat: NhlProductionStat ) -> float | None:
+      stat: NhlProductionStat,
+      trajectory: ProductionTrajectoryFit = ProductionTrajectoryFit.empty() ) -> float | None:
    year = Season.start_year( target_season_id )
    priors = PriorYearBuilder.build( seasons, [], year, [] )
-   return NhlProductionRegression.pace( coefficients, priors, year, stat )
+   return NhlProductionRegression.pace( coefficients, priors, year, stat, trajectory )
 
 
 @pytest.mark.parametrize( 'stat', list( NhlProductionStat ) )
@@ -185,15 +191,20 @@ def Test_Pace_TestWeightedShotHistory_ExpectRawAverageThenGrowth( older_games: i
       ProductionCoefficient( 18, 20, 1.32, 0.5, 100 ),
    ]
    _older_to_latest, latest_relationship, older_relationship = coefficients
-   latest_weight = latest_relationship.weight
-   older_weight = older_relationship.weight * min( older_games / 20, 1.0 )
+   latest_weight = latest_relationship.weight * PriorYear.reliability( latest.games_played )
+   older_weight = older_relationship.weight * PriorYear.reliability( older.games_played )
+   history = [
+      ProductionSeason( int( latest.age ), latest.shots_pace(), latest.games_played ),
+      ProductionSeason( int( older.age ), older.shots_pace(), older.games_played ),
+   ]
+   fit = ProductionTrajectoryFit( 0.15, [ ProductionTrajectoryShare( 19, 0.65, 0.40 ) ] )
+   shares = ProductionTrajectory.shares( history, [ latest_weight, older_weight ], fit )
    expected = (
-      latest.shots_pace() * latest_weight
-      + older.shots_pace() * older_weight
-   ) / ( latest_weight + older_weight ) * latest_relationship.multiplier
+      latest.shots_pace() * shares[ 0 ] + older.shots_pace() * shares[ 1 ]
+   ) / sum( shares ) * latest_relationship.multiplier
 
    projected = _pace(
-      coefficients, [ older, latest ], 20222023, NhlProductionStat.SHOTS )
+      coefficients, [ older, latest ], 20222023, NhlProductionStat.SHOTS, fit )
 
    assert projected == pytest.approx( expected )
 

@@ -14,6 +14,16 @@ def _prior( year: int, nhl_games: int, age: float ) -> PriorYear:
       age )
 
 
+def Test_Reliability_TestQualifiedSeason_ExpectFullWeight() -> None:
+   assert PriorYear.reliability( PriorYear.MIN_GAMES ) == 1.0
+   assert PriorYear.reliability( PriorYear.MIN_GAMES + 62 ) == 1.0
+
+
+def Test_Reliability_TestShortSeason_ExpectFractionOfTheGate() -> None:
+   games = PriorYear.MIN_GAMES // 2
+   assert PriorYear.reliability( games ) == games / PriorYear.MIN_GAMES
+
+
 def Test_AgeInYear_TestYears_ExpectCompletedAgeWithElapsedSeasons() -> None:
    prior = _prior( 2023, 60, 24.9 )
 

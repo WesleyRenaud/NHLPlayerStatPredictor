@@ -5,12 +5,19 @@ import pytest
 from api.recency.prior_year import PriorYear
 from api.recency.production_growth import ProductionGrowth
 from api.recency.production_history_predictor import ProductionHistoryPredictor
+from api.recency.production_season import ProductionSeason
+from api.recency.production_trajectory_fit import ProductionTrajectoryFit
 from api.recency.production_weight import ProductionWeight
 
 
 ANNUAL_MULTIPLIER = 2.0
 LATEST_WEIGHT = 1.0
 OLDER_WEIGHT = 0.5
+EMPTY = ProductionTrajectoryFit.empty()
+
+
+def _season( age: int, pace: float, games: int ) -> ProductionSeason:
+   return ProductionSeason( age, pace, games )
 
 
 def _lookup( from_age: int, to_age: int ) -> ProductionGrowth:
@@ -23,16 +30,15 @@ def _weight_lookup( from_age: int, to_age: int ) -> ProductionWeight:
 
 
 def Test_Pace_TestHistory_ExpectRawAverageThenLatestAgeMultiplier() -> None:
-   history = [ ( 20, 20.0, 80 ), ( 19, 5.0, 40 ) ]
+   history = [ _season( 20, 20.0, 80 ), _season( 19, 5.0, 40 ) ]
 
-   pace = ProductionHistoryPredictor.pace( history, 21, _lookup, _weight_lookup )
+   pace = ProductionHistoryPredictor.pace( history, 21, _lookup, _weight_lookup, EMPTY )
 
-   _latest_age, latest_pace, latest_games = history[ 0 ]
-   _older_age, older_pace, older_games = history[ 1 ]
-   latest_weight = min( latest_games, PriorYear.MIN_GAMES ) * LATEST_WEIGHT
-   older_weight = min( older_games, PriorYear.MIN_GAMES ) * OLDER_WEIGHT
+   latest, older = history
+   latest_weight = PriorYear.reliability( latest.games ) * LATEST_WEIGHT
+   older_weight = PriorYear.reliability( older.games ) * OLDER_WEIGHT
    weighted_average = (
-      latest_pace * latest_weight + older_pace * older_weight
+      latest.pace * latest_weight + older.pace * older_weight
    ) / ( latest_weight + older_weight )
    assert pace == pytest.approx( weighted_average * ANNUAL_MULTIPLIER )
 
@@ -46,9 +52,9 @@ def Test_Pace_TestHistory_ExpectRawAverageThenLatestAgeMultiplier() -> None:
 def Test_Pace_TestQualifiedSeasonLengths_ExpectSameProjection(
       latest_games: int,
       older_games: int ) -> None:
-   history = [ ( 20, 20.0, latest_games ), ( 19, 5.0, older_games ) ]
+   history = [ _season( 20, 20.0, latest_games ), _season( 19, 5.0, older_games ) ]
 
-   pace = ProductionHistoryPredictor.pace( history, 21, _lookup, _weight_lookup )
+   pace = ProductionHistoryPredictor.pace( history, 21, _lookup, _weight_lookup, EMPTY )
 
    assert pace == pytest.approx(
       ( 20.0 * LATEST_WEIGHT + 5.0 * OLDER_WEIGHT )
@@ -57,11 +63,11 @@ def Test_Pace_TestQualifiedSeasonLengths_ExpectSameProjection(
 
 @pytest.mark.parametrize( 'games', [ 0, 5, 10, 19 ] )
 def Test_Pace_TestSmallSample_ExpectReducedSeasonWeight( games: int ) -> None:
-   history = [ ( 20, 20.0, 60 ), ( 19, 5.0, games ) ]
-   latest_weight = PriorYear.MIN_GAMES * LATEST_WEIGHT
-   older_weight = games * OLDER_WEIGHT
+   history = [ _season( 20, 20.0, 60 ), _season( 19, 5.0, games ) ]
+   latest_weight = PriorYear.reliability( 60 ) * LATEST_WEIGHT
+   older_weight = PriorYear.reliability( games ) * OLDER_WEIGHT
 
-   pace = ProductionHistoryPredictor.pace( history, 21, _lookup, _weight_lookup )
+   pace = ProductionHistoryPredictor.pace( history, 21, _lookup, _weight_lookup, EMPTY )
 
    assert pace == pytest.approx(
       ( 20.0 * latest_weight + 5.0 * older_weight )
@@ -72,13 +78,13 @@ def Test_Pace_TestMissedSeason_ExpectCompoundedAgeMultipliers() -> None:
    prior_age = 19
    prior_pace = 5.0
    target_age = 22
-   pace = ProductionHistoryPredictor.pace( [ ( prior_age, prior_pace, 82 ) ], target_age, _lookup, _weight_lookup )
+   pace = ProductionHistoryPredictor.pace( [ _season( prior_age, prior_pace, 82 ) ], target_age, _lookup, _weight_lookup, EMPTY )
 
    assert pace == pytest.approx( prior_pace * ANNUAL_MULTIPLIER ** ( target_age - prior_age ) )
 
 
 def Test_Pace_TestZeroProduction_ExpectZeroProjection() -> None:
-   assert ProductionHistoryPredictor.pace( [ ( 20, 0.0, 82 ), ( 19, 0.0, 82 ) ], 21, _lookup, _weight_lookup ) == 0.0
+   assert ProductionHistoryPredictor.pace( [ _season( 20, 0.0, 82 ), _season( 19, 0.0, 82 ) ], 21, _lookup, _weight_lookup, EMPTY ) == 0.0
 
 
 def Test_Pace_TestUnsupportedWeights_ExpectLatestSeasonFallback() -> None:
@@ -91,8 +97,8 @@ def Test_Pace_TestUnsupportedWeights_ExpectLatestSeasonFallback() -> None:
    def weight_lookup( from_age: int, to_age: int ) -> ProductionWeight:
       return ProductionWeight( from_age, to_age, 0.0, 0 )
 
-   history = [ ( 20, latest_pace, 82 ), ( 19, 100.0, 82 ) ]
-   assert ProductionHistoryPredictor.pace( history, 21, lookup, weight_lookup ) == pytest.approx( latest_pace * annual_multiplier )
+   history = [ _season( 20, latest_pace, 82 ), _season( 19, 100.0, 82 ) ]
+   assert ProductionHistoryPredictor.pace( history, 21, lookup, weight_lookup, EMPTY ) == pytest.approx( latest_pace * annual_multiplier )
 
 
 def Test_Coefficient_TestUnknownAge_ExpectNearestAgeForSameLag() -> None:
@@ -138,7 +144,7 @@ def Test_Pace_TestSeparateUnsupportedWeights_ExpectLatestNhlGrowthFallback() -> 
    def weight_lookup( from_age: int, to_age: int ) -> ProductionWeight:
       return ProductionWeight( from_age, to_age, 0.0, 100 )
 
-   history = [ ( 18, latest_pace, 82 ), ( 17, 100.0, 82 ) ]
-   pace = ProductionHistoryPredictor.pace( history, 20, lookup, weight_lookup )
+   history = [ _season( 18, latest_pace, 82 ), _season( 17, 100.0, 82 ) ]
+   pace = ProductionHistoryPredictor.pace( history, 20, lookup, weight_lookup, EMPTY )
 
-   assert pace == pytest.approx( latest_pace * annual_multiplier ** ( 20 - history[ 0 ][ 0 ] ) )
+   assert pace == pytest.approx( latest_pace * annual_multiplier ** ( 20 - history[ 0 ].age ) )

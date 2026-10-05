@@ -25,6 +25,8 @@ from api.projections.season_pace import SeasonPace
 from api.recency.pace_regression_model import PaceRegressionModel
 from api.recency.production_coefficient import ProductionCoefficient
 from api.recency.production_growth import ProductionGrowth
+from api.recency.production_trajectory_fit import ProductionTrajectoryFit
+from api.recency.production_trajectory_share import ProductionTrajectoryShare
 from api.recency.production_weight import ProductionWeight
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
@@ -379,12 +381,14 @@ def Test_GetProjection_TestHistoricalRates_ExpectNormalizedThenProjectedStats(
       pace_games=82, even_strength_goals=20, even_strength_points=40,
       shots=200, penalty_minutes=20 )
    older = replace( latest, season_id=20232024, age=26.2 )
+   drop = 0.40
    model = PaceRegressionModel( [ ProductionGrowth( 27, 28, 1.0, 100 ) ],
       history_weights=[ ProductionWeight( 27, 28, 1.0, 100 ), ProductionWeight( 26, 28, 1.0, 100 ) ],
       pim_coefficients=[ ProductionCoefficient( 27, 28, 1.0, 1.0, 100 ),
          ProductionCoefficient( 26, 28, 1.0, 1.0, 100 ) ],
       shots_coefficients=[ ProductionCoefficient( 27, 28, 1.0, 1.0, 100 ),
-         ProductionCoefficient( 26, 28, 1.0, 1.0, 100 ) ] )
+         ProductionCoefficient( 26, 28, 1.0, 1.0, 100 ) ],
+      trajectory=ProductionTrajectoryFit( 0.15, [ ProductionTrajectoryShare( 27, None, drop ) ] ) )
    _stub_roster( monkeypatch )
    monkeypatch.setattr( projection_coordinator.SkaterSeasonProvider, 'seasons_for_player_id',
       lambda player_id, path: [ latest, older ] )
@@ -406,9 +410,13 @@ def Test_GetProjection_TestHistoricalRates_ExpectNormalizedThenProjectedStats(
    result = projection.to_dict()
    ratio = projected_toi / latest_toi
    older_ice_scale = latest_toi / older_toi
-   expected_points = ( latest.even_strength_points + older.even_strength_points * older_ice_scale ) / 2
-   expected_shots = ( latest.shots + older.shots * older_ice_scale ) / 2
-   expected_pim = ( latest.penalty_minutes + older.penalty_minutes * older_ice_scale ) / 2
+   expected_points = (
+      latest.even_strength_points * drop
+      + older.even_strength_points * older_ice_scale * ( 1.0 - drop ) )
+   expected_shots = latest.shots * drop + older.shots * older_ice_scale * ( 1.0 - drop )
+   expected_pim = (
+      latest.penalty_minutes * drop
+      + older.penalty_minutes * older_ice_scale * ( 1.0 - drop ) )
    assert result[ 'points' ] == expected_points * ratio
    assert result[ 'shots' ] == expected_shots * ratio
    assert result[ 'penaltyMinutes' ] == expected_pim * ratio

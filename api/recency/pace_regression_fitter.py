@@ -10,6 +10,7 @@ from .prior_year import PriorYear
 from .prior_year_builder import PriorYearBuilder
 from .production_coefficient_fitter import ProductionCoefficientFitter
 from .production_pair import ProductionPair
+from .production_trajectory_fitter import ProductionTrajectoryFitter
 from .scoring_component_share_fitter import ScoringComponentShareFitter
 from ..season import Season
 from ..skaters.nhl_skater_season import NhlSkaterSeason
@@ -62,9 +63,12 @@ class PaceRegressionFitter():
 
       nhl_history_by_player = (
          NhlProductionRegression.history( nhl_seasons ) if other_seasons else history_by_player )
+      growth = ProductionCoefficientFitter.fit_growth( points_pairs )
       return PaceRegressionModel(
-         ProductionCoefficientFitter.fit_growth( points_pairs ),
+         growth,
          component_shares,
          pim_coefficients=NhlProductionRegression.fit( nhl_seasons, NhlProductionStat.PIM, nhl_history_by_player ),
          shots_coefficients=NhlProductionRegression.fit( nhl_seasons, NhlProductionStat.SHOTS, nhl_history_by_player ),
-         history_weights=ProductionCoefficientFitter.fit_weights( points_pairs ) )
+         history_weights=ProductionCoefficientFitter.fit_weights( points_pairs ),
+         trajectory=ProductionTrajectoryFitter.fit(
+            ProductionTrajectoryFitter.observe( nhl_history_by_player, growth ) ) )

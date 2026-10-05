@@ -11,6 +11,8 @@ from .production_coefficient_fitter import ProductionCoefficientFitter
 from .production_growth import ProductionGrowth
 from .production_history_predictor import ProductionHistoryPredictor
 from .production_pair import ProductionPair
+from .production_season import ProductionSeason
+from .production_trajectory_fit import ProductionTrajectoryFit
 from .production_weight import ProductionWeight
 from ..season import Season
 from ..shared.enums.position import Position
@@ -74,7 +76,8 @@ class NhlProductionRegression():
          coefficients: list[ ProductionCoefficient ],
          priors: list[ PriorYear ],
          year: int,
-         stat: NhlProductionStat ) -> float | None:
+         stat: NhlProductionStat,
+         trajectory: ProductionTrajectoryFit ) -> float | None:
       if not priors:
          return None
 
@@ -86,7 +89,8 @@ class NhlProductionRegression():
          coefficient.weight, coefficient.samples ) for coefficient in coefficients ]
 
       return ProductionHistoryPredictor.pace(
-         [ ( int( prior.age ), getattr( prior, stat.value ), prior.games ) for prior in priors ],
+         [ ProductionSeason( int( prior.age ), getattr( prior, stat.value ), prior.games ) for prior in priors ],
          target_age,
          partial( ProductionHistoryPredictor.coefficient, growth ),
-         partial( ProductionHistoryPredictor.weight, weights ) )
+         partial( ProductionHistoryPredictor.weight, weights ),
+         trajectory )

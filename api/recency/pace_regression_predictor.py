@@ -9,6 +9,7 @@ from .pace_regression_model import PaceRegressionModel
 from .prior_year import PriorYear
 from .prior_year_builder import PriorYearBuilder
 from .production_history_predictor import ProductionHistoryPredictor
+from .production_season import ProductionSeason
 from ..projections.pace_values import PaceValues
 from ..projections.scoring_stat import ScoringStat
 from ..season import Season
@@ -40,9 +41,9 @@ class PaceRegressionPredictor():
       return PaceValues(
          **{ stat.value: pace for stat, pace in projected_paces_by_stat.items() },
          penalty_minutes=NhlProductionRegression.pace(
-            model.pim_coefficients, nhl_priors, year, NhlProductionStat.PIM ),
+            model.pim_coefficients, nhl_priors, year, NhlProductionStat.PIM, model.trajectory ),
          shots=NhlProductionRegression.pace(
-            model.shots_coefficients, nhl_priors, year, NhlProductionStat.SHOTS ) )
+            model.shots_coefficients, nhl_priors, year, NhlProductionStat.SHOTS, model.trajectory ) )
 
 
    @classmethod
@@ -56,7 +57,8 @@ class PaceRegressionPredictor():
          return 0.0
 
       return ProductionHistoryPredictor.pace(
-         [ ( int( prior.age ), getattr( prior.scoring, stat.value ), prior.games ) for prior in priors ],
+         [ ProductionSeason( int( prior.age ), getattr( prior.scoring, stat.value ), prior.games ) for prior in priors ],
          target_age,
          partial( ProductionHistoryPredictor.coefficient, model.scoring_growth ),
-         partial( ProductionHistoryPredictor.weight, model.history_weights ) )
+         partial( ProductionHistoryPredictor.weight, model.history_weights ),
+         model.trajectory )

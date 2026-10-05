@@ -21,3 +21,11 @@ class PriorYear():
 
    def age_in_year( self, year: int ) -> int:
       return int( self.age ) + year - self.year
+
+
+   @classmethod
+   def reliability( cls, games: int ) -> float:
+      if games >= cls.MIN_GAMES:
+         return 1.0
+
+      return games / cls.MIN_GAMES
