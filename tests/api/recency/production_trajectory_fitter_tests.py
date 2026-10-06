@@ -144,3 +144,36 @@ def Test_ObserveDebuts_TestFirstNhlSeason_ExpectTranslatedRiseOnly() -> None:
    assert change.prior_pace == pytest.approx( _pace( prior ) )
    assert change.latest_pace == pytest.approx( _pace( latest ) )
    assert change.following_pace == pytest.approx( _pace( following ) )
+
+
+def Test_ObserveShortNhl_TestShortStint_ExpectSplitYearOnly() -> None:
+   prior = _prior( 2020, 18.2, 30.0, nhl_games=0 )
+   latest = _prior( 2021, 19.2, 60.0, games=50, nhl_games=9 )
+   following = _prior( 2022, 20.2, 90.0 )
+   history = {
+      1: [ prior, latest, following ],
+      2: [
+         _prior( 2020, 18.2, 30.0, nhl_games=0 ),
+         _prior( 2021, 19.2, 60.0, nhl_games=0 ),
+         _prior( 2022, 20.2, 90.0 ),
+      ],
+      3: [
+         _prior( 2020, 18.2, 30.0, nhl_games=0 ),
+         _prior( 2021, 19.2, 60.0, games=25, nhl_games=15 ),
+         _prior( 2022, 20.2, 90.0 ),
+      ],
+      4: [
+         _prior( 2020, 18.2, 30.0 ),
+         _prior( 2021, 19.2, 60.0 ),
+         _prior( 2022, 20.2, 90.0 ),
+      ],
+   }
+
+   changes = ProductionTrajectoryFitter.observe_short_nhl( history, [ ProductionGrowth( 19, 20, 2.0, 10 ) ] )
+
+   assert len( changes ) == 1
+   change = changes[ Position.FIRST ]
+   assert change.age == int( latest.age )
+   assert change.prior_pace == pytest.approx( _pace( prior ) )
+   assert change.latest_pace == pytest.approx( _pace( latest ) )
+   assert change.following_pace == pytest.approx( _pace( following ) )

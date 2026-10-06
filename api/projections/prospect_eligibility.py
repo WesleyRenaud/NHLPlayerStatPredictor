@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from .prospect_profile import ProspectProfile
+from ..recency.prior_year import PriorYear
 
 
 class ProspectEligibility():
@@ -21,5 +22,15 @@ class ProspectEligibility():
    def pre_nhl( cls, age: float, nhl_games: int, prior_nhl_games: int ) -> bool:
       return (
          nhl_games == 0
+         and int( age ) <= cls.MAX_AGE
+         and prior_nhl_games <= cls.MAX_NHL_GAMES )
+
+
+   @classmethod
+   def short_nhl(
+         cls, age: float, nhl_games: int, other_games: int, prior_nhl_games: int ) -> bool:
+      return (
+         0 < nhl_games < PriorYear.MIN_GAMES
+         and other_games >= PriorYear.MIN_GAMES
          and int( age ) <= cls.MAX_AGE
          and prior_nhl_games <= cls.MAX_NHL_GAMES )

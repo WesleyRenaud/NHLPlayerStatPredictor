@@ -225,6 +225,26 @@ def Test_Paces_TestDebutRise_ExpectLatestSeasonKept() -> None:
    assert paced.goals == pytest.approx( 40.0 * AGE_19_TO_20_MULTIPLIER )
 
 
+def Test_Paces_TestShortNhlRise_ExpectLatestSeasonKept() -> None:
+   short = ProductionTrajectoryFit( 0.15, [ ProductionTrajectoryShare( 19, 1.0, None ) ] )
+   model = replace( _model(), short_nhl_trajectory=short )
+   priors = [ _prior( 2024, 19, 40.0, nhl_games=9 ), _prior( 2023, 18, 10.0, nhl_games=0 ) ]
+
+   paced = PaceRegressionPredictor.paces( model, priors, 20252026, [] )
+
+   assert paced is not None
+   assert paced.goals == pytest.approx( 40.0 * AGE_19_TO_20_MULTIPLIER )
+
+
+def Test_Paces_TestEstablishedSeason_ExpectShortShareUnused() -> None:
+   short = ProductionTrajectoryFit( 0.15, [ ProductionTrajectoryShare( 19, 1.0, None ) ] )
+   model = replace( _model(), short_nhl_trajectory=short )
+   priors = [ _prior( 2024, 19, 20.0 ), _prior( 2023, 18, 10.0 ) ]
+
+   assert PaceRegressionPredictor.paces( model, priors, 20252026, [] ) == (
+      PaceRegressionPredictor.paces( _model(), priors, 20252026, [] ) )
+
+
 def Test_Paces_TestEstablishedSeason_ExpectDebutShareUnused() -> None:
    debut = ProductionTrajectoryFit( 0.15, [ ProductionTrajectoryShare( 19, 1.0, None ) ] )
    model = replace( _model(), debut_trajectory=debut )
