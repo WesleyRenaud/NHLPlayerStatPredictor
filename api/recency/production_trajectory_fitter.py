@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from functools import partial
 
 from .prior_year import PriorYear
@@ -9,6 +10,7 @@ from .production_history_predictor import ProductionHistoryPredictor
 from .production_trajectory_change import ProductionTrajectoryChange
 from .production_trajectory_fit import ProductionTrajectoryFit
 from .production_trajectory_share import ProductionTrajectoryShare
+from ..projections.prospect_eligibility import ProspectEligibility
 
 
 class ProductionTrajectoryFitter():
@@ -44,6 +46,24 @@ class ProductionTrajectoryFitter():
          cls,
          history_by_player: dict[ int, list[ PriorYear ] ],
          growth: list[ ProductionGrowth ] ) -> list[ ProductionTrajectoryChange ]:
+      return cls._changes( history_by_player, growth, False )
+
+
+   @classmethod
+   def observe_debuts(
+         cls,
+         history_by_player: dict[ int, list[ PriorYear ] ],
+         growth: list[ ProductionGrowth ] ) -> list[ ProductionTrajectoryChange ]:
+      """Rises into a first NHL season from years still played outside the league."""
+      return cls._changes( history_by_player, growth, True )
+
+
+   @classmethod
+   def _changes(
+         cls,
+         history_by_player: dict[ int, list[ PriorYear ] ],
+         growth: list[ ProductionGrowth ],
+         debuts: bool ) -> list[ ProductionTrajectoryChange ]:
       lookup = partial( ProductionHistoryPredictor.coefficient, growth )
       changes: list[ ProductionTrajectoryChange ] = []
 
@@ -58,24 +78,52 @@ class ProductionTrajectoryFitter():
             if latest.year != prior.year + 1 or following.year != latest.year + 1:
                continue
 
-            prior_pace = prior.scoring.goals + prior.scoring.assists
-            latest_pace = latest.scoring.goals + latest.scoring.assists
-            following_pace = following.scoring.goals + following.scoring.assists
-            multiplier = ProductionHistoryPredictor.multiplier(
-               lookup, int( latest.age ), int( following.age ) )
-
-            if multiplier <= 0.0 or latest_pace == prior_pace:
+            if debuts and not cls._first_nhl_season( qualified, latest, following ):
                continue
 
-            changes.append( ProductionTrajectoryChange(
-               int( latest.age ),
-               prior_pace,
-               latest_pace,
-               following_pace,
-               multiplier,
-               min( prior.games, latest.games, following.games ) ) )
+            change = cls._change( prior, latest, following, lookup )
+
+            if change is not None:
+               changes.append( change )
 
       return changes
+
+
+   @classmethod
+   def _first_nhl_season(
+         cls,
+         qualified: list[ PriorYear ],
+         latest: PriorYear,
+         following: PriorYear ) -> bool:
+      played = sum( prior.nhl_games for prior in qualified if prior.year < following.year )
+      return (
+         following.nhl_games >= PriorYear.MIN_GAMES
+         and ProspectEligibility.pre_nhl( latest.age, latest.nhl_games, played ) )
+
+
+   @classmethod
+   def _change(
+         cls,
+         prior: PriorYear,
+         latest: PriorYear,
+         following: PriorYear,
+         lookup: Callable[ [ int, int ], ProductionGrowth ] ) -> ProductionTrajectoryChange | None:
+      prior_pace = prior.scoring.goals + prior.scoring.assists
+      latest_pace = latest.scoring.goals + latest.scoring.assists
+      following_pace = following.scoring.goals + following.scoring.assists
+      multiplier = ProductionHistoryPredictor.multiplier(
+         lookup, int( latest.age ), int( following.age ) )
+
+      if multiplier <= 0.0 or latest_pace == prior_pace:
+         return None
+
+      return ProductionTrajectoryChange(
+         int( latest.age ),
+         prior_pace,
+         latest_pace,
+         following_pace,
+         multiplier,
+         min( prior.games, latest.games, following.games ) )
 
 
    @classmethod

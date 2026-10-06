@@ -15,3 +15,11 @@ class ProspectEligibility():
       return (
          age <= cls.MAX_AGE
          and profile.prior_games( target_season_id ) <= cls.MAX_NHL_GAMES )
+
+
+   @classmethod
+   def pre_nhl( cls, age: float, nhl_games: int, prior_nhl_games: int ) -> bool:
+      return (
+         nhl_games == 0
+         and int( age ) <= cls.MAX_AGE
+         and prior_nhl_games <= cls.MAX_NHL_GAMES )

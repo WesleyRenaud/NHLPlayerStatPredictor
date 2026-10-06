@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from api.projections.prospect_eligibility import ProspectEligibility
 from api.projections.scoring_paces import ScoringPaces
 from api.recency.prior_year import PriorYear
 from api.recency.production_coefficient_fitter import ProductionCoefficientFitter
@@ -21,8 +22,19 @@ def _change(
    return ProductionTrajectoryChange( age, prior, latest, following, multiplier, games )
 
 
-def _prior( year: int, age: float, points: float, games: int = 82 ) -> PriorYear:
-   return PriorYear( year, ScoringPaces( points, 0.0, 0.0, 0.0, 0.0, 0.0 ), 0.0, games, games, age )
+def _pace( prior: PriorYear ) -> float:
+   return prior.scoring.goals + prior.scoring.assists
+
+
+def _prior(
+      year: int,
+      age: float,
+      points: float,
+      games: int = 82,
+      nhl_games: int | None = None ) -> PriorYear:
+   return PriorYear(
+      year, ScoringPaces( points, 0.0, 0.0, 0.0, 0.0, 0.0 ),
+      0.0, games, games if nhl_games is None else nhl_games, age )
 
 
 def Test_Fit_TestRetainedFraction_ExpectGamesWeightedShare() -> None:
@@ -73,8 +85,12 @@ def Test_Fit_TestThinHistory_ExpectNoAgeShares() -> None:
 
 def Test_Observe_TestConsecutiveSeasons_ExpectQualifiedChangesOnly() -> None:
    short = PriorYear.MIN_GAMES - 1
+   prior = _prior( 2020, 18.2, 30.0 )
+   latest = _prior( 2021, 19.2, 60.0 )
+   following = _prior( 2022, 20.2, 90.0 )
+   growth = ProductionGrowth( 19, 20, 2.0, 10 )
    history = {
-      1: [ _prior( 2020, 18.2, 30.0 ), _prior( 2021, 19.2, 60.0 ), _prior( 2022, 20.2, 90.0 ) ],
+      1: [ prior, latest, following ],
       2: [ _prior( 2020, 18.2, 30.0 ), _prior( 2022, 20.2, 60.0 ), _prior( 2023, 21.2, 90.0 ) ],
       3: [
          _prior( 2020, 18.2, 30.0, short ),
@@ -83,13 +99,48 @@ def Test_Observe_TestConsecutiveSeasons_ExpectQualifiedChangesOnly() -> None:
       ],
    }
 
-   changes = ProductionTrajectoryFitter.observe( history, [ ProductionGrowth( 19, 20, 2.0, 10 ) ] )
+   changes = ProductionTrajectoryFitter.observe( history, [ growth ] )
 
    assert len( changes ) == 1
    change = changes[ Position.FIRST ]
-   assert change.age == 19
-   assert change.prior_pace == pytest.approx( 30.0 )
-   assert change.latest_pace == pytest.approx( 60.0 )
-   assert change.following_pace == pytest.approx( 90.0 )
-   assert change.multiplier == pytest.approx( 2.0 )
-   assert change.games == 82
+   assert change.age == int( latest.age )
+   assert change.prior_pace == pytest.approx( _pace( prior ) )
+   assert change.latest_pace == pytest.approx( _pace( latest ) )
+   assert change.following_pace == pytest.approx( _pace( following ) )
+   assert change.multiplier == pytest.approx( growth.multiplier )
+   assert change.games == min( prior.games, latest.games, following.games )
+
+
+def Test_ObserveDebuts_TestFirstNhlSeason_ExpectTranslatedRiseOnly() -> None:
+   established = ProspectEligibility.MAX_NHL_GAMES + 1
+   prior = _prior( 2020, 18.2, 30.0, nhl_games=0 )
+   latest = _prior( 2021, 19.2, 60.0, nhl_games=0 )
+   following = _prior( 2022, 20.2, 90.0 )
+   history = {
+      1: [ prior, latest, following ],
+      2: [
+         _prior( 2020, 18.2, 30.0, nhl_games=0 ),
+         _prior( 2022, 20.2, 60.0, nhl_games=0 ),
+         _prior( 2023, 21.2, 90.0 ),
+      ],
+      3: [ _prior( 2020, 18.2, 30.0 ), _prior( 2021, 19.2, 60.0 ), _prior( 2022, 20.2, 90.0 ) ],
+      4: [
+         _prior( 2020, 18.2, 30.0, nhl_games=established ),
+         _prior( 2021, 19.2, 60.0, nhl_games=0 ),
+         _prior( 2022, 20.2, 90.0 ),
+      ],
+      5: [
+         _prior( 2020, 25.2, 30.0, nhl_games=0 ),
+         _prior( 2021, 26.2, 60.0, nhl_games=0 ),
+         _prior( 2022, 27.2, 90.0 ),
+      ],
+   }
+
+   changes = ProductionTrajectoryFitter.observe_debuts( history, [ ProductionGrowth( 19, 20, 2.0, 10 ) ] )
+
+   assert len( changes ) == 1
+   change = changes[ Position.FIRST ]
+   assert change.age == int( latest.age )
+   assert change.prior_pace == pytest.approx( _pace( prior ) )
+   assert change.latest_pace == pytest.approx( _pace( latest ) )
+   assert change.following_pace == pytest.approx( _pace( following ) )

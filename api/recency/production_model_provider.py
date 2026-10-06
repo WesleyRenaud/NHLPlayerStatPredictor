@@ -5,6 +5,7 @@ from .pace_regression_model import PaceRegressionModel
 from .pim_multiplier_store import PimMultiplierStore
 from .pim_weight_store import PimWeightStore
 from .production_coefficient import ProductionCoefficient
+from .production_debut_trajectory_store import ProductionDebutTrajectoryStore
 from .production_growth import ProductionGrowth
 from .production_history_predictor import ProductionHistoryPredictor
 from .production_trajectory_store import ProductionTrajectoryStore
@@ -23,7 +24,7 @@ class ProductionModelProvider():
    def paths( cls ) -> list[ Path ]:
       return [
          ScoringWeightStore.path(), ScoringMultiplierStore.path(),
-         ProductionTrajectoryStore.path(),
+         ProductionTrajectoryStore.path(), ProductionDebutTrajectoryStore.path(),
          PimWeightStore.path(), PimMultiplierStore.path(),
          ShotsWeightStore.path(), ShotsMultiplierStore.path(),
          ScoringComponentShareStore.path(),
@@ -38,7 +39,8 @@ class ProductionModelProvider():
          cls._coefficients( PimMultiplierStore.read(), PimWeightStore.read() ),
          cls._coefficients( ShotsMultiplierStore.read(), ShotsWeightStore.read() ),
          ScoringWeightStore.read(),
-         ProductionTrajectoryStore.read() )
+         ProductionTrajectoryStore.read(),
+         ProductionDebutTrajectoryStore.read() )
 
 
    @classmethod

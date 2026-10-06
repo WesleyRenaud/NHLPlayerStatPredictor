@@ -18,6 +18,7 @@ class PaceRegressionModel():
    shots_coefficients: list[ ProductionCoefficient ] = field( default_factory=list )
    history_weights: list[ ProductionWeight ] = field( default_factory=list )
    trajectory: ProductionTrajectoryFit = field( default_factory=ProductionTrajectoryFit.empty )
+   debut_trajectory: ProductionTrajectoryFit = field( default_factory=ProductionTrajectoryFit.empty )
 
 
    @classmethod
@@ -28,7 +29,8 @@ class PaceRegressionModel():
          [ ProductionCoefficient.from_row( item ) for item in row[ 'pim' ][ 'coefficients' ] ],
          [ ProductionCoefficient.from_row( item ) for item in row[ 'shots' ][ 'coefficients' ] ],
          [ ProductionWeight.from_row( item ) for item in row[ 'scoring' ][ 'history_weights' ] ],
-         ProductionTrajectoryFit.from_row( row[ 'trajectory' ] ) )
+         ProductionTrajectoryFit.from_row( row[ 'trajectory' ] ),
+         ProductionTrajectoryFit.from_row( row[ 'debut_trajectory' ] ) )
 
 
    def to_dict( self ) -> Types.JsonObject:
@@ -41,5 +43,6 @@ class PaceRegressionModel():
          'pim': { 'coefficients': [ coefficient.to_dict() for coefficient in self.pim_coefficients ] },
          'shots': { 'coefficients': [ coefficient.to_dict() for coefficient in self.shots_coefficients ] },
          'trajectory': self.trajectory.to_dict(),
+         'debut_trajectory': self.debut_trajectory.to_dict(),
       }
       return payload
