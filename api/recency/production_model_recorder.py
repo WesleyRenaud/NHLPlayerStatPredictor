@@ -3,6 +3,7 @@ from .pim_multiplier_store import PimMultiplierStore
 from .pim_weight_store import PimWeightStore
 from .production_debut_trajectory_store import ProductionDebutTrajectoryStore
 from .production_growth import ProductionGrowth
+from .production_short_nhl_trajectory_store import ProductionShortNhlTrajectoryStore
 from .production_trajectory_store import ProductionTrajectoryStore
 from .production_weight import ProductionWeight
 from .scoring_component_share_store import ScoringComponentShareStore
@@ -21,6 +22,7 @@ class ProductionModelRecorder():
       ScoringWeightStore.write( model.history_weights )
       ProductionTrajectoryStore.write( model.trajectory )
       ProductionDebutTrajectoryStore.write( model.debut_trajectory )
+      ProductionShortNhlTrajectoryStore.write( model.short_nhl_trajectory )
       ScoringComponentShareStore.write( model.component_shares )
 
       for coefficients, multiplier_store, weight_store in (

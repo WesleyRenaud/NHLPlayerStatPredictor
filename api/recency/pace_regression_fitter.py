@@ -73,4 +73,6 @@ class PaceRegressionFitter():
          trajectory=ProductionTrajectoryFitter.fit(
             ProductionTrajectoryFitter.observe( nhl_history_by_player, growth ) ),
          debut_trajectory=ProductionTrajectoryFitter.fit(
-            ProductionTrajectoryFitter.observe_debuts( history_by_player, growth ) ) )
+            ProductionTrajectoryFitter.observe_debuts( history_by_player, growth ) ),
+         short_nhl_trajectory=ProductionTrajectoryFitter.fit(
+            ProductionTrajectoryFitter.observe_short_nhl( history_by_player, growth ) ) )

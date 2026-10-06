@@ -46,7 +46,7 @@ class ProductionTrajectoryFitter():
          cls,
          history_by_player: dict[ int, list[ PriorYear ] ],
          growth: list[ ProductionGrowth ] ) -> list[ ProductionTrajectoryChange ]:
-      return cls._changes( history_by_player, growth, False )
+      return cls._changes( history_by_player, growth, None )
 
 
    @classmethod
@@ -55,7 +55,16 @@ class ProductionTrajectoryFitter():
          history_by_player: dict[ int, list[ PriorYear ] ],
          growth: list[ ProductionGrowth ] ) -> list[ ProductionTrajectoryChange ]:
       """Rises into a first NHL season from years still played outside the league."""
-      return cls._changes( history_by_player, growth, True )
+      return cls._changes( history_by_player, growth, cls._first_nhl_season )
+
+
+   @classmethod
+   def observe_short_nhl(
+         cls,
+         history_by_player: dict[ int, list[ PriorYear ] ],
+         growth: list[ ProductionGrowth ] ) -> list[ ProductionTrajectoryChange ]:
+      """Rises into a first NHL season from a year that already included a short NHL stint."""
+      return cls._changes( history_by_player, growth, cls._short_nhl_season )
 
 
    @classmethod
@@ -63,7 +72,7 @@ class ProductionTrajectoryFitter():
          cls,
          history_by_player: dict[ int, list[ PriorYear ] ],
          growth: list[ ProductionGrowth ],
-         debuts: bool ) -> list[ ProductionTrajectoryChange ]:
+         include: Callable[ [ list[ PriorYear ], PriorYear, PriorYear ], bool ] | None ) -> list[ ProductionTrajectoryChange ]:
       lookup = partial( ProductionHistoryPredictor.coefficient, growth )
       changes: list[ ProductionTrajectoryChange ] = []
 
@@ -78,7 +87,7 @@ class ProductionTrajectoryFitter():
             if latest.year != prior.year + 1 or following.year != latest.year + 1:
                continue
 
-            if debuts and not cls._first_nhl_season( qualified, latest, following ):
+            if include is not None and not include( qualified, latest, following ):
                continue
 
             change = cls._change( prior, latest, following, lookup )
@@ -99,6 +108,19 @@ class ProductionTrajectoryFitter():
       return (
          following.nhl_games >= PriorYear.MIN_GAMES
          and ProspectEligibility.pre_nhl( latest.age, latest.nhl_games, played ) )
+
+
+   @classmethod
+   def _short_nhl_season(
+         cls,
+         qualified: list[ PriorYear ],
+         latest: PriorYear,
+         following: PriorYear ) -> bool:
+      played = sum( prior.nhl_games for prior in qualified if prior.year < following.year )
+      return (
+         following.nhl_games >= PriorYear.MIN_GAMES
+         and ProspectEligibility.short_nhl(
+            latest.age, latest.nhl_games, latest.games - latest.nhl_games, played ) )
 
 
    @classmethod

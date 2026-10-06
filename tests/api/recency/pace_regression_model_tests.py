@@ -26,4 +26,5 @@ def Test_ToDict_TestModel_ExpectOnlyRegressions() -> None:
       'pim': { 'coefficients': [] }, 'shots': { 'coefficients': [] },
       'trajectory': ProductionTrajectoryFit.empty().to_dict(),
       'debut_trajectory': ProductionTrajectoryFit.empty().to_dict(),
+      'short_nhl_trajectory': ProductionTrajectoryFit.empty().to_dict(),
    }

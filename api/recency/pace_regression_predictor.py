@@ -63,6 +63,12 @@ class PaceRegressionPredictor():
          if Season.start_year( season.season_id ) < year )
 
       if (
+            model.short_nhl_trajectory.by_age
+            and ProspectEligibility.short_nhl(
+               latest.age, latest.nhl_games, latest.games - latest.nhl_games, played ) ):
+         return model.short_nhl_trajectory
+
+      if (
             model.debut_trajectory.by_age
             and ProspectEligibility.pre_nhl( latest.age, latest.nhl_games, played ) ):
          return model.debut_trajectory
