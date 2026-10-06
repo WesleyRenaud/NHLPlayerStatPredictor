@@ -71,4 +71,6 @@ class PaceRegressionFitter():
          shots_coefficients=NhlProductionRegression.fit( nhl_seasons, NhlProductionStat.SHOTS, nhl_history_by_player ),
          history_weights=ProductionCoefficientFitter.fit_weights( points_pairs ),
          trajectory=ProductionTrajectoryFitter.fit(
-            ProductionTrajectoryFitter.observe( nhl_history_by_player, growth ) ) )
+            ProductionTrajectoryFitter.observe( nhl_history_by_player, growth ) ),
+         debut_trajectory=ProductionTrajectoryFitter.fit(
+            ProductionTrajectoryFitter.observe_debuts( history_by_player, growth ) ) )
