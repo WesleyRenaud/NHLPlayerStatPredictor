@@ -236,6 +236,53 @@ def Test_Paces_TestShortNhlRise_ExpectLatestSeasonKept() -> None:
    assert paced.goals == pytest.approx( 40.0 * AGE_19_TO_20_MULTIPLIER )
 
 
+def Test_Paces_TestRookieRise_ExpectLatestSeasonKept() -> None:
+   rookie = ProductionTrajectoryFit( 0.15, [ ProductionTrajectoryShare( 19, 1.0, None ) ] )
+   model = replace( _model(), rookie_trajectory=rookie )
+   priors = [ _prior( 2024, 19, 40.0 ), _prior( 2023, 18, 10.0, nhl_games=0 ) ]
+
+   paced = PaceRegressionPredictor.paces( model, priors, 20252026, [] )
+
+   assert paced is not None
+   assert paced.goals == pytest.approx( 40.0 * AGE_19_TO_20_MULTIPLIER )
+
+
+def Test_Paces_TestSmallRookieStep_ExpectGeneralShareKept() -> None:
+   rookie = ProductionTrajectoryFit( 0.40, [ ProductionTrajectoryShare( 19, 1.0, None ) ] )
+   model = replace( _model(), rookie_trajectory=rookie )
+   priors = [ _prior( 2024, 19, 40.0 ), _prior( 2023, 18, 25.0, nhl_games=0 ) ]
+
+   assert PaceRegressionPredictor.paces( model, priors, 20252026, [] ) == (
+      PaceRegressionPredictor.paces( _model(), priors, 20252026, [] ) )
+
+
+def Test_Paces_TestRookieDrop_ExpectGeneralShareKept() -> None:
+   rookie = ProductionTrajectoryFit( 0.15, [ ProductionTrajectoryShare( 19, 1.0, 0.2 ) ] )
+   model = replace( _model(), rookie_trajectory=rookie )
+   priors = [ _prior( 2024, 19, 10.0 ), _prior( 2023, 18, 40.0, nhl_games=0 ) ]
+
+   assert PaceRegressionPredictor.paces( model, priors, 20252026, [] ) == (
+      PaceRegressionPredictor.paces( _model(), priors, 20252026, [] ) )
+
+
+def Test_Paces_TestRookieGap_ExpectGeneralShareKept() -> None:
+   rookie = ProductionTrajectoryFit( 0.15, [ ProductionTrajectoryShare( 19, 1.0, None ) ] )
+   model = replace( _model(), rookie_trajectory=rookie )
+   priors = [ _prior( 2024, 19, 40.0 ), _prior( 2022, 17, 10.0, nhl_games=0 ) ]
+
+   assert PaceRegressionPredictor.paces( model, priors, 20252026, [] ) == (
+      PaceRegressionPredictor.paces( _model(), priors, 20252026, [] ) )
+
+
+def Test_Paces_TestEstablishedRookie_ExpectRookieShareUnused() -> None:
+   rookie = ProductionTrajectoryFit( 0.15, [ ProductionTrajectoryShare( 19, 1.0, None ) ] )
+   model = replace( _model(), rookie_trajectory=rookie )
+   priors = [ _prior( 2024, 19, 40.0 ), _prior( 2023, 18, 10.0, nhl_games=26 ) ]
+
+   assert PaceRegressionPredictor.paces( model, priors, 20252026, [] ) == (
+      PaceRegressionPredictor.paces( _model(), priors, 20252026, [] ) )
+
+
 def Test_Paces_TestEstablishedSeason_ExpectShortShareUnused() -> None:
    short = ProductionTrajectoryFit( 0.15, [ ProductionTrajectoryShare( 19, 1.0, None ) ] )
    model = replace( _model(), short_nhl_trajectory=short )

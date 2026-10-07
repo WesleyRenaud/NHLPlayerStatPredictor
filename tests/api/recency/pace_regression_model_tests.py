@@ -27,4 +27,5 @@ def Test_ToDict_TestModel_ExpectOnlyRegressions() -> None:
       'trajectory': ProductionTrajectoryFit.empty().to_dict(),
       'debut_trajectory': ProductionTrajectoryFit.empty().to_dict(),
       'short_nhl_trajectory': ProductionTrajectoryFit.empty().to_dict(),
+      'rookie_trajectory': ProductionTrajectoryFit.empty().to_dict(),
    }

@@ -68,6 +68,15 @@ class ProductionTrajectoryFitter():
 
 
    @classmethod
+   def observe_rookie(
+         cls,
+         history_by_player: dict[ int, list[ PriorYear ] ],
+         growth: list[ ProductionGrowth ] ) -> list[ ProductionTrajectoryChange ]:
+      """Changes through a first full NHL season and the NHL season after it."""
+      return cls._changes( history_by_player, growth, cls._rookie_season )
+
+
+   @classmethod
    def _changes(
          cls,
          history_by_player: dict[ int, list[ PriorYear ] ],
@@ -121,6 +130,18 @@ class ProductionTrajectoryFitter():
          following.nhl_games >= PriorYear.MIN_GAMES
          and ProspectEligibility.short_nhl(
             latest.age, latest.nhl_games, latest.games - latest.nhl_games, played ) )
+
+
+   @classmethod
+   def _rookie_season(
+         cls,
+         qualified: list[ PriorYear ],
+         latest: PriorYear,
+         following: PriorYear ) -> bool:
+      played = sum( prior.nhl_games for prior in qualified if prior.year < latest.year )
+      return (
+         following.nhl_games >= PriorYear.MIN_GAMES
+         and ProspectEligibility.rookie_nhl( latest.age, latest.nhl_games, played ) )
 
 
    @classmethod

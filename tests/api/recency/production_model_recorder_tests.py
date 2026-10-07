@@ -15,6 +15,7 @@ from api.recency.production_growth import ProductionGrowth
 from api.recency.production_list_store import ProductionListStore
 from api.recency.production_model_provider import ProductionModelProvider
 from api.recency.production_model_recorder import ProductionModelRecorder
+from api.recency.production_rookie_trajectory_store import ProductionRookieTrajectoryStore
 from api.recency.production_short_nhl_trajectory_store import ProductionShortNhlTrajectoryStore
 from api.recency.production_trajectory_store import ProductionTrajectoryStore
 from api.recency.production_weight import ProductionWeight
@@ -31,6 +32,7 @@ _STORES: list[ type[ ProductionListStore ] ] = [
    ProductionTrajectoryStore,
    ProductionDebutTrajectoryStore,
    ProductionShortNhlTrajectoryStore,
+   ProductionRookieTrajectoryStore,
    PimWeightStore,
    PimMultiplierStore,
    ShotsWeightStore,

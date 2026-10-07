@@ -31,6 +31,13 @@ class ProductionTrajectoryFit():
       return cls( 0.0, [] )
 
 
+   def without_drops( self ) -> ProductionTrajectoryFit:
+      return ProductionTrajectoryFit(
+         self.move,
+         [ ProductionTrajectoryShare( share.age, share.rise_share, None )
+            for share in self.by_age if share.rise_share is not None ] )
+
+
    def retained( self, age: int, rising: bool ) -> float | None:
       usable = [
          share for share in self.by_age

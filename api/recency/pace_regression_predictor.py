@@ -73,7 +73,41 @@ class PaceRegressionPredictor():
             and ProspectEligibility.pre_nhl( latest.age, latest.nhl_games, played ) ):
          return model.debut_trajectory
 
+      if cls._rookie_rise( model, priors, nhl_seasons ):
+         return model.rookie_trajectory
+
       return model.trajectory
+
+
+   @classmethod
+   def _rookie_rise(
+         cls,
+         model: PaceRegressionModel,
+         priors: list[ PriorYear ],
+         nhl_seasons: list[ NhlSkaterSeason ] ) -> bool:
+      if len( priors ) < 2 or not model.rookie_trajectory.by_age:
+         return False
+
+      latest = priors[ Position.FIRST ]
+      prior = priors[ Position.SECOND ]
+
+      if prior.year != latest.year - 1 or prior.games < PriorYear.MIN_GAMES:
+         return False
+
+      seen = { item.year for item in priors }
+      before = sum( item.nhl_games for item in priors if item.year < latest.year )
+      before += sum(
+         season.games_played for season in nhl_seasons
+         if Season.start_year( season.season_id ) < latest.year
+         and Season.start_year( season.season_id ) not in seen )
+
+      if not ProspectEligibility.rookie_nhl( latest.age, latest.nhl_games, before ):
+         return False
+
+      latest_pace = latest.scoring.goals + latest.scoring.assists
+      prior_pace = prior.scoring.goals + prior.scoring.assists
+      peak = max( latest_pace, prior_pace )
+      return peak > 0.0 and ( latest_pace - prior_pace ) / peak >= model.rookie_trajectory.move
 
 
    @classmethod

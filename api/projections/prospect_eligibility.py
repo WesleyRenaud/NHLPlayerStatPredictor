@@ -34,3 +34,11 @@ class ProspectEligibility():
          and other_games >= PriorYear.MIN_GAMES
          and int( age ) <= cls.MAX_AGE
          and prior_nhl_games <= cls.MAX_NHL_GAMES )
+
+
+   @classmethod
+   def rookie_nhl( cls, age: float, nhl_games: int, prior_nhl_games: int ) -> bool:
+      return (
+         nhl_games >= PriorYear.MIN_GAMES
+         and int( age ) <= cls.MAX_AGE
+         and prior_nhl_games <= cls.MAX_NHL_GAMES )
