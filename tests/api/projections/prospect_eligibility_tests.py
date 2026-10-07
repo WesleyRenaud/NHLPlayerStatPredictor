@@ -45,3 +45,14 @@ def Test_PreNhl_TestWindow_ExpectLatestSeasonOutsideLeague(
 def Test_ShortNhl_TestWindow_ExpectStintBesideAnotherLeague(
       age: float, nhl_games: int, other_games: int, prior_games: int, expected: bool ) -> None:
    assert ProspectEligibility.short_nhl( age, nhl_games, other_games, prior_games ) is expected
+
+
+@pytest.mark.parametrize( 'age, nhl_games, prior_games, expected', [
+   ( 25.9, PriorYear.MIN_GAMES, 25, True ),
+   ( 25.0, PriorYear.MIN_GAMES - 1, 0, False ),
+   ( 26.0, PriorYear.MIN_GAMES, 0, False ),
+   ( 25.0, PriorYear.MIN_GAMES, 26, False ),
+] )
+def Test_RookieNhl_TestWindow_ExpectFirstFullSeason(
+      age: float, nhl_games: int, prior_games: int, expected: bool ) -> None:
+   assert ProspectEligibility.rookie_nhl( age, nhl_games, prior_games ) is expected

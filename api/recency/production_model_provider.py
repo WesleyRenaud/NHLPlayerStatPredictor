@@ -8,6 +8,7 @@ from .production_coefficient import ProductionCoefficient
 from .production_debut_trajectory_store import ProductionDebutTrajectoryStore
 from .production_growth import ProductionGrowth
 from .production_history_predictor import ProductionHistoryPredictor
+from .production_rookie_trajectory_store import ProductionRookieTrajectoryStore
 from .production_short_nhl_trajectory_store import ProductionShortNhlTrajectoryStore
 from .production_trajectory_store import ProductionTrajectoryStore
 from .production_weight import ProductionWeight
@@ -26,7 +27,7 @@ class ProductionModelProvider():
       return [
          ScoringWeightStore.path(), ScoringMultiplierStore.path(),
          ProductionTrajectoryStore.path(), ProductionDebutTrajectoryStore.path(),
-         ProductionShortNhlTrajectoryStore.path(),
+         ProductionShortNhlTrajectoryStore.path(), ProductionRookieTrajectoryStore.path(),
          PimWeightStore.path(), PimMultiplierStore.path(),
          ShotsWeightStore.path(), ShotsMultiplierStore.path(),
          ScoringComponentShareStore.path(),
@@ -43,7 +44,8 @@ class ProductionModelProvider():
          ScoringWeightStore.read(),
          ProductionTrajectoryStore.read(),
          ProductionDebutTrajectoryStore.read(),
-         ProductionShortNhlTrajectoryStore.read() )
+         ProductionShortNhlTrajectoryStore.read(),
+         ProductionRookieTrajectoryStore.read() )
 
 
    @classmethod
