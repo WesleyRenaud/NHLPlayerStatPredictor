@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from ..aging.league_arrival_store import LeagueArrivalStore
 from ..aging.league_factor import LeagueFactor
 from ..depth.nhl_player_season_ice_scale import NhlPlayerSeasonIceScale
 from .pace_values import PaceValues
@@ -22,7 +23,14 @@ class BaselinePaceResolver():
       year = Season.start_year( target_season_id )
       return PaceRegressionPredictor.paces(
          model,
-         PriorYearBuilder.build( skater.seasons, league_factors, year, model.component_shares, player_ice_scales ),
+         PriorYearBuilder.build(
+            skater.seasons,
+            league_factors,
+            year,
+            model.component_shares,
+            player_ice_scales,
+            LeagueArrivalStore.read(),
+            model.scoring_growth ),
          target_season_id,
          skater.nhl_seasons(),
          player_ice_scales )

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pytest
 
-from api.projections.prospect_eligibility import ProspectEligibility
 from api.projections.scoring_paces import ScoringPaces
 from api.recency.prior_year import PriorYear
 from api.recency.production_coefficient_fitter import ProductionCoefficientFitter
@@ -28,7 +27,7 @@ def _pace( prior: PriorYear ) -> float:
 
 def _prior(
       year: int,
-      age: float,
+      age: int,
       points: float,
       games: int = 82,
       nhl_games: int | None = None ) -> PriorYear:
@@ -85,17 +84,17 @@ def Test_Fit_TestThinHistory_ExpectNoAgeShares() -> None:
 
 def Test_Observe_TestConsecutiveSeasons_ExpectQualifiedChangesOnly() -> None:
    short = PriorYear.MIN_GAMES - 1
-   prior = _prior( 2020, 18.2, 30.0 )
-   latest = _prior( 2021, 19.2, 60.0 )
-   following = _prior( 2022, 20.2, 90.0 )
+   prior = _prior( 2020, 18, 30.0 )
+   latest = _prior( 2021, 19, 60.0 )
+   following = _prior( 2022, 20, 90.0 )
    growth = ProductionGrowth( 19, 20, 2.0, 10 )
    history = {
       1: [ prior, latest, following ],
-      2: [ _prior( 2020, 18.2, 30.0 ), _prior( 2022, 20.2, 60.0 ), _prior( 2023, 21.2, 90.0 ) ],
+      2: [ _prior( 2020, 18, 30.0 ), _prior( 2022, 20, 60.0 ), _prior( 2023, 21, 90.0 ) ],
       3: [
-         _prior( 2020, 18.2, 30.0, short ),
-         _prior( 2021, 19.2, 60.0, short ),
-         _prior( 2022, 20.2, 90.0, short ),
+         _prior( 2020, 18, 30.0, short ),
+         _prior( 2021, 19, 60.0, short ),
+         _prior( 2022, 20, 90.0, short ),
       ],
    }
 
@@ -109,110 +108,3 @@ def Test_Observe_TestConsecutiveSeasons_ExpectQualifiedChangesOnly() -> None:
    assert change.following_pace == pytest.approx( _pace( following ) )
    assert change.multiplier == pytest.approx( growth.multiplier )
    assert change.games == min( prior.games, latest.games, following.games )
-
-
-def Test_ObserveDebuts_TestFirstNhlSeason_ExpectTranslatedRiseOnly() -> None:
-   established = ProspectEligibility.MAX_NHL_GAMES + 1
-   prior = _prior( 2020, 18.2, 30.0, nhl_games=0 )
-   latest = _prior( 2021, 19.2, 60.0, nhl_games=0 )
-   following = _prior( 2022, 20.2, 90.0 )
-   history = {
-      1: [ prior, latest, following ],
-      2: [
-         _prior( 2020, 18.2, 30.0, nhl_games=0 ),
-         _prior( 2022, 20.2, 60.0, nhl_games=0 ),
-         _prior( 2023, 21.2, 90.0 ),
-      ],
-      3: [ _prior( 2020, 18.2, 30.0 ), _prior( 2021, 19.2, 60.0 ), _prior( 2022, 20.2, 90.0 ) ],
-      4: [
-         _prior( 2020, 18.2, 30.0, nhl_games=established ),
-         _prior( 2021, 19.2, 60.0, nhl_games=0 ),
-         _prior( 2022, 20.2, 90.0 ),
-      ],
-      5: [
-         _prior( 2020, 25.2, 30.0, nhl_games=0 ),
-         _prior( 2021, 26.2, 60.0, nhl_games=0 ),
-         _prior( 2022, 27.2, 90.0 ),
-      ],
-   }
-
-   changes = ProductionTrajectoryFitter.observe_debuts( history, [ ProductionGrowth( 19, 20, 2.0, 10 ) ] )
-
-   assert len( changes ) == 1
-   change = changes[ Position.FIRST ]
-   assert change.age == int( latest.age )
-   assert change.prior_pace == pytest.approx( _pace( prior ) )
-   assert change.latest_pace == pytest.approx( _pace( latest ) )
-   assert change.following_pace == pytest.approx( _pace( following ) )
-
-
-def Test_ObserveShortNhl_TestShortStint_ExpectSplitYearOnly() -> None:
-   prior = _prior( 2020, 18.2, 30.0, nhl_games=0 )
-   latest = _prior( 2021, 19.2, 60.0, games=50, nhl_games=9 )
-   following = _prior( 2022, 20.2, 90.0 )
-   history = {
-      1: [ prior, latest, following ],
-      2: [
-         _prior( 2020, 18.2, 30.0, nhl_games=0 ),
-         _prior( 2021, 19.2, 60.0, nhl_games=0 ),
-         _prior( 2022, 20.2, 90.0 ),
-      ],
-      3: [
-         _prior( 2020, 18.2, 30.0, nhl_games=0 ),
-         _prior( 2021, 19.2, 60.0, games=25, nhl_games=15 ),
-         _prior( 2022, 20.2, 90.0 ),
-      ],
-      4: [
-         _prior( 2020, 18.2, 30.0 ),
-         _prior( 2021, 19.2, 60.0 ),
-         _prior( 2022, 20.2, 90.0 ),
-      ],
-   }
-
-   changes = ProductionTrajectoryFitter.observe_short_nhl( history, [ ProductionGrowth( 19, 20, 2.0, 10 ) ] )
-
-   assert len( changes ) == 1
-   change = changes[ Position.FIRST ]
-   assert change.age == int( latest.age )
-   assert change.prior_pace == pytest.approx( _pace( prior ) )
-   assert change.latest_pace == pytest.approx( _pace( latest ) )
-   assert change.following_pace == pytest.approx( _pace( following ) )
-
-
-def Test_ObserveRookie_TestFirstFullSeason_ExpectBackToBackOnly() -> None:
-   established = ProspectEligibility.MAX_NHL_GAMES + 1
-   prior = _prior( 2020, 18.2, 30.0, nhl_games=0 )
-   latest = _prior( 2021, 19.2, 60.0 )
-   following = _prior( 2022, 20.2, 90.0 )
-   history = {
-      1: [ prior, latest, following ],
-      2: [
-         _prior( 2020, 18.2, 30.0, nhl_games=0 ),
-         _prior( 2022, 20.2, 60.0 ),
-         _prior( 2023, 21.2, 90.0 ),
-      ],
-      3: [
-         _prior( 2020, 18.2, 30.0, nhl_games=established ),
-         _prior( 2021, 19.2, 60.0 ),
-         _prior( 2022, 20.2, 90.0 ),
-      ],
-      4: [
-         _prior( 2020, 25.2, 30.0, nhl_games=0 ),
-         _prior( 2021, 26.2, 60.0 ),
-         _prior( 2022, 27.2, 90.0 ),
-      ],
-      5: [
-         _prior( 2020, 18.2, 30.0, nhl_games=0 ),
-         _prior( 2021, 19.2, 60.0 ),
-         _prior( 2022, 20.2, 90.0, nhl_games=0 ),
-      ],
-   }
-
-   changes = ProductionTrajectoryFitter.observe_rookie( history, [ ProductionGrowth( 19, 20, 2.0, 10 ) ] )
-
-   assert len( changes ) == 1
-   change = changes[ Position.FIRST ]
-   assert change.age == int( latest.age )
-   assert change.prior_pace == pytest.approx( _pace( prior ) )
-   assert change.latest_pace == pytest.approx( _pace( latest ) )
-   assert change.following_pace == pytest.approx( _pace( following ) )

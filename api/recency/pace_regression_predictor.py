@@ -12,7 +12,6 @@ from .production_history_predictor import ProductionHistoryPredictor
 from .production_season import ProductionSeason
 from .production_trajectory_fit import ProductionTrajectoryFit
 from ..projections.pace_values import PaceValues
-from ..projections.prospect_eligibility import ProspectEligibility
 from ..projections.scoring_stat import ScoringStat
 from ..season import Season
 from ..shared.enums.position import Position
@@ -31,83 +30,39 @@ class PaceRegressionPredictor():
       if not priors:
          return None
 
+      priors = cls._history( priors )
       year = Season.start_year( target_season_id )
       latest = priors[ Position.FIRST ]
       target_age = latest.age_in_year( year )
       projected_paces_by_stat: dict[ ScoringStat, float ] = {}
       nhl_priors = PriorYearBuilder.build( nhl_seasons, [], year, [], player_ice_scales )
 
-      trajectory = cls._trajectory( model, priors, nhl_seasons, year )
-
       for stat in ScoringStat:
-         projected_paces_by_stat[ stat ] = cls._pace( model, priors, target_age, stat, trajectory )
+         projected_paces_by_stat[ stat ] = cls._pace(
+            model, priors, target_age, stat, model.trajectory )
 
       return PaceValues(
          **{ stat.value: pace for stat, pace in projected_paces_by_stat.items() },
          penalty_minutes=NhlProductionRegression.pace(
-            model.pim_coefficients, nhl_priors, year, NhlProductionStat.PIM, trajectory ),
+            model.pim_coefficients, nhl_priors, year, NhlProductionStat.PIM, model.trajectory ),
          shots=NhlProductionRegression.pace(
-            model.shots_coefficients, nhl_priors, year, NhlProductionStat.SHOTS, trajectory ) )
+            model.shots_coefficients, nhl_priors, year, NhlProductionStat.SHOTS, model.trajectory ) )
 
 
    @classmethod
-   def _trajectory(
-         cls,
-         model: PaceRegressionModel,
-         priors: list[ PriorYear ],
-         nhl_seasons: list[ NhlSkaterSeason ],
-         year: int ) -> ProductionTrajectoryFit:
-      latest = priors[ Position.FIRST ]
-      played = sum(
-         season.games_played for season in nhl_seasons
-         if Season.start_year( season.season_id ) < year )
+   def _history( cls, priors: list[ PriorYear ] ) -> list[ PriorYear ]:
+      arrived = priors[ Position.FIRST ].arrival is not None
+      seen_nhl = False
+      kept: list[ PriorYear ] = []
 
-      if (
-            model.short_nhl_trajectory.by_age
-            and ProspectEligibility.short_nhl(
-               latest.age, latest.nhl_games, latest.games - latest.nhl_games, played ) ):
-         return model.short_nhl_trajectory
+      for index, prior in enumerate( priors ):
+         if prior.nhl_games:
+            kept.append( prior )
+            seen_nhl = True
+         elif not seen_nhl and ( index == Position.FIRST or not arrived ):
+            kept.append( prior )
 
-      if (
-            model.debut_trajectory.by_age
-            and ProspectEligibility.pre_nhl( latest.age, latest.nhl_games, played ) ):
-         return model.debut_trajectory
-
-      if cls._rookie_rise( model, priors, nhl_seasons ):
-         return model.rookie_trajectory
-
-      return model.trajectory
-
-
-   @classmethod
-   def _rookie_rise(
-         cls,
-         model: PaceRegressionModel,
-         priors: list[ PriorYear ],
-         nhl_seasons: list[ NhlSkaterSeason ] ) -> bool:
-      if len( priors ) < 2 or not model.rookie_trajectory.by_age:
-         return False
-
-      latest = priors[ Position.FIRST ]
-      prior = priors[ Position.SECOND ]
-
-      if prior.year != latest.year - 1 or prior.games < PriorYear.MIN_GAMES:
-         return False
-
-      seen = { item.year for item in priors }
-      before = sum( item.nhl_games for item in priors if item.year < latest.year )
-      before += sum(
-         season.games_played for season in nhl_seasons
-         if Season.start_year( season.season_id ) < latest.year
-         and Season.start_year( season.season_id ) not in seen )
-
-      if not ProspectEligibility.rookie_nhl( latest.age, latest.nhl_games, before ):
-         return False
-
-      latest_pace = latest.scoring.goals + latest.scoring.assists
-      prior_pace = prior.scoring.goals + prior.scoring.assists
-      peak = max( latest_pace, prior_pace )
-      return peak > 0.0 and ( latest_pace - prior_pace ) / peak >= model.rookie_trajectory.move
+      return kept
 
 
    @classmethod
@@ -122,7 +77,12 @@ class PaceRegressionPredictor():
          return 0.0
 
       return ProductionHistoryPredictor.pace(
-         [ ProductionSeason( int( prior.age ), getattr( prior.scoring, stat.value ), prior.games ) for prior in priors ],
+         [ ProductionSeason(
+            prior.age,
+            getattr( prior.scoring, stat.value ),
+            prior.games,
+            None if prior.arrival is None else getattr( prior.arrival, stat.value ) )
+            for prior in priors ],
          target_age,
          partial( ProductionHistoryPredictor.coefficient, model.scoring_growth ),
          partial( ProductionHistoryPredictor.weight, model.history_weights ),

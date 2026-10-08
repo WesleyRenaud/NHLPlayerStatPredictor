@@ -20,5 +20,24 @@ def Test_Paces_TestComponents_ExpectUnalteredValues() -> None:
    assert pace.assists == pace.even_strength_assists + pace.power_play_assists + pace.short_handed_assists
 
 
+def Test_Scaled_TestFactor_ExpectEachComponentMultiplied() -> None:
+   pace = ScoringPaces( 2.0, 3.0, 3.0, 6.0, 1.0, 2.0 )
+
+   assert pace.scaled( 2.0 ) == ScoringPaces( 4.0, 6.0, 6.0, 12.0, 2.0, 4.0 )
+
+
+def Test_PerGame_TestGames_ExpectEachComponentDivided() -> None:
+   pace = ScoringPaces( 4.0, 6.0, 6.0, 12.0, 2.0, 4.0 )
+
+   assert pace.per_game( 2 ) == ScoringPaces( 2.0, 3.0, 3.0, 6.0, 1.0, 2.0 )
+
+
+def Test_Adding_TestOtherPace_ExpectComponentSums() -> None:
+   pace = ScoringPaces( 2.0, 3.0, 3.0, 6.0, 1.0, 2.0 )
+   other = ScoringPaces( 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 )
+
+   assert pace.adding( other ) == ScoringPaces( 3.0, 4.0, 4.0, 7.0, 2.0, 3.0 )
+
+
 def Test_Paces_TestScoringStats_ExpectEnumMatchesFields() -> None:
    assert { stat.value for stat in ScoringStat } == { field.name for field in fields( ScoringPaces ) }

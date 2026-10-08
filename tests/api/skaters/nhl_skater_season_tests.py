@@ -5,6 +5,7 @@ from datetime import date
 
 import pytest
 
+from api.draft_class import DraftClass
 from api.season import Season
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
@@ -49,13 +50,15 @@ def _season( games_played: int, goals: int, assists: int ) -> NhlSkaterSeason:
 def Test_FromRow_TestStoredFields_ExpectValues() -> None:
    position = list( SkaterPosition )[ Position.FIRST ]
    team = list( Team )[ Position.FIRST ]
+   season_id = 20252026
+   birth_date = date( 1997, 1, 13 )
    season = NhlSkaterSeason(
       player_id=8478402,
-      season_id=20252026,
+      season_id=season_id,
       player_name='Connor McDavid',
       position=position,
-      birth_date=date( 1997, 1, 13 ),
-      age=28.7,
+      birth_date=birth_date,
+      age=DraftClass.age( birth_date, season_id ),
       team=team,
       games_played=82,
       even_strength_goals=48 - 20 - 3,

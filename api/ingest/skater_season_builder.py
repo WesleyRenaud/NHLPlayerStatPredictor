@@ -3,6 +3,7 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 
 from ..config import Config
+from ..draft_class import DraftClass
 from .nhl_client import NhlClient
 from ..season import Season
 from ..season_length import SeasonLength
@@ -56,7 +57,7 @@ class SkaterSeasonBuilder():
          assists = float( summary.assists )
          points = float( summary.points )
          birth_date = bio.birth_date
-         age = Season.age_on( birth_date, season.start_date )
+         age = DraftClass.age( birth_date, season.season_id )
          gp_share = games_played / float( season.number_of_games )
 
          rows.append( NhlSkaterSeason(

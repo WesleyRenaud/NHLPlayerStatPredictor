@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import replace
-
 from ..aging.league_factor import LeagueFactor
 from .draft_pick_modifier_fitter import DraftPickModifierFitter
 from .pace_values import PaceValues
@@ -57,7 +55,7 @@ class ProspectCalibrationResolver():
       pick = profile.draft_pick_before( target_season_id ).value
       if pick is None or pick > cls.MAX_DRAFT_PICK:
          return None
-      age = source.completed_age() + Season.start_year( target_season_id ) - Season.start_year( source.season_id )
+      age = source.age + Season.start_year( target_season_id ) - Season.start_year( source.season_id )
       if not ProspectEligibility.eligible( profile, target_season_id, age ):
          return None
       return pick
@@ -65,11 +63,4 @@ class ProspectCalibrationResolver():
 
    @classmethod
    def _scale_scoring( cls, paces: PaceValues, factor: float ) -> PaceValues:
-      return replace(
-         paces,
-         even_strength_goals=paces.even_strength_goals * factor,
-         even_strength_assists=paces.even_strength_assists * factor,
-         power_play_goals=paces.power_play_goals * factor,
-         power_play_assists=paces.power_play_assists * factor,
-         short_handed_goals=paces.short_handed_goals * factor,
-         short_handed_assists=paces.short_handed_assists * factor )
+      return paces.scaled( factor )

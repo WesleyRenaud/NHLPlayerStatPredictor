@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
-from ..shared.enums.position import Position
+from ..iso_date import IsoDate
 from ..types import Types
 
 
@@ -22,5 +22,4 @@ class SkaterBio():
    def from_row( cls, raw: Types.JsonObject ) -> SkaterBio:
       return cls(
          int( raw[ 'playerId' ] ),
-         date.fromisoformat(
-            str( raw[ 'birthDate' ] ).split( 'T' )[ Position.FIRST ] ) )
+         IsoDate.parse( raw[ 'birthDate' ] ) )

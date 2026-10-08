@@ -6,6 +6,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from api.aging.league_arrival import LeagueArrival
 from api.aging.league_factor import LeagueFactor
 from api.projections.scoring_component_shares import ScoringComponentShares
 from api.projections.scoring_paces import ScoringPaces
@@ -13,6 +14,7 @@ from api.projections.translated_pace_averager import TranslatedPaceAverager
 from api.projections.year_pace import YearPace
 from api.recency.prior_year import PriorYear
 from api.recency.prior_year_builder import PriorYearBuilder
+from api.recency.production_growth import ProductionGrowth
 from api.season import Season
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
@@ -24,7 +26,7 @@ from api.skaters.team import Team
 def _nhl(
       start_year: int,
       games_played: int,
-      age: float = 25.4,
+      age: int = 25,
       goals: int = 0,
       assists: int = 0 ) -> NhlSkaterSeason:
    return NhlSkaterSeason(
@@ -64,7 +66,7 @@ def _other( start_year: int, games_played: int, league: str = 'AAA' ) -> OtherLe
       season_id=start_year * 10000 + start_year + 1,
       league=league,
       position=SkaterPosition( 'C' ),
-      age=25.2,
+      age=25,
       games_played=games_played,
       goals=0,
       assists=0,
@@ -145,6 +147,28 @@ def Test_Build_TestUnknownLeague_ExpectSkipped() -> None:
    priors = PriorYearBuilder.build( seasons, [ LeagueFactor( 'AAA', 0.5 ) ], 2025, [] )
 
    assert priors == []
+
+
+def Test_Build_TestEnteringYear_ExpectArrivalOnlyOnThatSeason() -> None:
+   factor = LeagueFactor( 'AAA', 0.5 )
+   rate = 0.9
+   shares = ScoringComponentShares( 25, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0 )
+   entering = _other( 2024, 40 )
+   earlier = _other( 2023, 40 )
+
+   priors = PriorYearBuilder.build(
+      [ entering, earlier ],
+      [ factor ],
+      2025,
+      [ shares ],
+      arrivals=[ LeagueArrival( 'AAA', 25, rate ) ],
+      scoring_growth=[ ProductionGrowth( 25, 26, 3.0, 1 ) ] )
+
+   assert priors[ 0 ].year == 2024
+   assert priors[ 0 ].arrival is not None
+   assert priors[ 0 ].arrival.goals == pytest.approx( entering.g_pace * rate )
+   assert priors[ 1 ].arrival is None
+   assert priors[ 1 ].scoring.goals == pytest.approx( earlier.g_pace * factor.rate )
 
 
 def Test_Build_TestOtherLeagueYear_ExpectMissingPim() -> None:

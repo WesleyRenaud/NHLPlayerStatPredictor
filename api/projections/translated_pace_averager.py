@@ -106,5 +106,5 @@ class TranslatedPaceAverager():
       if translated_totals is None:
          return None
 
-      shares = min( component_shares, key=lambda item: abs( item.age - season.completed_age() ) )
+      shares = min( component_shares, key=lambda item: abs( item.age - season.age ) )
       return shares.split( translated_totals.goals, translated_totals.assists )

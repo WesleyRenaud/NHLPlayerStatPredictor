@@ -17,7 +17,7 @@ class ProspectSourceResolver():
       return (
          isinstance( row, OtherLeagueSkaterSeason ) and ClubLeague.contains( row.league )
          and row.season_id < target_season_id and row.games_played >= PriorYear.MIN_GAMES
-         and row.completed_age() <= cls.MAX_SOURCE_AGE )
+         and row.age <= cls.MAX_SOURCE_AGE )
 
 
    @classmethod

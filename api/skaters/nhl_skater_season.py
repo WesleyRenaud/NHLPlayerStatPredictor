@@ -3,12 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
+from ..draft_class import DraftClass
+from ..iso_date import IsoDate
 from ..projections.power_play_pace import PowerPlayPace
 from ..projections.scoring_paces import ScoringPaces
 from ..projections.season_pace import SeasonPace
 from ..projections.short_handed_pace import ShortHandedPace
 from ..season import Season
-from ..shared.enums.position import Position
 from .skater_position import SkaterPosition
 from .skater_season import SkaterSeason
 from .skater_season_key import SkaterSeasonKey
@@ -41,10 +42,12 @@ class NhlSkaterSeason( SkaterSeason ):
    @classmethod
    def from_row( cls, row: Types.JsonObject | Types.Row ) -> NhlSkaterSeason:
       gp_share = row[ 'GP_SHARE' ]
+      season_id = int( row[ 'SEASON_ID' ] )
+      birth_date = IsoDate.parse( row[ 'BIRTH_DATE' ] )
       return cls(
          player_id=int( row[ 'PLAYER_ID' ] ),
-         season_id=int( row[ 'SEASON_ID' ] ),
-         age=float( row[ 'AGE' ] ),
+         season_id=season_id,
+         age=DraftClass.age( birth_date, season_id ),
          games_played=int( row[ 'GAMES_PLAYED' ] ),
          goals=int( row[ 'GOALS' ] ),
          assists=int( row[ 'ASSISTS' ] ),
@@ -53,8 +56,7 @@ class NhlSkaterSeason( SkaterSeason ):
          a_pace=float( row[ 'A_PACE' ] ),
          player_name=str( row[ 'PLAYER_NAME' ] ),
          position=SkaterPosition( str( row[ 'POSITION' ] ) ),
-         birth_date=date.fromisoformat(
-            str( row[ 'BIRTH_DATE' ] ).split( 'T' )[ Position.FIRST ] ),
+         birth_date=birth_date,
          team=Team( str( row[ 'TEAM' ] ) ),
          schedule_games=int( row[ 'SCHEDULE_GAMES' ] ),
          pace_games=int( row[ 'PACE_GAMES' ] ),

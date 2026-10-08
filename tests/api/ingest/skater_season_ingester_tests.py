@@ -44,7 +44,7 @@ def _season(
       player_name='Stub Skater',
       position=SkaterPosition( 'C' ),
       birth_date=date( 1997, 1, 13 ),
-      age=28.7,
+      age=28,
       team=list( Team )[ Position.FIRST ],
       games_played=1,
       even_strength_goals=0,

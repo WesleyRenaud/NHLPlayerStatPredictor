@@ -26,7 +26,7 @@ OLDER_RELATIONSHIP_WEIGHT = 0.5
 def _prior( year: int, age: int, goals: float, nhl_games: int = 82 ) -> PriorYear:
    return PriorYear(
       year, ScoringPaces( goals, goals, 0.0, 0.0, 0.0, 0.0 ),
-      0.0, 82, nhl_games, age + 0.4 )
+      0.0, 82, nhl_games, age )
 
 
 def _fit() -> ProductionTrajectoryFit:
@@ -105,30 +105,13 @@ def Test_Paces_TestNoHistory_ExpectNone() -> None:
    assert PaceRegressionPredictor.paces( _model(), [], 20252026, [] ) is None
 
 
-def Test_Paces_TestMixedSources_ExpectSameWeightsAndGrowthAsNhlHistory() -> None:
-   nhl_multiplier = 1.2
-   latest_reliability = 1.0
-   older_reliability = 0.5
-   model = PaceRegressionModel( [
-      ProductionGrowth( 18, 19, nhl_multiplier, 100 ),
-      ProductionGrowth( 19, 20, nhl_multiplier, 100 ),
-      ProductionGrowth( 18, 20, nhl_multiplier ** 2, 100 )
-   ], history_weights=[ ProductionWeight( 19, 20, latest_reliability, 100 ),
-      ProductionWeight( 18, 20, older_reliability, 100 ) ] )
-   priors = [ _prior( 2024, 19, 10.0 ), _prior( 2023, 18, 5.0, nhl_games=0 ) ]
+def Test_Paces_TestNhlSeason_ExpectOlderOtherLeagueLeftOut() -> None:
+   priors = [ _prior( 2024, 19, 60.0 ), _prior( 2023, 18, 5.0, nhl_games=0 ) ]
 
-   paced = PaceRegressionPredictor.paces( model, priors, 20252026, [] )
+   paced = PaceRegressionPredictor.paces( _model(), priors, 20252026, [] )
 
    assert paced is not None
-   latest, older = priors
-   latest_weight = latest.games * latest_reliability
-   older_weight = older.games * older_reliability
-   expected_goals = (
-      latest.scoring.goals * latest_weight + older.scoring.goals * older_weight
-   ) / ( latest_weight + older_weight ) * nhl_multiplier
-   assert paced.goals == pytest.approx( expected_goals )
-   nhl_priors = [ _prior( prior.year, int( prior.age ), prior.scoring.goals ) for prior in priors ]
-   assert paced == PaceRegressionPredictor.paces( model, nhl_priors, 20252026, [] )
+   assert paced.goals == pytest.approx( 60.0 * AGE_19_TO_20_MULTIPLIER )
 
 
 def Test_Paces_TestTranslatedMultiYearHistory_ExpectSameGrowthAsNhlHistory() -> None:
@@ -196,8 +179,8 @@ def Test_Paces_TestSteadyIncline_ExpectOldestSeasonFaded() -> None:
 def Test_Paces_TestAllScoringComponents_ExpectSharedGrowthAndHistoryBlend() -> None:
    latest_scoring = ScoringPaces( 20.0, 30.0, 5.0, 10.0, 1.0, 2.0 )
    older_scoring = ScoringPaces( 10.0, 15.0, 4.0, 8.0, 2.0, 1.0 )
-   priors = [ PriorYear( 2024, latest_scoring, 0.0, 82, 82, 19.4 ),
-      PriorYear( 2023, older_scoring, 0.0, 41, 0, 18.4 ) ]
+   priors = [ PriorYear( 2024, latest_scoring, 0.0, 82, 82, 19 ),
+      PriorYear( 2023, older_scoring, 0.0, 41, 41, 18 ) ]
 
    paced = PaceRegressionPredictor.paces( _model(), priors, 20252026, [] )
 
@@ -214,88 +197,28 @@ def Test_Paces_TestAllScoringComponents_ExpectSharedGrowthAndHistoryBlend() -> N
    assert paced.goals + paced.assists == pytest.approx( sum( expected_by_stat.values() ) )
 
 
-def Test_Paces_TestDebutRise_ExpectLatestSeasonKept() -> None:
-   debut = ProductionTrajectoryFit( 0.15, [ ProductionTrajectoryShare( 19, 1.0, None ) ] )
-   model = replace( _model(), debut_trajectory=debut )
-   priors = [ _prior( 2024, 19, 40.0, nhl_games=0 ), _prior( 2023, 18, 10.0, nhl_games=0 ) ]
+def Test_Paces_TestArrival_ExpectOlderOtherLeagueLeftOut() -> None:
+   arrived = replace(
+      _prior( 2024, 19, 5.0, nhl_games=0 ),
+      arrival=ScoringPaces( 40.0, 0.0, 0.0, 0.0, 0.0, 0.0 ) )
+   older = _prior( 2023, 18, 100.0, nhl_games=0 )
 
-   paced = PaceRegressionPredictor.paces( model, priors, 20252026, [] )
-
-   assert paced is not None
-   assert paced.goals == pytest.approx( 40.0 * AGE_19_TO_20_MULTIPLIER )
-
-
-def Test_Paces_TestShortNhlRise_ExpectLatestSeasonKept() -> None:
-   short = ProductionTrajectoryFit( 0.15, [ ProductionTrajectoryShare( 19, 1.0, None ) ] )
-   model = replace( _model(), short_nhl_trajectory=short )
-   priors = [ _prior( 2024, 19, 40.0, nhl_games=9 ), _prior( 2023, 18, 10.0, nhl_games=0 ) ]
-
-   paced = PaceRegressionPredictor.paces( model, priors, 20252026, [] )
+   paced = PaceRegressionPredictor.paces( _model(), [ arrived, older ], 20252026, [] )
 
    assert paced is not None
-   assert paced.goals == pytest.approx( 40.0 * AGE_19_TO_20_MULTIPLIER )
+   assert paced.goals == pytest.approx( 40.0 )
 
 
-def Test_Paces_TestRookieRise_ExpectLatestSeasonKept() -> None:
-   rookie = ProductionTrajectoryFit( 0.15, [ ProductionTrajectoryShare( 19, 1.0, None ) ] )
-   model = replace( _model(), rookie_trajectory=rookie )
-   priors = [ _prior( 2024, 19, 40.0 ), _prior( 2023, 18, 10.0, nhl_games=0 ) ]
+def Test_Paces_TestArrival_ExpectOlderNhlSeasonKept() -> None:
+   arrived = replace(
+      _prior( 2024, 19, 5.0, nhl_games=12 ),
+      arrival=ScoringPaces( 40.0, 0.0, 0.0, 0.0, 0.0, 0.0 ) )
+   older = _prior( 2023, 18, 10.0 )
+   model = replace( _model(), trajectory=ProductionTrajectoryFit.empty() )
 
-   paced = PaceRegressionPredictor.paces( model, priors, 20252026, [] )
+   paced = PaceRegressionPredictor.paces( model, [ arrived, older ], 20252026, [] )
 
    assert paced is not None
-   assert paced.goals == pytest.approx( 40.0 * AGE_19_TO_20_MULTIPLIER )
-
-
-def Test_Paces_TestSmallRookieStep_ExpectGeneralShareKept() -> None:
-   rookie = ProductionTrajectoryFit( 0.40, [ ProductionTrajectoryShare( 19, 1.0, None ) ] )
-   model = replace( _model(), rookie_trajectory=rookie )
-   priors = [ _prior( 2024, 19, 40.0 ), _prior( 2023, 18, 25.0, nhl_games=0 ) ]
-
-   assert PaceRegressionPredictor.paces( model, priors, 20252026, [] ) == (
-      PaceRegressionPredictor.paces( _model(), priors, 20252026, [] ) )
-
-
-def Test_Paces_TestRookieDrop_ExpectGeneralShareKept() -> None:
-   rookie = ProductionTrajectoryFit( 0.15, [ ProductionTrajectoryShare( 19, 1.0, 0.2 ) ] )
-   model = replace( _model(), rookie_trajectory=rookie )
-   priors = [ _prior( 2024, 19, 10.0 ), _prior( 2023, 18, 40.0, nhl_games=0 ) ]
-
-   assert PaceRegressionPredictor.paces( model, priors, 20252026, [] ) == (
-      PaceRegressionPredictor.paces( _model(), priors, 20252026, [] ) )
-
-
-def Test_Paces_TestRookieGap_ExpectGeneralShareKept() -> None:
-   rookie = ProductionTrajectoryFit( 0.15, [ ProductionTrajectoryShare( 19, 1.0, None ) ] )
-   model = replace( _model(), rookie_trajectory=rookie )
-   priors = [ _prior( 2024, 19, 40.0 ), _prior( 2022, 17, 10.0, nhl_games=0 ) ]
-
-   assert PaceRegressionPredictor.paces( model, priors, 20252026, [] ) == (
-      PaceRegressionPredictor.paces( _model(), priors, 20252026, [] ) )
-
-
-def Test_Paces_TestEstablishedRookie_ExpectRookieShareUnused() -> None:
-   rookie = ProductionTrajectoryFit( 0.15, [ ProductionTrajectoryShare( 19, 1.0, None ) ] )
-   model = replace( _model(), rookie_trajectory=rookie )
-   priors = [ _prior( 2024, 19, 40.0 ), _prior( 2023, 18, 10.0, nhl_games=26 ) ]
-
-   assert PaceRegressionPredictor.paces( model, priors, 20252026, [] ) == (
-      PaceRegressionPredictor.paces( _model(), priors, 20252026, [] ) )
-
-
-def Test_Paces_TestEstablishedSeason_ExpectShortShareUnused() -> None:
-   short = ProductionTrajectoryFit( 0.15, [ ProductionTrajectoryShare( 19, 1.0, None ) ] )
-   model = replace( _model(), short_nhl_trajectory=short )
-   priors = [ _prior( 2024, 19, 20.0 ), _prior( 2023, 18, 10.0 ) ]
-
-   assert PaceRegressionPredictor.paces( model, priors, 20252026, [] ) == (
-      PaceRegressionPredictor.paces( _model(), priors, 20252026, [] ) )
-
-
-def Test_Paces_TestEstablishedSeason_ExpectDebutShareUnused() -> None:
-   debut = ProductionTrajectoryFit( 0.15, [ ProductionTrajectoryShare( 19, 1.0, None ) ] )
-   model = replace( _model(), debut_trajectory=debut )
-   priors = [ _prior( 2024, 19, 20.0 ), _prior( 2023, 18, 10.0 ) ]
-
-   assert PaceRegressionPredictor.paces( model, priors, 20252026, [] ) == (
-      PaceRegressionPredictor.paces( _model(), priors, 20252026, [] ) )
+   assert paced.goals == pytest.approx(
+      ( 40.0 * LATEST_RELATIONSHIP_WEIGHT + 10.0 * AGE_19_TO_20_MULTIPLIER * OLDER_RELATIONSHIP_WEIGHT )
+      / ( LATEST_RELATIONSHIP_WEIGHT + OLDER_RELATIONSHIP_WEIGHT ) )

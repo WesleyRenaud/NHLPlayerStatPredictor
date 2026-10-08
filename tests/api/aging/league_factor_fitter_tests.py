@@ -15,7 +15,7 @@ from api.skaters.team import Team
 def _nhl(
       player_id: int,
       season_id: int,
-      age: float,
+      age: int,
       g_pace: float,
       a_pace: float,
       games_played: int = 1 ) -> NhlSkaterSeason:
@@ -54,7 +54,7 @@ def _other(
       player_id: int,
       season_id: int,
       league: str,
-      age: float,
+      age: int,
       g_pace: float,
       a_pace: float ) -> OtherLeagueSkaterSeason:
    return OtherLeagueSkaterSeason(
@@ -73,10 +73,10 @@ def _other(
 
 def Test_Fit_TestSameYear_ExpectRatioOfMeans() -> None:
    league = 'AAA'
-   first_nhl = _nhl( 1, 20252026, 20.2, 10.0, 20.0 )
-   second_nhl = _nhl( 2, 20252026, 21.4, 30.0, 40.0 )
-   first_other = _other( 1, 20252026, league, 20.2, 50.0, 80.0 )
-   second_other = _other( 2, 20252026, league, 21.4, 90.0, 120.0 )
+   first_nhl = _nhl( 1, 20252026, 20, 10.0, 20.0 )
+   second_nhl = _nhl( 2, 20252026, 21, 30.0, 40.0 )
+   first_other = _other( 1, 20252026, league, 20, 50.0, 80.0 )
+   second_other = _other( 2, 20252026, league, 21, 90.0, 120.0 )
 
    factors = LeagueFactorFitter.fit(
       [ first_nhl, second_nhl ],
@@ -93,10 +93,10 @@ def Test_Fit_TestSameYear_ExpectRatioOfMeans() -> None:
 
 def Test_Fit_TestLowPaceSwing_ExpectRatioOfMeansNotMeanOfPercents() -> None:
    league = 'AAA'
-   first_nhl = _nhl( 1, 20252026, 20.1, 5.0, 5.0 )
-   second_nhl = _nhl( 2, 20252026, 20.4, 40.0, 40.0 )
-   first_other = _other( 1, 20252026, league, 20.1, 10.0, 10.0 )
-   second_other = _other( 2, 20252026, league, 20.4, 40.0, 40.0 )
+   first_nhl = _nhl( 1, 20252026, 20, 5.0, 5.0 )
+   second_nhl = _nhl( 2, 20252026, 20, 40.0, 40.0 )
+   first_other = _other( 1, 20252026, league, 20, 10.0, 10.0 )
+   second_other = _other( 2, 20252026, league, 20, 40.0, 40.0 )
 
    factors = LeagueFactorFitter.fit(
       [ first_nhl, second_nhl ],
@@ -113,10 +113,10 @@ def Test_Fit_TestLowPaceSwing_ExpectRatioOfMeansNotMeanOfPercents() -> None:
 
 def Test_Fit_TestUnevenNhlGames_ExpectGamesWeightedRatio() -> None:
    league = 'AAA'
-   cameo_nhl = _nhl( 1, 20252026, 20.2, 0.0, 10.0, games_played=2 )
-   regular_nhl = _nhl( 2, 20252026, 21.4, 20.0, 30.0, games_played=80 )
-   cameo_other = _other( 1, 20252026, league, 20.2, 50.0, 50.0 )
-   regular_other = _other( 2, 20252026, league, 21.4, 60.0, 40.0 )
+   cameo_nhl = _nhl( 1, 20252026, 20, 0.0, 10.0, games_played=2 )
+   regular_nhl = _nhl( 2, 20252026, 21, 20.0, 30.0, games_played=80 )
+   cameo_other = _other( 1, 20252026, league, 20, 50.0, 50.0 )
+   regular_other = _other( 2, 20252026, league, 21, 60.0, 40.0 )
 
    factors = LeagueFactorFitter.fit(
       [ cameo_nhl, regular_nhl ],
@@ -143,8 +143,8 @@ def Test_Fit_TestConsecutiveYear_ExpectAgeAdjusted() -> None:
    other_assists = 80.0
    nhl_goals = 40.0
    nhl_assists = 48.0
-   nhl = _nhl( 1, 20242025, 19.2, nhl_goals, nhl_assists )
-   other = _other( 1, 20232024, league, 18.2, other_goals, other_assists )
+   nhl = _nhl( 1, 20242025, 19, nhl_goals, nhl_assists )
+   other = _other( 1, 20232024, league, 18, other_goals, other_assists )
    aged_goals = other.g_pace * ( 1.0 + aging.goals )
    aged_assists = other.a_pace * ( 1.0 + aging.assists )
 
@@ -159,8 +159,8 @@ def Test_Fit_TestConsecutiveYear_ExpectAgeAdjusted() -> None:
 
 def Test_Fit_TestMissingAgingRow_ExpectSkipped() -> None:
    league = 'AAA'
-   nhl = _nhl( 1, 20242025, 19.2, 40.0, 40.0 )
-   other = _other( 1, 20232024, league, 18.2, 100.0, 100.0 )
+   nhl = _nhl( 1, 20242025, 19, 40.0, 40.0 )
+   other = _other( 1, 20232024, league, 18, 100.0, 100.0 )
 
    factors = LeagueFactorFitter.fit( [ nhl ], [ other ], [] )
 
@@ -169,9 +169,9 @@ def Test_Fit_TestMissingAgingRow_ExpectSkipped() -> None:
 
 def Test_Fit_TestSameYearAndNext_ExpectSameYearPair() -> None:
    league = 'AAA'
-   same_nhl = _nhl( 1, 20232024, 18.2, 20.0, 30.0 )
-   next_nhl = _nhl( 1, 20242025, 19.2, 80.0, 90.0 )
-   other = _other( 1, 20232024, league, 18.2, 40.0, 60.0 )
+   same_nhl = _nhl( 1, 20232024, 18, 20.0, 30.0 )
+   next_nhl = _nhl( 1, 20242025, 19, 80.0, 90.0 )
+   other = _other( 1, 20232024, league, 18, 40.0, 60.0 )
 
    factors = LeagueFactorFitter.fit(
       [ same_nhl, next_nhl ],
@@ -187,8 +187,8 @@ def Test_Fit_TestSameYearAndNext_ExpectSameYearPair() -> None:
 
 def Test_Fit_TestUnevenGoalsAndAssists_ExpectSharedPointsRate() -> None:
    league = 'AAA'
-   nhl = _nhl( 1, 20252026, 20.2, 10.0, 20.0 )
-   other = _other( 1, 20252026, league, 20.2, 10.0, 80.0 )
+   nhl = _nhl( 1, 20252026, 20, 10.0, 20.0 )
+   other = _other( 1, 20252026, league, 20, 10.0, 80.0 )
 
    factors = LeagueFactorFitter.fit( [ nhl ], [ other ], [] )
 
@@ -201,8 +201,8 @@ def Test_Fit_TestUnevenGoalsAndAssists_ExpectSharedPointsRate() -> None:
 
 def Test_Fit_TestZeroNhlPace_ExpectSkipped() -> None:
    league = 'AAA'
-   nhl = _nhl( 1, 20252026, 20.2, 0.0, 0.0 )
-   other = _other( 1, 20252026, league, 20.2, 50.0, 80.0 )
+   nhl = _nhl( 1, 20252026, 20, 0.0, 0.0 )
+   other = _other( 1, 20252026, league, 20, 50.0, 80.0 )
 
    factors = LeagueFactorFitter.fit( [ nhl ], [ other ], [] )
 
@@ -211,8 +211,8 @@ def Test_Fit_TestZeroNhlPace_ExpectSkipped() -> None:
 
 def Test_Fit_TestPreviousYearOnly_ExpectSkipped() -> None:
    league = 'AAA'
-   nhl = _nhl( 1, 20232024, 24.2, 22.0, 36.0 )
-   other = _other( 1, 20242025, league, 25.2, 50.0, 80.0 )
+   nhl = _nhl( 1, 20232024, 24, 22.0, 36.0 )
+   other = _other( 1, 20242025, league, 25, 50.0, 80.0 )
 
    factors = LeagueFactorFitter.fit( [ nhl ], [ other ], [ AgingFactor( 24, 0.10, 0.20 ) ] )
 

@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from datetime import date
 
+from ..draft_class import DraftClass
+from ..iso_date import IsoDate
 from .nhl_client import NhlClient
 from ..season import Season
 from ..season_length import SeasonLength
-from ..shared.enums.position import Position
 from ..skaters.club_league import ClubLeague
 from ..skaters.club_league_alias import ClubLeagueAlias
 from ..skaters.other_league_season_key import OtherLeagueSeasonKey
@@ -23,8 +24,7 @@ class OtherLeagueSeasonBuilder():
          pace_games: int ) -> list[ OtherLeagueSkaterSeason ]:
       player_id = int( landing[ 'playerId' ] )
       position = SkaterPosition( str( landing[ 'position' ] ) )
-      birth_date = date.fromisoformat(
-         str( landing[ 'birthDate' ] ).split( 'T' )[ Position.FIRST ] )
+      birth_date = IsoDate.parse( landing[ 'birthDate' ] )
 
       combined: dict[ OtherLeagueSeasonKey, OtherLeagueSkaterSeason ] = {}
       by_season_id = { season.season_id: season for season in seasons }
@@ -169,7 +169,7 @@ class OtherLeagueSeasonBuilder():
          season_id=season_id,
          league=league.value,
          position=position,
-         age=Season.age_on( birth_date, season.start_date ),
+         age=DraftClass.age( birth_date, season_id ),
          games_played=games_played,
          goals=int( raw[ 'goals' ] ),
          assists=int( raw[ 'assists' ] ),

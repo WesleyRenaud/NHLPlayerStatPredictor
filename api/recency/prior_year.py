@@ -15,12 +15,13 @@ class PriorYear():
    pim_pace: float | None
    games: int
    nhl_games: int
-   age: float
+   age: int
    shots_pace: float | None = None
+   arrival: ScoringPaces | None = None
 
 
    def age_in_year( self, year: int ) -> int:
-      return int( self.age ) + year - self.year
+      return self.age + year - self.year
 
 
    @classmethod

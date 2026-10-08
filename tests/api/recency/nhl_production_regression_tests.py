@@ -25,7 +25,7 @@ from api.skaters.team import Team
 ANNUAL_MULTIPLIER = 2
 
 
-def _season( player_id: int, year: int, age: float, production: int ) -> NhlSkaterSeason:
+def _season( player_id: int, year: int, age: int, production: int ) -> NhlSkaterSeason:
    return NhlSkaterSeason(
       player_id=player_id,
       season_id=year * 10000 + year + 1,
@@ -59,7 +59,7 @@ def _season( player_id: int, year: int, age: float, production: int ) -> NhlSkat
 
 def _training_seasons() -> list[ NhlSkaterSeason ]:
    return [
-      _season( player_id, year, 18.4 + year - 2020, player_id * ANNUAL_MULTIPLIER ** ( year - 2020 ) )
+      _season( player_id, year, 18 + year - 2020, player_id * ANNUAL_MULTIPLIER ** ( year - 2020 ) )
       for player_id in range( 1, 31 )
       for year in range( 2020, 2023 )
    ]
@@ -101,22 +101,22 @@ def Test_Fit_TestDifferentCohorts_ExpectCompoundedAnnualGrowth( stat: NhlProduct
       _season( player_id, year, age, production )
       for player_id in range( 1, 31 )
       for year, age, production in (
-         ( 2020, 25.4, base_production ),
-         ( 2021, 26.4, base_production * first_annual_multiplier ),
+         ( 2020, 25, base_production ),
+         ( 2021, 26, base_production * first_annual_multiplier ),
       )
    ] + [
       _season( player_id, year, age, production )
       for player_id in range( 31, 61 )
       for year, age, production in (
-         ( 2020, 26.4, base_production ),
-         ( 2021, 27.4, base_production * second_annual_multiplier ),
+         ( 2020, 26, base_production ),
+         ( 2021, 27, base_production * second_annual_multiplier ),
       )
    ] + [
       _season( player_id, year, age, production )
       for player_id in range( 61, 91 )
       for year, age, production in (
-         ( 2020, 25.4, base_production ),
-         ( 2022, 27.4, base_production * long_gap_multiplier ),
+         ( 2020, 25, base_production ),
+         ( 2022, 27, base_production * long_gap_multiplier ),
       )
    ]
 
@@ -152,7 +152,7 @@ def Test_Pace_TestElapsedAgeGrowth_ExpectCompoundedMultiplier(
       stat: NhlProductionStat,
       target_year: int ) -> None:
    coefficients = NhlProductionRegression.fit( _training_seasons(), stat )
-   prior = _season( 100, 2020, 18.7, 25 )
+   prior = _season( 100, 2020, 18, 25 )
    elapsed_seasons = target_year - 2020
    expected = prior.shots_pace() * ANNUAL_MULTIPLIER ** elapsed_seasons
 
@@ -169,22 +169,22 @@ def Test_Pace_TestNoHistory_ExpectNone( stat: NhlProductionStat ) -> None:
 
 @pytest.mark.parametrize( 'stat', list( NhlProductionStat ) )
 def Test_Pace_TestSmallNhlStint_ExpectIncluded( stat: NhlProductionStat ) -> None:
-   season = replace( _season( 1, 2020, 18.4, 20 ), games_played=9 )
+   season = replace( _season( 1, 2020, 18, 20 ), games_played=9 )
 
    expected = season.penalty_minutes_pace() if stat == NhlProductionStat.PIM else season.shots_pace()
    assert _pace( [], [ season ], 20212022, stat ) == pytest.approx( expected )
 
 
 def Test_Pace_TestZeroShots_ExpectZeroNotMissing() -> None:
-   season = _season( 1, 2020, 18.4, 0 )
+   season = _season( 1, 2020, 18, 0 )
 
    assert _pace( [], [ season ], 20212022, NhlProductionStat.SHOTS ) == 0.0
 
 
 @pytest.mark.parametrize( 'older_games', [ 1, 5, 19, 20, 41 ] )
 def Test_Pace_TestWeightedShotHistory_ExpectRawAverageThenGrowth( older_games: int ) -> None:
-   latest = _season( 1, 2021, 19.4, 160 )
-   older = replace( _season( 1, 2020, 18.4, 50 ), games_played=older_games )
+   latest = _season( 1, 2021, 19, 160 )
+   older = replace( _season( 1, 2020, 18, 50 ), games_played=older_games )
    coefficients = [
       ProductionCoefficient( 18, 19, 1.2, 0.8, 100 ),
       ProductionCoefficient( 19, 20, 1.1, 0.9, 100 ),
@@ -210,9 +210,9 @@ def Test_Pace_TestWeightedShotHistory_ExpectRawAverageThenGrowth( older_games: i
 
 
 def Test_Pace_TestCurrentAndFutureRows_ExpectExcluded() -> None:
-   previous = _season( 1, 2020, 18.4, 100 )
-   current = _season( 1, 2021, 19.4, 1000 )
-   future = _season( 1, 2022, 20.4, 2000 )
+   previous = _season( 1, 2020, 18, 100 )
+   current = _season( 1, 2021, 19, 1000 )
+   future = _season( 1, 2022, 20, 2000 )
 
    projected = _pace(
       [], [ previous, current, future ], 20212022, NhlProductionStat.SHOTS )

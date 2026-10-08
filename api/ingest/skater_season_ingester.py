@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from ..aging.aging_curve_fitter import AgingCurveFitter
+from ..aging.league_arrival_fitter import LeagueArrivalFitter
+from ..aging.league_arrival_store import LeagueArrivalStore
 from ..aging.league_factor_fitter import LeagueFactorFitter
 from ..aging.league_factor_store import LeagueFactorStore
 from ..availability.availability_decay_fitter import AvailabilityDecayFitter
@@ -72,6 +74,7 @@ class SkaterSeasonIngester():
          other_rows,
          AgingCurveFitter.fit( rows, other_rows ) )
       LeagueFactorStore.write( league_factors )
+      LeagueArrivalStore.write( LeagueArrivalFitter.fit( rows, other_rows ) )
       ProductionModelRecorder.write( PaceRegressionFitter.fit( rows, other_rows, league_factors ) )
       target_season_id = RecencyTargetResolver.resolve()
       prospect_profiles = [

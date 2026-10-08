@@ -21,3 +21,17 @@ class DatabaseConnectionProvider():
          return
 
       conn.close()
+
+
+   @classmethod
+   def rows(
+         cls,
+         db_path: str,
+         sql: str,
+         parameters: list[ int ] | None = None ) -> list[ Types.Row ]:
+      conn = cls.open( db_path )
+
+      try:
+         return list( conn.execute( sql, parameters or [] ).fetchall() )
+      finally:
+         cls.close( conn )
