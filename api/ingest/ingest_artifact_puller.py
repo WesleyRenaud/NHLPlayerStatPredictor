@@ -49,7 +49,7 @@ class IngestArtifactPuller():
       Paths.PROCESSED_DIR.mkdir( parents=True, exist_ok=True )
       shutil.copy2( cls._source_db( artifact_root ), Paths.DB_PATH )
       for path in ProductionModelProvider.paths():
-         shutil.copy2( artifact_root / path.relative_to( Paths.ROOT ), path )
+         shutil.copy2( cls._source( artifact_root, path ), path )
       shutil.copy2(
          cls._source_availability( artifact_root ),
          AvailabilityWeightStore.path() )
@@ -61,14 +61,13 @@ class IngestArtifactPuller():
       shutil.copy2( cls._source_ice( artifact_root ), SkaterIceStore.path() )
       shutil.copy2( cls._source_chosen( artifact_root ), IceChosenShareStore.path() )
       shutil.copy2(
-         artifact_root / ProspectCalibrationStore.path().relative_to( Paths.ROOT ),
+         cls._source( artifact_root, ProspectCalibrationStore.path() ),
          ProspectCalibrationStore.path() )
 
       if Paths.RAW_DIR.exists():
          shutil.rmtree( Paths.RAW_DIR )
 
       shutil.copytree( cls._source_raw( artifact_root ), Paths.RAW_DIR )
-      print( Paths.DB_PATH )
 
 
    @classmethod
@@ -85,7 +84,7 @@ class IngestArtifactPuller():
                not cls._source_db( artifact_root ).is_file()
                or not cls._source_raw( artifact_root ).is_dir()
                or any(
-                  not ( artifact_root / path.relative_to( Paths.ROOT ) ).is_file()
+                  not cls._source( artifact_root, path ).is_file()
                   for path in ProductionModelProvider.paths() )
                or not cls._source_availability( artifact_root ).is_file()
                or not cls._source_leagues( artifact_root ).is_file()
@@ -95,7 +94,7 @@ class IngestArtifactPuller():
                or not cls._source_slots( artifact_root ).is_file()
                or not cls._source_ice( artifact_root ).is_file()
                or not cls._source_chosen( artifact_root ).is_file()
-               or not ( artifact_root / ProspectCalibrationStore.path().relative_to( Paths.ROOT ) ).is_file() ):
+               or not cls._source( artifact_root, ProspectCalibrationStore.path() ).is_file() ):
             print( 'Ingest artifact is incomplete; run the current Ingest workflow to generate all required files.' )
             return False
 
@@ -193,50 +192,73 @@ class IngestArtifactPuller():
 
 
    @classmethod
+   def _source( cls, artifact_root: Path, path: Path ) -> Path:
+      return cls._located( artifact_root, path.relative_to( Paths.ROOT ) )
+
+
+   @classmethod
+   def _located( cls, artifact_root: Path, relative: Path ) -> Path:
+      direct = artifact_root / relative
+
+      if direct.exists():
+         return direct
+
+      data_name = Paths.DATA_DIR.name
+
+      if relative.parts and relative.parts[ Position.FIRST ] == data_name:
+         stripped = artifact_root.joinpath( *relative.parts[ Position.SECOND: ] )
+
+         if stripped.exists():
+            return stripped
+
+      return direct
+
+
+   @classmethod
    def _source_db( cls, artifact_root: Path ) -> Path:
-      return artifact_root / Paths.DB_PATH.relative_to( Paths.ROOT )
+      return cls._source( artifact_root, Paths.DB_PATH )
 
 
    @classmethod
    def _source_raw( cls, artifact_root: Path ) -> Path:
-      return artifact_root / Paths.RAW_DIR.relative_to( Paths.ROOT )
+      return cls._source( artifact_root, Paths.RAW_DIR )
 
 
    @classmethod
    def _source_availability( cls, artifact_root: Path ) -> Path:
-      return artifact_root / AvailabilityWeightStore.path().relative_to( Paths.ROOT )
+      return cls._source( artifact_root, AvailabilityWeightStore.path() )
 
 
    @classmethod
    def _source_leagues( cls, artifact_root: Path ) -> Path:
-      return artifact_root / LeagueFactorStore.path().relative_to( Paths.ROOT )
+      return cls._source( artifact_root, LeagueFactorStore.path() )
 
 
    @classmethod
    def _source_arrivals( cls, artifact_root: Path ) -> Path:
-      return artifact_root / LeagueArrivalStore.path().relative_to( Paths.ROOT )
+      return cls._source( artifact_root, LeagueArrivalStore.path() )
 
 
    @classmethod
    def _source_teams( cls, artifact_root: Path ) -> Path:
-      return artifact_root / TeamFactorStore.path().relative_to( Paths.ROOT )
+      return cls._source( artifact_root, TeamFactorStore.path() )
 
 
    @classmethod
    def _source_charts( cls, artifact_root: Path ) -> Path:
-      return artifact_root / DepthChartStore.path().relative_to( Paths.ROOT )
+      return cls._source( artifact_root, DepthChartStore.path() )
 
 
    @classmethod
    def _source_slots( cls, artifact_root: Path ) -> Path:
-      return artifact_root / SlotAverageStore.path().relative_to( Paths.ROOT )
+      return cls._source( artifact_root, SlotAverageStore.path() )
 
 
    @classmethod
    def _source_chosen( cls, artifact_root: Path ) -> Path:
-      return artifact_root / IceChosenShareStore.path().relative_to( Paths.ROOT )
+      return cls._source( artifact_root, IceChosenShareStore.path() )
 
 
    @classmethod
    def _source_ice( cls, artifact_root: Path ) -> Path:
-      return artifact_root / SkaterIceStore.path().relative_to( Paths.ROOT )
+      return cls._source( artifact_root, SkaterIceStore.path() )

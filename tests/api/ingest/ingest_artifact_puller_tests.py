@@ -181,6 +181,35 @@ def Test_ArtifactRoot_TestNestedArtifactDir_ExpectNested(
    assert artifact_root == nested
 
 
+
+def Test_Pull_TestArtifactRootedAtData_ExpectInstalled(
+      monkeypatch: pytest.MonkeyPatch,
+      tmp_path: Path,
+      capsys: pytest.CaptureFixture[ str ] ) -> None:
+   run_id = '99'
+   _bind_paths( monkeypatch, tmp_path / 'repo' )
+
+   def fake_download( listed_run_id: str, download_dir: Path ) -> bool:
+      _write_artifact( download_dir )
+      data = download_dir / 'data'
+
+      for child in list( data.iterdir() ):
+         child.rename( download_dir / child.name )
+
+      data.rmdir()
+      return True
+
+   monkeypatch.setattr( IngestArtifactPuller, '_download', fake_download )
+
+   assert IngestArtifactPuller._pull( run_id )
+   stored_db = ingest_artifact_puller.Paths.DB_PATH.read_bytes()
+   stored_stamp = IngestArtifactPuller._stamp_path().read_text()
+
+   assert stored_db == _SQLITE_BYTES
+   assert stored_stamp == run_id
+   assert 'incomplete' not in capsys.readouterr().out
+
+
 def Test_Main_TestDownloadedArtifact_ExpectInstalled(
       monkeypatch: pytest.MonkeyPatch,
       tmp_path: Path ) -> None:
