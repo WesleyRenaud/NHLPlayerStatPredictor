@@ -74,6 +74,20 @@ def Test_Pace_TestSmallSample_ExpectReducedSeasonWeight( games: int ) -> None:
       / ( latest_weight + older_weight ) * ANNUAL_MULTIPLIER )
 
 
+def Test_Pace_TestArrival_ExpectLatestSeasonAlreadyAtTargetAge() -> None:
+   arrival = 50.0
+   older_pace = 5.0
+   history = [ ProductionSeason( 20, 20.0, 80, arrival ), _season( 19, older_pace, 40 ) ]
+
+   pace = ProductionHistoryPredictor.pace( history, 21, _lookup, _weight_lookup, EMPTY )
+
+   latest_weight = PriorYear.reliability( history[ 0 ].games ) * LATEST_WEIGHT
+   older_weight = PriorYear.reliability( history[ 1 ].games ) * OLDER_WEIGHT
+   assert pace == pytest.approx(
+      ( arrival * latest_weight + older_pace * older_weight * ANNUAL_MULTIPLIER )
+      / ( latest_weight + older_weight ) )
+
+
 def Test_Pace_TestMissedSeason_ExpectCompoundedAgeMultipliers() -> None:
    prior_age = 19
    prior_pace = 5.0
@@ -99,6 +113,12 @@ def Test_Pace_TestUnsupportedWeights_ExpectLatestSeasonFallback() -> None:
 
    history = [ _season( 20, latest_pace, 82 ), _season( 19, 100.0, 82 ) ]
    assert ProductionHistoryPredictor.pace( history, 21, lookup, weight_lookup, EMPTY ) == pytest.approx( latest_pace * annual_multiplier )
+
+
+def Test_OneYearMultiplier_TestKnownStep_ExpectThatMultiplier() -> None:
+   coefficients = [ ProductionGrowth( 18, 19, 1.2, 100 ) ]
+
+   assert ProductionHistoryPredictor.one_year_multiplier( coefficients, 18 ) == coefficients[ 0 ].multiplier
 
 
 def Test_Coefficient_TestUnknownAge_ExpectNearestAgeForSameLag() -> None:

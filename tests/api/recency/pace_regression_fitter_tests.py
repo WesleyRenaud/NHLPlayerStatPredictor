@@ -69,7 +69,7 @@ def _other( player_id: int, start_year: int, g_pace: float, a_pace: float ) -> O
       season_id=start_year * 10000 + start_year + 1,
       league='AAA',
       position=SkaterPosition( 'C' ),
-      age=18.4,
+      age=18,
       games_played=60,
       goals=0,
       assists=0,
@@ -84,11 +84,11 @@ def Test_Fit_TestDifferentGoalAndAssistGrowth_ExpectOneTotalPointsMultiplier() -
    seasons: list[ NhlSkaterSeason ] = []
 
    for player_id in range( 1, 31 ):
-      seasons.append( _nhl( player_id, 2020, 3.0 * player_id, 3.0 * player_id, 18.4, player_id, 2 * player_id, player_id, 2 * player_id ) )
+      seasons.append( _nhl( player_id, 2020, 3.0 * player_id, 3.0 * player_id, 18, player_id, 2 * player_id, player_id, 2 * player_id ) )
       special_goals = goal_multiplier * player_id
       special_points = ( goal_multiplier + assist_multiplier ) * player_id
       seasons.append( _nhl(
-         player_id, 2021, 3 * goal_multiplier * player_id, 3 * assist_multiplier * player_id, 19.4,
+         player_id, 2021, 3 * goal_multiplier * player_id, 3 * assist_multiplier * player_id, 19,
          special_goals, special_points, special_goals, special_points ) )
 
    model = PaceRegressionFitter.fit( seasons, [], [] )
@@ -101,7 +101,7 @@ def Test_Fit_TestDifferentGoalAndAssistGrowth_ExpectOneTotalPointsMultiplier() -
 def Test_Fit_TestAgePairAcrossYears_ExpectAnnualGrowthAndLongerLagWeights() -> None:
    annual_multiplier = 2
    seasons = [
-      _nhl( player_id, year, float( player_id * annual_multiplier ** ( year - 2020 ) ), float( player_id ), 18.4 + year - 2020 )
+      _nhl( player_id, year, float( player_id * annual_multiplier ** ( year - 2020 ) ), float( player_id ), 18 + year - 2020 )
       for player_id in range( 1, 31 )
       for year in range( 2020, 2024 )
    ]
@@ -121,7 +121,7 @@ def Test_Fit_TestAgePairAcrossYears_ExpectAnnualGrowthAndLongerLagWeights() -> N
 def Test_Fit_TestTranslatedPriors_ExpectNormalizedPointsGrowthAndReliability() -> None:
    other_league_multiplier = 2.0
    league_factor = LeagueFactor( 'AAA', 0.5 )
-   nhl = [ _nhl( player_id, 2021, float( player_id ), float( player_id ), 19.4 ) for player_id in range( 1, 31 ) ]
+   nhl = [ _nhl( player_id, 2021, float( player_id ), float( player_id ), 19 ) for player_id in range( 1, 31 ) ]
    other = [
       _other( player_id, 2020, other_league_multiplier * player_id, other_league_multiplier * player_id )
       for player_id in range( 1, 31 ) ]
@@ -138,8 +138,8 @@ def Test_Fit_TestSmallNhlStints_ExpectExcludedSpecialTeamsTraining() -> None:
    others: list[ OtherLeagueSkaterSeason ] = []
 
    for player_id in range( 1, 31 ):
-      seasons.append( replace( _nhl( player_id, 2020, 10.0, 10.0, 18.4, 2, 4 ), games_played=9 ) )
-      seasons.append( _nhl( player_id, 2021, 20.0, 20.0, 19.4, 10, 20 ) )
+      seasons.append( replace( _nhl( player_id, 2020, 10.0, 10.0, 18, 2, 4 ), games_played=9 ) )
+      seasons.append( _nhl( player_id, 2021, 20.0, 20.0, 19, 10, 20 ) )
       others.append( _other( player_id, 2020, 20.0, 20.0 ) )
 
    model = PaceRegressionFitter.fit( seasons, others, [ LeagueFactor( 'AAA', 0.5 ) ] )
@@ -157,7 +157,7 @@ def Test_Fit_TestNhlProduction_ExpectSeparatePimAndShotsCoefficients() -> None:
    shots_multiplier = 3
    seasons = [
       replace(
-         _nhl( player_id, year, 10.0, 20.0, 18.4 + year - 2020 ),
+         _nhl( player_id, year, 10.0, 20.0, 18 + year - 2020 ),
          penalty_minutes=player_id * pim_multiplier ** ( year - 2020 ),
          shots=player_id * shots_multiplier ** ( year - 2020 ) )
       for player_id in range( 1, 31 )
@@ -179,7 +179,7 @@ def Test_Fit_TestNhlProduction_ExpectSeparatePimAndShotsCoefficients() -> None:
 def Test_Fit_TestMultipleYears_ExpectOneHistoryPreparationPerPlayer(
       monkeypatch: pytest.MonkeyPatch ) -> None:
    seasons = [
-      _nhl( player_id, year, 10.0, 20.0, 18.4 + year - 2020 )
+      _nhl( player_id, year, 10.0, 20.0, 18 + year - 2020 )
       for player_id in range( 1, 31 )
       for year in range( 2020, 2024 )
    ]
@@ -198,7 +198,7 @@ def Test_Fit_TestMultipleYears_ExpectOneHistoryPreparationPerPlayer(
 def Test_Fit_TestTotalOnlyPriors_ExpectNormalizedPointsGrowthAndReliability() -> None:
    league_factor = LeagueFactor( 'AAA', 0.5 )
    nhl = [
-      _nhl( player_id, 2021, 10.0 * player_id, 10.0 * player_id, 19.4, 2 * player_id, 4 * player_id )
+      _nhl( player_id, 2021, 10.0 * player_id, 10.0 * player_id, 19, 2 * player_id, 4 * player_id )
       for player_id in range( 1, 31 ) ]
    other = [ _other( player_id, 2020, 20.0 * player_id, 20.0 * player_id ) for player_id in range( 1, 31 ) ]
 
@@ -213,11 +213,11 @@ def Test_Fit_TestDifferentComponentRelationships_ExpectPointsGrowthAndWeights(
       translated: bool ) -> None:
    player_ids = range( 1, 31 )
    previous = [
-      _nhl( player_id, 2020, 3.0 * player_id, 2.0 * player_id, 18.4, player_id, 2 * player_id )
+      _nhl( player_id, 2020, 3.0 * player_id, 2.0 * player_id, 18, player_id, 2 * player_id )
       for player_id in player_ids ]
    current = [
       _nhl( player_id, 2021, float( player_id + 30 ), float( 2 * player_id + 10 * ( player_id % 3 ) ),
-         19.4, 31 - player_id, 31 - player_id )
+         19, 31 - player_id, 31 - player_id )
       for player_id in player_ids ]
    factors = [ LeagueFactor( 'AAA', 0.5 ) ]
    other = [ _other( season.player_id, 2020, 2 * season.g_pace, 2 * season.a_pace ) for season in previous ]
@@ -257,7 +257,7 @@ def Test_Fit_TestDifferentComponentRelationships_ExpectPointsGrowthAndWeights(
 def Test_Fit_TestScoringComponents_ExpectOneGrowthFitPerProductionType(
       monkeypatch: pytest.MonkeyPatch ) -> None:
    seasons = [
-      _nhl( player_id, year, float( player_id ), float( 2 * player_id ), 18.4 + year - 2020 )
+      _nhl( player_id, year, float( player_id ), float( 2 * player_id ), 18 + year - 2020 )
       for player_id in range( 1, 31 )
       for year in ( 2020, 2021 ) ]
    weight_fit = Mock( wraps=ProductionCoefficientFitter.fit_weights )
@@ -277,15 +277,15 @@ def Test_Fit_TestNhlAndTranslatedPairs_ExpectOnePooledScoringFit() -> None:
    nhl_multiplier = 2.0
    translated_multiplier = 3.0
    factor = LeagueFactor( 'AAA', 0.5 )
-   previous = [ _nhl( player_id, 2020, float( player_id ), float( player_id ), 18.4 )
+   previous = [ _nhl( player_id, 2020, float( player_id ), float( player_id ), 18 )
       for player_id in range( 1, 31 ) ]
    other = [ _other( season.player_id + len( previous ), 2020,
       season.g_pace / factor.rate, season.a_pace / factor.rate ) for season in previous ]
    current = [ _nhl( season.player_id, 2021,
-      season.g_pace * nhl_multiplier, season.a_pace * nhl_multiplier, 19.4 ) for season in previous ]
+      season.g_pace * nhl_multiplier, season.a_pace * nhl_multiplier, 19 ) for season in previous ]
    translated_current = [ _nhl( season.player_id, 2021,
       season.g_pace * factor.rate * translated_multiplier,
-      season.a_pace * factor.rate * translated_multiplier, 19.4 ) for season in other ]
+      season.a_pace * factor.rate * translated_multiplier, 19 ) for season in other ]
 
    model = PaceRegressionFitter.fit( previous + current + translated_current, other, [ factor ] )
 

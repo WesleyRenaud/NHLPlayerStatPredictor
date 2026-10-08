@@ -7,15 +7,16 @@ from .other_league_skater_season import OtherLeagueSkaterSeason
 class OtherLeagueSeasonProvider():
    @classmethod
    def all_seasons( cls, db_path: str ) -> list[ OtherLeagueSkaterSeason ]:
-      conn = DatabaseConnectionProvider.open( db_path )
-
-      try:
-         return [
-            OtherLeagueSkaterSeason.from_row( row )
-            for row in conn.execute( 'SELECT * FROM OtherLeagueSeason ORDER BY PLAYER_ID, SEASON_ID, LEAGUE' )
-         ]
-      finally:
-         DatabaseConnectionProvider.close( conn )
+      return [
+         OtherLeagueSkaterSeason.from_row( row ).with_birth_date( row[ 'BIRTH_DATE' ] )
+         for row in DatabaseConnectionProvider.rows(
+            db_path,
+            f'''
+            SELECT OtherLeagueSeason.*, { cls._birth_date() }
+            FROM OtherLeagueSeason
+            ORDER BY PLAYER_ID, SEASON_ID, LEAGUE
+            ''' )
+      ]
 
 
    @classmethod
@@ -23,20 +24,18 @@ class OtherLeagueSeasonProvider():
          cls,
          season_id: int,
          db_path: str ) -> list[ OtherLeagueSkaterSeason ]:
-      conn = DatabaseConnectionProvider.open( db_path )
-
-      try:
-         cursor = conn.execute(
-            '''
-            SELECT *
+      return [
+         OtherLeagueSkaterSeason.from_row( row ).with_birth_date( row[ 'BIRTH_DATE' ] )
+         for row in DatabaseConnectionProvider.rows(
+            db_path,
+            f'''
+            SELECT OtherLeagueSeason.*, { cls._birth_date() }
             FROM OtherLeagueSeason
             WHERE SEASON_ID = ?
             ORDER BY PLAYER_ID, LEAGUE
             ''',
-            ( season_id, ) )
-         return [ OtherLeagueSkaterSeason.from_row( row ) for row in cursor.fetchall() ]
-      finally:
-         DatabaseConnectionProvider.close( conn )
+            [ season_id ] )
+      ]
 
 
    @classmethod
@@ -44,20 +43,18 @@ class OtherLeagueSeasonProvider():
          cls,
          player_id: int,
          db_path: str ) -> list[ OtherLeagueSkaterSeason ]:
-      conn = DatabaseConnectionProvider.open( db_path )
-
-      try:
-         cursor = conn.execute(
-            '''
-            SELECT *
+      return [
+         OtherLeagueSkaterSeason.from_row( row ).with_birth_date( row[ 'BIRTH_DATE' ] )
+         for row in DatabaseConnectionProvider.rows(
+            db_path,
+            f'''
+            SELECT OtherLeagueSeason.*, { cls._birth_date() }
             FROM OtherLeagueSeason
             WHERE PLAYER_ID = ?
             ORDER BY SEASON_ID, LEAGUE
             ''',
-            ( player_id, ) )
-         return [ OtherLeagueSkaterSeason.from_row( row ) for row in cursor.fetchall() ]
-      finally:
-         DatabaseConnectionProvider.close( conn )
+            [ player_id ] )
+      ]
 
 
    @classmethod
@@ -65,18 +62,25 @@ class OtherLeagueSeasonProvider():
          cls,
          player_ids: list[ int ],
          db_path: str ) -> list[ OtherLeagueSkaterSeason ]:
-      conn = DatabaseConnectionProvider.open( db_path )
-
-      try:
-         placeholders = ', '.join( '?' for _ in player_ids )
-         cursor = conn.execute(
+      placeholders = ', '.join( '?' for _ in player_ids )
+      return [
+         OtherLeagueSkaterSeason.from_row( row ).with_birth_date( row[ 'BIRTH_DATE' ] )
+         for row in DatabaseConnectionProvider.rows(
+            db_path,
             f'''
-            SELECT *
+            SELECT OtherLeagueSeason.*, { cls._birth_date() }
             FROM OtherLeagueSeason
             WHERE PLAYER_ID IN ( { placeholders } )
             ORDER BY PLAYER_ID, SEASON_ID, LEAGUE
             ''',
-            tuple( player_ids ) )
-         return [ OtherLeagueSkaterSeason.from_row( row ) for row in cursor.fetchall() ]
-      finally:
-         DatabaseConnectionProvider.close( conn )
+            player_ids )
+      ]
+
+
+   @classmethod
+   def _birth_date( cls ) -> str:
+      return '''
+         ( SELECT BIRTH_DATE FROM SkaterSeason
+           WHERE SkaterSeason.PLAYER_ID = OtherLeagueSeason.PLAYER_ID
+           LIMIT 1 ) AS BIRTH_DATE
+      '''

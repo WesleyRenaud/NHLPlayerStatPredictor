@@ -10,13 +10,10 @@ from api.recency.pace_regression_model import PaceRegressionModel
 from api.recency.pim_multiplier_store import PimMultiplierStore
 from api.recency.pim_weight_store import PimWeightStore
 from api.recency.production_coefficient import ProductionCoefficient
-from api.recency.production_debut_trajectory_store import ProductionDebutTrajectoryStore
 from api.recency.production_growth import ProductionGrowth
 from api.recency.production_list_store import ProductionListStore
 from api.recency.production_model_provider import ProductionModelProvider
 from api.recency.production_model_recorder import ProductionModelRecorder
-from api.recency.production_rookie_trajectory_store import ProductionRookieTrajectoryStore
-from api.recency.production_short_nhl_trajectory_store import ProductionShortNhlTrajectoryStore
 from api.recency.production_trajectory_store import ProductionTrajectoryStore
 from api.recency.production_weight import ProductionWeight
 from api.recency.scoring_component_share_store import ScoringComponentShareStore
@@ -30,9 +27,6 @@ _STORES: list[ type[ ProductionListStore ] ] = [
    ScoringWeightStore,
    ScoringMultiplierStore,
    ProductionTrajectoryStore,
-   ProductionDebutTrajectoryStore,
-   ProductionShortNhlTrajectoryStore,
-   ProductionRookieTrajectoryStore,
    PimWeightStore,
    PimMultiplierStore,
    ShotsWeightStore,

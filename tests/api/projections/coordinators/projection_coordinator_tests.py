@@ -52,7 +52,7 @@ def _stub_roster( monkeypatch: pytest.MonkeyPatch ) -> None:
       lambda player_id, path: list( Team )[ Position.FIRST ] )
 
 
-def _season( age: float ) -> NhlSkaterSeason:
+def _season( age: int ) -> NhlSkaterSeason:
    return NhlSkaterSeason(
       player_id=1,
       season_id=20232024,
@@ -92,7 +92,7 @@ def Test_GetProjection_TestProspectCurve_ExpectCalibrationBeforeIceAndRounding(
    ice_scale = projected_toi / baseline_toi
    pace_games = 84
    source = OtherLeagueSkaterSeason(
-      player_id=1, season_id=20252026, age=18.0, games_played=40,
+      player_id=1, season_id=20252026, age=18, games_played=40,
       goals=10, assists=20, points=30, g_pace=21.0, a_pace=42.0,
       position=SkaterPosition.CENTER, league='SHL' )
    calibration = ProspectCalibrationModel(
@@ -145,7 +145,7 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
       shots_pace: float | None ) -> None:
    db_path = tmp_path / 'skaters.sqlite'
    player_id = 7
-   seasons = [ _season( 27.2 ), _season( 28.7 ) ]
+   seasons = [ _season( 27 ), _season( 28 ) ]
    target_season_id = 20232024
    aged = SeasonPace( 10.4, 20.6 )
    pim_pace = 18.7
@@ -278,7 +278,7 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
       sh_pace: float ) -> None:
    db_path = tmp_path / 'skaters.sqlite'
    player_id = 7
-   seasons = [ _season( 27.2 ) ]
+   seasons = [ _season( 27 ) ]
    aged = SeasonPace( goal_pace, 40.0 )
    pim_pace = 18.7
    shots_pace = 205.3
@@ -377,10 +377,10 @@ def Test_GetProjection_TestHistoricalRates_ExpectNormalizedThenProjectedStats(
       projected_toi: float ) -> None:
    latest_toi = 20.0
    older_toi = 10.0
-   latest = replace( _season( 27.2 ), season_id=20242025, games_played=82,
+   latest = replace( _season( 27 ), season_id=20242025, games_played=82,
       pace_games=82, even_strength_goals=20, even_strength_points=40,
       shots=200, penalty_minutes=20 )
-   older = replace( latest, season_id=20232024, age=26.2 )
+   older = replace( latest, season_id=20232024, age=26 )
    drop = 0.40
    model = PaceRegressionModel( [ ProductionGrowth( 27, 28, 1.0, 100 ) ],
       history_weights=[ ProductionWeight( 27, 28, 1.0, 100 ), ProductionWeight( 26, 28, 1.0, 100 ) ],

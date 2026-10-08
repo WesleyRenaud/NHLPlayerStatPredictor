@@ -91,8 +91,8 @@ class LeagueFactorFitter():
       return cls._age_to(
          other.g_pace,
          other.a_pace,
-         other.completed_age(),
-         nhl.completed_age(),
+         other.age,
+         nhl.age,
          aging_factors )
 
 

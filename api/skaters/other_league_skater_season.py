@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from ..aging.league_factor import LeagueFactor
+from ..draft_class import DraftClass
+from ..iso_date import IsoDate
 from .other_league_season_key import OtherLeagueSeasonKey
 from ..projections.season_pace import SeasonPace
 from .skater_position import SkaterPosition
@@ -29,6 +31,15 @@ class OtherLeagueSkaterSeason( SkaterSeason ):
          a_pace=float( row[ 'A_PACE' ] ),
          league=str( row[ 'LEAGUE' ] ),
          position=SkaterPosition( str( row[ 'POSITION' ] ) ) )
+
+
+   def with_birth_date( self, birth_date: str | None ) -> OtherLeagueSkaterSeason:
+      if birth_date is None:
+         return self
+
+      return replace(
+         self,
+         age=DraftClass.age( IsoDate.parse( birth_date ), self.season_id ) )
 
 
    def key( self ) -> OtherLeagueSeasonKey:

@@ -4,6 +4,7 @@ from datetime import date
 
 import pytest
 
+from api.draft_class import DraftClass
 from api.ingest.nhl_client import NhlClient
 from api.ingest.other_league_season_builder import OtherLeagueSeasonBuilder
 from api.season import Season
@@ -84,7 +85,7 @@ def Test_Build_TestClubSeason_ExpectPacedRow() -> None:
          season_id=season_id,
          league=league,
          position=position,
-         age=Season.age_on( birth_date, start_date ),
+         age=DraftClass.age( birth_date, season_id ),
          games_played=games_played,
          goals=goals,
          assists=assists,

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
-from .shared.enums.position import Position
+from .iso_date import IsoDate
 from .types import Types
 
 
@@ -25,7 +25,5 @@ class SeasonLength():
       return cls(
          int( raw[ 'id' ] ),
          int( raw[ 'numberOfGames' ] ),
-         date.fromisoformat(
-            str( raw[ 'startDate' ] ).split( 'T' )[ Position.FIRST ] ),
-         date.fromisoformat(
-            str( raw[ 'regularSeasonEndDate' ] ).split( 'T' )[ Position.FIRST ] ) )
+         IsoDate.parse( raw[ 'startDate' ] ),
+         IsoDate.parse( raw[ 'regularSeasonEndDate' ] ) )

@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
+from api.draft_class import DraftClass
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
 from api.skaters.skater_position import SkaterPosition
@@ -12,13 +13,14 @@ from api.skaters.team import Team
 
 
 def _season( player_id: int, season_id: int ) -> NhlSkaterSeason:
+   birth_date = date( 1997, 1, 13 )
    return NhlSkaterSeason(
       player_id=player_id,
       season_id=season_id,
       player_name='Stub Skater',
       position=list( SkaterPosition )[ Position.FIRST ],
-      birth_date=date( 1997, 1, 13 ),
-      age=28.7,
+      birth_date=birth_date,
+      age=DraftClass.age( birth_date, season_id ),
       team=list( Team )[ Position.FIRST ],
       games_played=82,
       even_strength_goals=10,
@@ -46,13 +48,15 @@ def _season( player_id: int, season_id: int ) -> NhlSkaterSeason:
 def Test_SeasonsForName_TestInsertedPlayer_ExpectLookupByName( tmp_path: Path ) -> None:
    db_path = str( tmp_path / 'skaters.sqlite' )
    query = 'mcdavid'
+   season_id = 20252026
+   birth_date = date( 1997, 1, 13 )
    season = NhlSkaterSeason(
       player_id=8478402,
-      season_id=20252026,
+      season_id=season_id,
       player_name='Connor McDavid',
       position=list( SkaterPosition )[ Position.FIRST ],
-      birth_date=date( 1997, 1, 13 ),
-      age=28.7,
+      birth_date=birth_date,
+      age=DraftClass.age( birth_date, season_id ),
       team=list( Team )[ Position.FIRST ],
       games_played=82,
       even_strength_goals=48,

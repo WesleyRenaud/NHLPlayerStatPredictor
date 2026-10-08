@@ -8,3 +8,4 @@ class ProductionSeason():
    age: int
    pace: float
    games: int
+   arrival: float | None = None

@@ -43,7 +43,7 @@ class ProspectCalibrationFitter():
             if actual.games_played < PriorYear.MIN_GAMES or actual.season_id >= target_season_id:
                continue
             if not ProspectEligibility.eligible(
-                  profile, actual.season_id, actual.completed_age() ):
+                  profile, actual.season_id, actual.age ):
                continue
             if history.latest_prospect_source(
                   actual.season_id, max_gap=cls.MAX_SOURCE_GAP,

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, replace
 
 from .power_play_pace import PowerPlayPace
+from .scoring_stat import ScoringStat
 from .season_pace import SeasonPace
 from .short_handed_pace import ShortHandedPace
 
@@ -45,3 +47,30 @@ class ScoringPaces():
       return ShortHandedPace(
          goals=self.short_handed_goals,
          assists=self.short_handed_assists )
+
+
+   @classmethod
+   def zero( cls ) -> ScoringPaces:
+      return cls( 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 )
+
+
+   def scaled( self, factor: float ) -> ScoringPaces:
+      return self._components( lambda value: value * factor )
+
+
+   def per_game( self, games: int ) -> ScoringPaces:
+      return self._components( lambda value: value / games )
+
+
+   def adding( self, other: ScoringPaces ) -> ScoringPaces:
+      return replace( self, **{
+         stat.value: getattr( self, stat.value ) + getattr( other, stat.value )
+         for stat in ScoringStat
+      } )
+
+
+   def _components( self, apply: Callable[ [ float ], float ] ) -> ScoringPaces:
+      return replace( self, **{
+         stat.value: apply( getattr( self, stat.value ) )
+         for stat in ScoringStat
+      } )

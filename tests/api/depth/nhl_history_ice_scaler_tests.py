@@ -17,7 +17,7 @@ from api.types import Types
 
 def _season() -> NhlSkaterSeason:
    return NhlSkaterSeason(
-      player_id=1, season_id=20242025, age=27.4, games_played=82,
+      player_id=1, season_id=20242025, age=27, games_played=82,
       goals=20, assists=30, points=50, g_pace=20.0, a_pace=30.0,
       position=SkaterPosition( 'C' ), player_name='Stub', birth_date=date( 1997, 1, 13 ),
       team=Team( 'COL' ), schedule_games=82, pace_games=82, p_pace=50.0,

@@ -46,7 +46,7 @@ class NhlProductionRegression():
             if prior.games < PriorYear.MIN_GAMES or not 0 < lag <= PriorYearBuilder.WIDTH:
                continue
 
-            age = int( prior.age )
+            age = prior.age
             samples.append( ProductionPair(
                from_age=age,
                to_age=age + lag,
@@ -89,7 +89,7 @@ class NhlProductionRegression():
          coefficient.weight, coefficient.samples ) for coefficient in coefficients ]
 
       return ProductionHistoryPredictor.pace(
-         [ ProductionSeason( int( prior.age ), getattr( prior, stat.value ), prior.games ) for prior in priors ],
+         [ ProductionSeason( prior.age, getattr( prior, stat.value ), prior.games ) for prior in priors ],
          target_age,
          partial( ProductionHistoryPredictor.coefficient, growth ),
          partial( ProductionHistoryPredictor.weight, weights ),

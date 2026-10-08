@@ -39,16 +39,6 @@ def Test_Pace_TestHalfSeason_ExpectScaledToPace() -> None:
    assert pace == value / games_played * pace_games
 
 
-def Test_AgeOn_TestKnownBirthday_ExpectFractionalAge() -> None:
-   birth_date = date( 1997, 1, 13 )
-   on_date = date( 2025, 10, 7 )
-   days_per_year = 365.25
-
-   age = Season.age_on( birth_date, on_date )
-
-   assert age == ( on_date - birth_date ).days / days_per_year
-
-
 def Test_PaceGames_TestLastSeason_ExpectScheduledLength() -> None:
    seasons = [
       SeasonLength( 20252026, 82, date( 2025, 10, 7 ), date( 2026, 4, 17 ) ),

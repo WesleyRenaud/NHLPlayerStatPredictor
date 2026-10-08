@@ -65,7 +65,7 @@ def _other( season_id: int, g_pace: float, a_pace: float, league: str ) -> Other
       season_id=season_id,
       league=league,
       position=SkaterPosition( 'C' ),
-      age=18.4,
+      age=18,
       games_played=52,
       goals=0,
       assists=0,
@@ -88,7 +88,7 @@ def _model() -> PaceRegressionModel:
 
 
 def Test_Resolve_TestNhlSeason_ExpectMultiplicativePace() -> None:
-   season = replace( _nhl( 20242025, 20.0, 30.0, 27.4 ), penalty_minutes=20, shots=200 )
+   season = replace( _nhl( 20242025, 20.0, 30.0, 27 ), penalty_minutes=20, shots=200 )
 
    resolved = BaselinePaceResolver.resolve( Skater( [ season ] ), 20252026, [], _model() )
 
@@ -103,9 +103,9 @@ def Test_Resolve_TestNhlSeason_ExpectMultiplicativePace() -> None:
 def Test_Resolve_TestDifferentHistoricalToi_ExpectRateBlendForAllStats() -> None:
    older_production_scale = 2
    older_ice_scale = 1 / older_production_scale
-   latest = replace( _nhl( 20242025, 20.0, 30.0, 27.4 ), penalty_minutes=20, shots=200,
+   latest = replace( _nhl( 20242025, 20.0, 30.0, 27 ), penalty_minutes=20, shots=200,
       power_play_goals=5, power_play_points=10, even_strength_goals=15, even_strength_points=40 )
-   older = replace( latest, season_id=20232024, age=26.4,
+   older = replace( latest, season_id=20232024, age=26,
       even_strength_goals=latest.even_strength_goals * older_production_scale,
       even_strength_points=latest.even_strength_points * older_production_scale,
       power_play_goals=latest.power_play_goals * older_production_scale,
@@ -137,7 +137,7 @@ def Test_Resolve_TestDifferentHistoricalToi_ExpectRateBlendForAllStats() -> None
 
 def Test_Resolve_TestMixedLeagueIceScale_ExpectOnlyNhlAdjusted() -> None:
    nhl_ice_scale = 0.5
-   nhl = _nhl( 20242025, 20.0, 30.0, 18.4 )
+   nhl = _nhl( 20242025, 20.0, 30.0, 18 )
    other = _other( 20242025, 30.0, 50.0, 'AAA' )
    factor = LeagueFactor( 'AAA', 0.4 )
 
@@ -154,7 +154,7 @@ def Test_Resolve_TestMixedLeagueIceScale_ExpectOnlyNhlAdjusted() -> None:
 
 
 def Test_Resolve_TestDifferentPlayerIceScale_ExpectNoAdjustment() -> None:
-   season = _nhl( 20242025, 20.0, 30.0, 27.4 )
+   season = _nhl( 20242025, 20.0, 30.0, 27 )
 
    resolved = BaselinePaceResolver.resolve(
       Skater( [ season ] ), 20252026, [], _model(),
@@ -166,7 +166,7 @@ def Test_Resolve_TestDifferentPlayerIceScale_ExpectNoAdjustment() -> None:
 
 
 def Test_Resolve_TestPlayoffSurplus_ExpectRegularSeasonWorkflow() -> None:
-   regular = _nhl( 20242025, 20.0, 30.0, 27.4 )
+   regular = _nhl( 20242025, 20.0, 30.0, 27 )
    playoffs = replace( regular, playoff_games=10, playoff_goals=5, playoff_assists=3 )
 
    without = BaselinePaceResolver.resolve( Skater( [ regular ] ), 20252026, [], _model() )
@@ -219,7 +219,7 @@ def Test_Resolve_TestTranslatedSeason_ExpectLeagueConversionOnceThenNhlGrowth() 
 
 def Test_Resolve_TestSmallNhlStint_ExpectObservedAndInferredComponents() -> None:
    factor = LeagueFactor( 'AAA', 0.4 )
-   nhl = replace( _nhl( 20242025, 20.0, 30.0, 18.4 ), games_played=9, power_play_goals=2, power_play_points=4 )
+   nhl = replace( _nhl( 20242025, 20.0, 30.0, 18 ), games_played=9, power_play_goals=2, power_play_points=4 )
    other = _other( 20242025, 30.0, 50.0, factor.league )
 
    resolved = BaselinePaceResolver.resolve( Skater( [ nhl, other ] ), 20252026, [ factor ], _model() )
@@ -237,7 +237,7 @@ def Test_Resolve_TestSmallNhlStint_ExpectObservedAndInferredComponents() -> None
 
 
 def Test_Resolve_TestMissedSeason_ExpectElapsedAgeGrowth() -> None:
-   season = _nhl( 20232024, 20.0, 30.0, 27.4 )
+   season = _nhl( 20232024, 20.0, 30.0, 27 )
 
    resolved = BaselinePaceResolver.resolve( Skater( [ season ] ), 20252026, [], _model() )
 
@@ -248,7 +248,7 @@ def Test_Resolve_TestMissedSeason_ExpectElapsedAgeGrowth() -> None:
 
 def Test_Resolve_TestLatestOtherLeague_ExpectMixedComponentsAndNhlOnlyPim() -> None:
    factor = LeagueFactor( 'AAA', 0.4 )
-   nhl = replace( _nhl( 20222023, 20.0, 30.0, 16.4 ), penalty_minutes=20, power_play_goals=2, power_play_points=4 )
+   nhl = replace( _nhl( 20222023, 20.0, 30.0, 16 ), penalty_minutes=20, power_play_goals=2, power_play_points=4 )
    other = _other( 20242025, 30.0, 50.0, factor.league )
 
    resolved = BaselinePaceResolver.resolve( Skater( [ nhl, other ] ), 20252026, [ factor ], _model() )

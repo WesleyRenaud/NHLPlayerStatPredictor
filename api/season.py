@@ -1,20 +1,14 @@
 from __future__ import annotations
 
-from datetime import date, datetime
-
 from .season_length import SeasonLength
 from .shared.enums.position import Position
 from .skaters.team import Team
 
 
 class Season():
-   ISO_DATE_LENGTH = 10
-   START_YEAR_DIVISOR = 10000
-
-
    @classmethod
    def start_year( cls, season_id: int ) -> int:
-      return season_id // Season.START_YEAR_DIVISOR
+      return season_id // 10000
 
 
    @classmethod
@@ -26,24 +20,6 @@ class Season():
    def label( cls, season_id: int ) -> str:
       start = cls.start_year( season_id )
       return f'{ start }-{ str( start + 1 )[ Position.SECOND_LAST: ] }'
-
-
-   @classmethod
-   def parse_date( cls, value: str | None ) -> date | None:
-      if not value:
-         return None
-
-      text = str( value )[ :Season.ISO_DATE_LENGTH ]
-
-      try:
-         return date.fromisoformat( text )
-      except ValueError:
-         return datetime.fromisoformat( str( value ).replace( 'Z', '+00:00' ) ).date()
-
-
-   @classmethod
-   def age_on( cls, birth_date: date, on_date: date ) -> float:
-      return ( on_date - birth_date ).days / 365.25
 
 
    @classmethod

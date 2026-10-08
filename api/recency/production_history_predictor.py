@@ -58,6 +58,14 @@ class ProductionHistoryPredictor():
 
 
    @classmethod
+   def one_year_multiplier(
+         cls,
+         coefficients: list[ ProductionGrowth ],
+         age: int ) -> float:
+      return cls.coefficient( coefficients, age, age + 1 ).multiplier
+
+
+   @classmethod
    def pace(
          cls,
          history: list[ ProductionSeason ],
@@ -65,20 +73,44 @@ class ProductionHistoryPredictor():
          lookup: Callable[ [ int, int ], ProductionGrowth ],
          weight_lookup: Callable[ [ int, int ], ProductionWeight ],
          trajectory: ProductionTrajectoryFit ) -> float:
-      bases = [
+      latest = history[ Position.FIRST ]
+      growth = cls.multiplier( lookup, latest.age, target_age )
+      levels = [ cls._at_target_age( season, growth ) for season in history ]
+      shares = ProductionTrajectory.shares(
+         history,
+         cls._weights( history, target_age, weight_lookup ),
+         trajectory )
+      return cls._blend( levels, shares )
+
+
+   @classmethod
+   def _at_target_age( cls, season: ProductionSeason, growth: float ) -> float:
+      if season.arrival is not None:
+         return season.arrival
+
+      return season.pace * growth
+
+
+   @classmethod
+   def _weights(
+         cls,
+         history: list[ ProductionSeason ],
+         target_age: int,
+         weight_lookup: Callable[ [ int, int ], ProductionWeight ] ) -> list[ float ]:
+      return [
          weight_lookup( season.age, target_age ).weight * PriorYear.reliability( season.games )
          for season in history
       ]
-      shares = ProductionTrajectory.shares( history, bases, trajectory )
-      latest = history[ Position.FIRST ]
-      weighted = 0.0
-      total_weight = 0.0
 
-      for season, share in zip( history, shares, strict=True ):
-         # Qualified seasons are equally reliable regardless of league schedule length.
-         weighted += share * season.pace
-         total_weight += share
 
-      # Average raw production first, then grow once from the latest season's age.
-      average = weighted / total_weight if total_weight else latest.pace
-      return max( 0.0, average * cls.multiplier( lookup, latest.age, target_age ) )
+   @classmethod
+   def _blend( cls, levels: list[ float ], shares: list[ float ] ) -> float:
+      total = sum( shares )
+
+      if not total:
+         return max( 0.0, levels[ Position.FIRST ] )
+
+      weighted = sum(
+         share * level
+         for share, level in zip( shares, levels, strict=True ) )
+      return max( 0.0, weighted / total )

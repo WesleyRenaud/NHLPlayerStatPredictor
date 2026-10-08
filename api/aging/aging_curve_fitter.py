@@ -63,7 +63,7 @@ class AgingCurveFitter():
          totals_by_age: dict[ int, AgingPairTotals ],
          current: SkaterSeason,
          following: SkaterSeason ) -> None:
-      age = current.completed_age()
+      age = current.age
 
       if age > AgingCurveFitter.LAST_AGE:
          return

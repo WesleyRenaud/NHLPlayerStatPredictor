@@ -12,11 +12,11 @@ class ScoringComponentShareFitter():
       qualified = [ season for season in seasons if season.games_played >= PriorYear.MIN_GAMES ]
       shares = []
 
-      for age in sorted( { int( season.age ) for season in qualified } ):
-         selected = [ season for season in qualified if int( season.age ) == age ]
+      for age in sorted( { season.age for season in qualified } ):
+         selected = [ season for season in qualified if season.age == age ]
 
          if len( selected ) < ProductionCoefficientFitter.MIN_SUPPORT:
-            selected = [ season for season in qualified if abs( int( season.age ) - age ) <= 1 ]
+            selected = [ season for season in qualified if abs( season.age - age ) <= 1 ]
 
          if len( selected ) < ProductionCoefficientFitter.MIN_SUPPORT:
             selected = qualified

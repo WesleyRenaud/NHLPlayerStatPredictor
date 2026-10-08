@@ -9,7 +9,7 @@ from .skater_position import SkaterPosition
 class SkaterSeason():
    player_id: int
    season_id: int
-   age: float
+   age: int
    games_played: int
    goals: int
    assists: int
@@ -17,7 +17,3 @@ class SkaterSeason():
    g_pace: float
    a_pace: float
    position: SkaterPosition
-
-
-   def completed_age( self ) -> int:
-      return int( self.age )

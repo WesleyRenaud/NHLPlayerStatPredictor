@@ -52,7 +52,7 @@ class PaceRegressionFitter():
             if prior.games < PriorYear.MIN_GAMES or not 0 < lag <= PriorYearBuilder.WIDTH:
                continue
 
-            age = int( prior.age )
+            age = prior.age
             games = float( min( prior.games, current.games_played ) )
             points_pairs.append( ProductionPair(
                from_age=age,
@@ -71,10 +71,4 @@ class PaceRegressionFitter():
          shots_coefficients=NhlProductionRegression.fit( nhl_seasons, NhlProductionStat.SHOTS, nhl_history_by_player ),
          history_weights=ProductionCoefficientFitter.fit_weights( points_pairs ),
          trajectory=ProductionTrajectoryFitter.fit(
-            ProductionTrajectoryFitter.observe( nhl_history_by_player, growth ) ),
-         debut_trajectory=ProductionTrajectoryFitter.fit(
-            ProductionTrajectoryFitter.observe_debuts( history_by_player, growth ) ),
-         short_nhl_trajectory=ProductionTrajectoryFitter.fit(
-            ProductionTrajectoryFitter.observe_short_nhl( history_by_player, growth ) ),
-         rookie_trajectory=ProductionTrajectoryFitter.fit(
-            ProductionTrajectoryFitter.observe_rookie( history_by_player, growth ) ).without_drops() )
+            ProductionTrajectoryFitter.observe( nhl_history_by_player, growth ) ) )

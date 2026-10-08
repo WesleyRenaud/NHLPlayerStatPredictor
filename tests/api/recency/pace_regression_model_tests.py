@@ -25,7 +25,4 @@ def Test_ToDict_TestModel_ExpectOnlyRegressions() -> None:
       'scoring': { 'growth': [], 'history_weights': [] }, 'component_shares': [],
       'pim': { 'coefficients': [] }, 'shots': { 'coefficients': [] },
       'trajectory': ProductionTrajectoryFit.empty().to_dict(),
-      'debut_trajectory': ProductionTrajectoryFit.empty().to_dict(),
-      'short_nhl_trajectory': ProductionTrajectoryFit.empty().to_dict(),
-      'rookie_trajectory': ProductionTrajectoryFit.empty().to_dict(),
    }
