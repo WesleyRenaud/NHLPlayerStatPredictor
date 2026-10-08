@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import time
 from unittest.mock import Mock, patch
 
 import pytest
@@ -95,6 +96,15 @@ def _write_artifact( root: Path ) -> None:
       ingest_artifact_puller.Paths.ROOT )
    chosen_path.parent.mkdir( parents=True, exist_ok=True )
    chosen_path.write_text( _EMPTY_JSON )
+
+
+def _write_current( run_id: str ) -> None:
+   ingest_artifact_puller.Paths.PROCESSED_DIR.mkdir( parents=True, exist_ok=True )
+   ingest_artifact_puller.Paths.DB_PATH.write_bytes( _SQLITE_BYTES )
+   ProductionModelRecorder.write( _REGRESSION_MODEL )
+   ProspectCalibrationStore.write( ProspectCalibrationModel( 20262027, [], [] ) )
+   LeagueArrivalStore.path().write_text( _EMPTY_JSON )
+   IngestArtifactPuller._stamp_path().write_text( run_id )
 
 
 def Test_ListedRunId_TestRuns_ExpectFirstId( monkeypatch: pytest.MonkeyPatch ) -> None:
@@ -254,6 +264,59 @@ def Test_Sync_TestMatchingStamp_ExpectDownloadSkipped(
    IngestArtifactPuller.sync()
 
    assert downloaded == []
+   assert IngestArtifactPuller._checked_path().is_file()
+
+
+
+def Test_Sync_TestFreshCheck_ExpectListSkipped(
+      monkeypatch: pytest.MonkeyPatch,
+      tmp_path: Path ) -> None:
+   _bind_paths( monkeypatch, tmp_path / 'repo' )
+   _write_current( '99' )
+   IngestArtifactPuller._mark_checked()
+   listed: list[ str ] = []
+   monkeypatch.setattr(
+      IngestArtifactPuller,
+      '_listed_run_id',
+      lambda: listed.append( '99' ) or '' )
+
+   IngestArtifactPuller.sync()
+
+   assert listed == []
+
+
+
+def Test_Sync_TestStaleCheck_ExpectListed(
+      monkeypatch: pytest.MonkeyPatch,
+      tmp_path: Path ) -> None:
+   _bind_paths( monkeypatch, tmp_path / 'repo' )
+   _write_current( '99' )
+   checked_at = time.time() - IngestArtifactPuller.CHECK_INTERVAL_SECONDS - 1
+   IngestArtifactPuller._checked_path().write_text( str( checked_at ) )
+   listed: list[ str ] = []
+   monkeypatch.setattr( IngestArtifactPuller, '_listed_run_id', lambda: listed.append( '99' ) or '99' )
+   monkeypatch.setattr( IngestArtifactPuller, '_download', lambda run_id, download_dir: False )
+
+   IngestArtifactPuller.sync()
+
+   assert listed == [ '99' ]
+
+
+
+def Test_Sync_TestFreshCheckWithMissingFile_ExpectListed(
+      monkeypatch: pytest.MonkeyPatch,
+      tmp_path: Path ) -> None:
+   _bind_paths( monkeypatch, tmp_path / 'repo' )
+   _write_current( '99' )
+   IngestArtifactPuller._mark_checked()
+   ( ingest_artifact_puller.Paths.PROCESSED_DIR / 'shots_weights.json' ).unlink()
+   listed: list[ str ] = []
+   monkeypatch.setattr( IngestArtifactPuller, '_listed_run_id', lambda: listed.append( '99' ) or '99' )
+   monkeypatch.setattr( IngestArtifactPuller, '_download', lambda run_id, download_dir: False )
+
+   IngestArtifactPuller.sync()
+
+   assert listed == [ '99' ]
 
 
 def Test_Sync_TestNewRun_ExpectPulled(
