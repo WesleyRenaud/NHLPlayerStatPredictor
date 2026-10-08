@@ -5,6 +5,7 @@ from pathlib import Path
 import shutil
 import tempfile
 
+from ..aging.league_arrival_store import LeagueArrivalStore
 from ..aging.league_factor_store import LeagueFactorStore
 from ..availability.availability_weight_store import AvailabilityWeightStore
 from ..depth.depth_chart_store import DepthChartStore
@@ -53,6 +54,7 @@ class IngestArtifactPuller():
          cls._source_availability( artifact_root ),
          AvailabilityWeightStore.path() )
       shutil.copy2( cls._source_leagues( artifact_root ), LeagueFactorStore.path() )
+      shutil.copy2( cls._source_arrivals( artifact_root ), LeagueArrivalStore.path() )
       shutil.copy2( cls._source_teams( artifact_root ), TeamFactorStore.path() )
       shutil.copy2( cls._source_charts( artifact_root ), DepthChartStore.path() )
       shutil.copy2( cls._source_slots( artifact_root ), SlotAverageStore.path() )
@@ -87,6 +89,7 @@ class IngestArtifactPuller():
                   for path in ProductionModelProvider.paths() )
                or not cls._source_availability( artifact_root ).is_file()
                or not cls._source_leagues( artifact_root ).is_file()
+               or not cls._source_arrivals( artifact_root ).is_file()
                or not cls._source_teams( artifact_root ).is_file()
                or not cls._source_charts( artifact_root ).is_file()
                or not cls._source_slots( artifact_root ).is_file()
@@ -161,6 +164,7 @@ class IngestArtifactPuller():
    def _needs_pull( cls, run_id: str ) -> bool:
       if (
             not Paths.DB_PATH.is_file() or not ProspectCalibrationStore.path().is_file()
+            or not LeagueArrivalStore.path().is_file()
             or any( not path.is_file() for path in ProductionModelProvider.paths() ) ):
          return True
 
@@ -206,6 +210,11 @@ class IngestArtifactPuller():
    @classmethod
    def _source_leagues( cls, artifact_root: Path ) -> Path:
       return artifact_root / LeagueFactorStore.path().relative_to( Paths.ROOT )
+
+
+   @classmethod
+   def _source_arrivals( cls, artifact_root: Path ) -> Path:
+      return artifact_root / LeagueArrivalStore.path().relative_to( Paths.ROOT )
 
 
    @classmethod
