@@ -44,9 +44,11 @@ jobs:
             data/processed/shots_weights.json
             data/processed/shots_multipliers.json
             data/processed/scoring_component_shares.json
+            data/processed/production_trajectory.json
             data/processed/prospect_calibration.json
             data/processed/availability_weights.json
             data/processed/league_factors.json
+            data/processed/league_arrivals.json
             data/processed/team_factors.json
             data/processed/depth_charts.json
             data/processed/slot_averages.json

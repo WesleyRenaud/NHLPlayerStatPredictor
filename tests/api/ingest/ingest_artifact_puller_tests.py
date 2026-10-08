@@ -6,6 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from api.aging.league_arrival_store import LeagueArrivalStore
 from api.aging.league_factor_store import LeagueFactorStore
 from api.availability.availability_weight_store import AvailabilityWeightStore
 from api.depth.depth_chart_store import DepthChartStore
@@ -70,6 +71,10 @@ def _write_artifact( root: Path ) -> None:
       ingest_artifact_puller.Paths.ROOT )
    leagues_path.parent.mkdir( parents=True, exist_ok=True )
    leagues_path.write_text( _EMPTY_JSON )
+   arrivals_path = root / LeagueArrivalStore.path().relative_to(
+      ingest_artifact_puller.Paths.ROOT )
+   arrivals_path.parent.mkdir( parents=True, exist_ok=True )
+   arrivals_path.write_text( _EMPTY_JSON )
    teams_path = root / TeamFactorStore.path().relative_to(
       ingest_artifact_puller.Paths.ROOT )
    teams_path.parent.mkdir( parents=True, exist_ok=True )
@@ -144,6 +149,7 @@ def Test_Install_TestArtifactTree_ExpectCopiedDbAndRaw(
    stored_seasons = ( ingest_artifact_puller.Paths.RAW_DIR / 'seasons.json' ).read_text()
    stored_availability = AvailabilityWeightStore.path().read_text()
    stored_leagues = LeagueFactorStore.path().read_text()
+   stored_arrivals = LeagueArrivalStore.path().read_text()
    stored_teams = TeamFactorStore.path().read_text()
    stored_charts = DepthChartStore.path().read_text()
    stored_slots = SlotAverageStore.path().read_text()
@@ -155,6 +161,7 @@ def Test_Install_TestArtifactTree_ExpectCopiedDbAndRaw(
    assert ProductionModelProvider.read() == _REGRESSION_MODEL
    assert stored_availability == _EMPTY_JSON
    assert stored_leagues == _EMPTY_JSON
+   assert stored_arrivals == _EMPTY_JSON
    assert stored_teams == _EMPTY_JSON
    assert stored_charts == _EMPTY_JSON
    assert stored_slots == _EMPTY_JSON
@@ -204,6 +211,7 @@ def Test_Sync_TestMatchingStamp_ExpectDownloadSkipped(
    ingest_artifact_puller.Paths.DB_PATH.write_bytes( _SQLITE_BYTES )
    ProductionModelRecorder.write( _REGRESSION_MODEL )
    ProspectCalibrationStore.write( ProspectCalibrationModel( 20262027, [], [] ) )
+   LeagueArrivalStore.path().write_text( _EMPTY_JSON )
    IngestArtifactPuller._stamp_path().write_text( run_id )
    downloaded: list[ str ] = []
 
