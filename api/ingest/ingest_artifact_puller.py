@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import shutil
 import tempfile
+import time
 
 from ..aging.league_arrival_store import LeagueArrivalStore
 from ..aging.league_factor_store import LeagueFactorStore
@@ -25,6 +26,8 @@ class IngestArtifactPuller():
    ARTIFACT = 'skaters'
    RUN_ID_FIELD = 'databaseId'
    STAMP_NAME = 'INGEST_RUN_ID'
+   CHECKED_NAME = 'INGEST_CHECKED_AT'
+   CHECK_INTERVAL_SECONDS = 60 * 60
 
    @classmethod
    def main( cls ) -> None:
@@ -36,12 +39,20 @@ class IngestArtifactPuller():
 
    @classmethod
    def sync( cls ) -> None:
-      run_id = cls._listed_run_id()
-
-      if not run_id or not cls._needs_pull( run_id ):
+      if cls._recently_checked() and not cls._files_missing():
          return
 
-      cls._pull( run_id )
+      run_id = cls._listed_run_id()
+
+      if not run_id:
+         return
+
+      if cls._needs_pull( run_id ):
+         if cls._pull( run_id ):
+            cls._mark_checked()
+         return
+
+      cls._mark_checked()
 
 
    @classmethod
@@ -161,10 +172,7 @@ class IngestArtifactPuller():
 
    @classmethod
    def _needs_pull( cls, run_id: str ) -> bool:
-      if (
-            not Paths.DB_PATH.is_file() or not ProspectCalibrationStore.path().is_file()
-            or not LeagueArrivalStore.path().is_file()
-            or any( not path.is_file() for path in ProductionModelProvider.paths() ) ):
+      if cls._files_missing():
          return True
 
       stamp_path = cls._stamp_path()
@@ -176,8 +184,41 @@ class IngestArtifactPuller():
 
 
    @classmethod
+   def _files_missing( cls ) -> bool:
+      return (
+         not Paths.DB_PATH.is_file() or not ProspectCalibrationStore.path().is_file()
+         or not LeagueArrivalStore.path().is_file()
+         or any( not path.is_file() for path in ProductionModelProvider.paths() ) )
+
+
+   @classmethod
+   def _recently_checked( cls ) -> bool:
+      path = cls._checked_path()
+
+      if not path.is_file():
+         return False
+
+      try:
+         checked_at = float( path.read_text() )
+      except ValueError:
+         return False
+
+      return time.time() - checked_at < cls.CHECK_INTERVAL_SECONDS
+
+
+   @classmethod
+   def _mark_checked( cls ) -> None:
+      cls._checked_path().write_text( str( time.time() ) )
+
+
+   @classmethod
    def _stamp_path( cls ) -> Path:
       return Paths.PROCESSED_DIR / cls.STAMP_NAME
+
+
+   @classmethod
+   def _checked_path( cls ) -> Path:
+      return Paths.PROCESSED_DIR / cls.CHECKED_NAME
 
 
    @classmethod
