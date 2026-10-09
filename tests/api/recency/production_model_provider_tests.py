@@ -8,6 +8,7 @@ from api.paths import Paths
 from api.recency.pace_regression_model import PaceRegressionModel
 from api.recency.production_model_provider import ProductionModelProvider
 from api.recency.production_model_recorder import ProductionModelRecorder
+from api.recency.shots_weight_store import ShotsWeightStore
 
 
 def Test_Read_TestModel_ExpectFileUnchanged(
@@ -28,7 +29,7 @@ def Test_Read_TestMissingFile_ExpectExplicitFailure(
       tmp_path: Path ) -> None:
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
    ProductionModelRecorder.write( PaceRegressionModel( [] ) )
-   ( tmp_path / 'shots_weights.json' ).unlink()
+   ShotsWeightStore.path().unlink()
 
    with pytest.raises( FileNotFoundError ):
       ProductionModelProvider.read()

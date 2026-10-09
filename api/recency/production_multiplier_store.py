@@ -1,8 +1,10 @@
+from ..paths import Paths
 from .production_growth import ProductionGrowth
 from .production_list_store import ProductionListStore
 
 
 class ProductionMultiplierStore( ProductionListStore ):
+   FOLDER = Paths.MULTIPLIERS
 
 
    @classmethod

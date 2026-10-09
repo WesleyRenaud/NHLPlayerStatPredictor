@@ -13,7 +13,7 @@ class TeamFactorStore():
 
    @classmethod
    def path( cls ) -> Path:
-      return Paths.PROCESSED_DIR / cls.FILE_NAME
+      return Paths.PROCESSED_DIR / Paths.TEAMS / cls.FILE_NAME
 
 
    @classmethod

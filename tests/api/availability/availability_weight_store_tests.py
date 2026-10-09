@@ -27,4 +27,5 @@ def Test_Write_TestWeights_ExpectReadable(
    assert AvailabilityWeightStore.path().read_text() == json.dumps(
       [ weight.to_dict() for weight in weights ],
       indent=2 )
-   assert AvailabilityWeightStore.path() == tmp_path / AvailabilityWeightStore.FILE_NAME
+   assert AvailabilityWeightStore.path() == (
+      tmp_path / Paths.WEIGHTS / AvailabilityWeightStore.FILE_NAME )

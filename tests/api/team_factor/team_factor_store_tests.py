@@ -40,4 +40,4 @@ def Test_Write_TestFactors_ExpectReadable(
    assert written == json.dumps(
       [ factor.to_dict() for factor in factors ],
       indent=2 )
-   assert TeamFactorStore.path() == tmp_path / TeamFactorStore.FILE_NAME
+   assert TeamFactorStore.path() == tmp_path / Paths.TEAMS / TeamFactorStore.FILE_NAME

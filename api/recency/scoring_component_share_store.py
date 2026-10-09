@@ -1,9 +1,11 @@
+from ..paths import Paths
 from .production_list_store import ProductionListStore
 from ..projections.scoring_component_shares import ScoringComponentShares
 
 
 class ScoringComponentShareStore( ProductionListStore ):
    FILE_NAME = 'scoring_component_shares.json'
+   FOLDER = Paths.RECENCY
 
 
    @classmethod

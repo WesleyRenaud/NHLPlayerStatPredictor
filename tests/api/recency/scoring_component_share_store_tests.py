@@ -16,4 +16,6 @@ def Test_Write_TestShares_ExpectIndependentTypedRoundTrip(
    ScoringComponentShareStore.write( shares )
 
    assert ScoringComponentShareStore.read() == shares
-   assert list( tmp_path.iterdir() ) == [ ScoringComponentShareStore.path() ]
+   assert ScoringComponentShareStore.path().parent == tmp_path / Paths.RECENCY
+   assert list( ScoringComponentShareStore.path().parent.iterdir() ) == [
+      ScoringComponentShareStore.path() ]

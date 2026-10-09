@@ -111,7 +111,7 @@ def Test_Record_TestRosterAndUsage_ExpectStoredChart(
    assert defense.team == team
    assert len( defense.regulars ) == 2
    DepthChartRecorder.main()
-   assert ( tmp_path / DepthChartStore.FILE_NAME ).exists()
+   assert DepthChartStore.path().exists()
 
 
 def Test_Record_TestForwardAndDefense_ExpectBothCharts(

@@ -58,11 +58,11 @@ def Test_Write_TestModel_ExpectReadable(
    ProductionModelRecorder.write( model )
 
    assert ProductionModelProvider.read() == model
-   assert set( tmp_path.iterdir() ) == set( ProductionModelProvider.paths() )
+   assert set( tmp_path.rglob( '*.json' ) ) == set( ProductionModelProvider.paths() )
    for path in ProductionModelProvider.paths():
       assert isinstance( json.loads( path.read_text() ), list )
-   multipliers = json.loads( ( tmp_path / 'pim_multipliers.json' ).read_text() )
+   multipliers = json.loads( PimMultiplierStore.path().read_text() )
    assert all( item[ 'to_age' ] == item[ 'from_age' ] + 1 for item in multipliers )
    assert all( 'weight' not in item for item in multipliers )
-   weights = json.loads( ( tmp_path / 'pim_weights.json' ).read_text() )
+   weights = json.loads( PimWeightStore.path().read_text() )
    assert all( 'multiplier' not in item for item in weights )
