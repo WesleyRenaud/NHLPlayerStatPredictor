@@ -9,11 +9,12 @@ from ..types import Types
 
 class ProductionListStore():
    FILE_NAME: str
+   FOLDER: str
 
 
    @classmethod
    def path( cls ) -> Path:
-      return Paths.PROCESSED_DIR / cls.FILE_NAME
+      return Paths.PROCESSED_DIR / cls.FOLDER / cls.FILE_NAME
 
 
    @classmethod

@@ -1,8 +1,10 @@
+from ..paths import Paths
 from .production_list_store import ProductionListStore
 from .production_weight import ProductionWeight
 
 
 class ProductionWeightStore( ProductionListStore ):
+   FOLDER = Paths.WEIGHTS
 
 
    @classmethod

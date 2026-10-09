@@ -20,9 +20,11 @@ from api.ingest.ingest_artifact_puller import IngestArtifactPuller
 from api.projections.prospect_calibration_model import ProspectCalibrationModel
 from api.projections.prospect_calibration_store import ProspectCalibrationStore
 from api.recency.pace_regression_model import PaceRegressionModel
+from api.recency.pim_weight_store import PimWeightStore
 from api.recency.production_coefficient import ProductionCoefficient
 from api.recency.production_model_provider import ProductionModelProvider
 from api.recency.production_model_recorder import ProductionModelRecorder
+from api.recency.shots_weight_store import ShotsWeightStore
 from api.shared.enums.position import Position
 from api.team_factor.team_factor_store import TeamFactorStore
 
@@ -104,7 +106,7 @@ def _write_current( run_id: str ) -> None:
    ProductionModelRecorder.write( _REGRESSION_MODEL )
    ProspectCalibrationStore.write( ProspectCalibrationModel( 20262027, [], [] ) )
    LeagueArrivalStore.path().write_text( _EMPTY_JSON )
-   IngestArtifactPuller._stamp_path().write_text( run_id )
+   IngestArtifactPuller._write( IngestArtifactPuller._stamp_path(), run_id )
 
 
 def Test_ListedRunId_TestRuns_ExpectFirstId( monkeypatch: pytest.MonkeyPatch ) -> None:
@@ -251,7 +253,7 @@ def Test_Sync_TestMatchingStamp_ExpectDownloadSkipped(
    ProductionModelRecorder.write( _REGRESSION_MODEL )
    ProspectCalibrationStore.write( ProspectCalibrationModel( 20262027, [], [] ) )
    LeagueArrivalStore.path().write_text( _EMPTY_JSON )
-   IngestArtifactPuller._stamp_path().write_text( run_id )
+   IngestArtifactPuller._write( IngestArtifactPuller._stamp_path(), run_id )
    downloaded: list[ str ] = []
 
    def fake_download( current_run_id: str, download_dir: Path ) -> bool:
@@ -292,7 +294,7 @@ def Test_Sync_TestStaleCheck_ExpectListed(
    _bind_paths( monkeypatch, tmp_path / 'repo' )
    _write_current( '99' )
    checked_at = time.time() - IngestArtifactPuller.CHECK_INTERVAL_SECONDS - 1
-   IngestArtifactPuller._checked_path().write_text( str( checked_at ) )
+   IngestArtifactPuller._write( IngestArtifactPuller._checked_path(), str( checked_at ) )
    listed: list[ str ] = []
    monkeypatch.setattr( IngestArtifactPuller, '_listed_run_id', lambda: listed.append( '99' ) or '99' )
    monkeypatch.setattr( IngestArtifactPuller, '_download', lambda run_id, download_dir: False )
@@ -309,7 +311,7 @@ def Test_Sync_TestFreshCheckWithMissingFile_ExpectListed(
    _bind_paths( monkeypatch, tmp_path / 'repo' )
    _write_current( '99' )
    IngestArtifactPuller._mark_checked()
-   ( ingest_artifact_puller.Paths.PROCESSED_DIR / 'shots_weights.json' ).unlink()
+   ShotsWeightStore.path().unlink()
    listed: list[ str ] = []
    monkeypatch.setattr( IngestArtifactPuller, '_listed_run_id', lambda: listed.append( '99' ) or '99' )
    monkeypatch.setattr( IngestArtifactPuller, '_download', lambda run_id, download_dir: False )
@@ -326,7 +328,7 @@ def Test_Sync_TestNewRun_ExpectPulled(
    _bind_paths( monkeypatch, tmp_path / 'repo' )
    ingest_artifact_puller.Paths.PROCESSED_DIR.mkdir( parents=True, exist_ok=True )
    ingest_artifact_puller.Paths.DB_PATH.write_bytes( b'old' )
-   IngestArtifactPuller._stamp_path().write_text( '1' )
+   IngestArtifactPuller._write( IngestArtifactPuller._stamp_path(), '1' )
 
    def fake_download( run_id: str, download_dir: Path ) -> bool:
       _write_artifact( download_dir )
@@ -360,8 +362,8 @@ def Test_Sync_TestMatchingStampWithMissingModelFile_ExpectPulled(
    ingest_artifact_puller.Paths.PROCESSED_DIR.mkdir( parents=True, exist_ok=True )
    ingest_artifact_puller.Paths.DB_PATH.write_bytes( _SQLITE_BYTES )
    ProductionModelRecorder.write( _REGRESSION_MODEL )
-   ( ingest_artifact_puller.Paths.PROCESSED_DIR / 'shots_weights.json' ).unlink()
-   IngestArtifactPuller._stamp_path().write_text( '99' )
+   ShotsWeightStore.path().unlink()
+   IngestArtifactPuller._write( IngestArtifactPuller._stamp_path(), '99' )
    pulled: list[ str ] = []
    monkeypatch.setattr( IngestArtifactPuller, '_listed_run_id', lambda: '99' )
    monkeypatch.setattr( IngestArtifactPuller, '_pull', lambda run_id: pulled.append( run_id ) )
@@ -379,8 +381,7 @@ def Test_Pull_TestMissingModelFile_ExpectRejectedBeforeInstall(
 
    def fake_download( run_id: str, download_dir: Path ) -> bool:
       _write_artifact( download_dir )
-      relative_path = ( ingest_artifact_puller.Paths.PROCESSED_DIR / 'pim_weights.json' ).relative_to(
-         ingest_artifact_puller.Paths.ROOT )
+      relative_path = PimWeightStore.path().relative_to( ingest_artifact_puller.Paths.ROOT )
       ( download_dir / relative_path ).unlink()
       return True
 
@@ -417,7 +418,7 @@ def Test_Sync_TestMissingCalibration_ExpectPulled( monkeypatch: pytest.MonkeyPat
    ingest_artifact_puller.Paths.PROCESSED_DIR.mkdir( parents=True, exist_ok=True )
    ingest_artifact_puller.Paths.DB_PATH.write_bytes( _SQLITE_BYTES )
    ProductionModelRecorder.write( _REGRESSION_MODEL )
-   IngestArtifactPuller._stamp_path().write_text( '99' )
+   IngestArtifactPuller._write( IngestArtifactPuller._stamp_path(), '99' )
    pulled = []
    monkeypatch.setattr( IngestArtifactPuller, '_listed_run_id', lambda: '99' )
    monkeypatch.setattr( IngestArtifactPuller, '_pull', lambda run_id: pulled.append( run_id ) )

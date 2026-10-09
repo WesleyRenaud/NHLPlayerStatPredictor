@@ -13,7 +13,7 @@ class LeagueArrivalStore():
 
    @classmethod
    def path( cls ) -> Path:
-      return Paths.PROCESSED_DIR / cls.FILE_NAME
+      return Paths.PROCESSED_DIR / Paths.MULTIPLIERS / cls.FILE_NAME
 
 
    @classmethod

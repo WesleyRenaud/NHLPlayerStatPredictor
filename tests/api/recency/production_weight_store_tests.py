@@ -21,4 +21,5 @@ def Test_Write_TestWeights_ExpectIndependentTypedRoundTrip(
    store.write( weights )
 
    assert store.read() == weights
-   assert list( tmp_path.iterdir() ) == [ store.path() ]
+   assert store.path().parent == tmp_path / Paths.WEIGHTS
+   assert list( store.path().parent.iterdir() ) == [ store.path() ]

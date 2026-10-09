@@ -58,20 +58,20 @@ class IngestArtifactPuller():
    @classmethod
    def install( cls, artifact_root: Path ) -> None:
       Paths.PROCESSED_DIR.mkdir( parents=True, exist_ok=True )
-      shutil.copy2( cls._source_db( artifact_root ), Paths.DB_PATH )
+      cls._copy( cls._source_db( artifact_root ), Paths.DB_PATH )
       for path in ProductionModelProvider.paths():
-         shutil.copy2( cls._source( artifact_root, path ), path )
-      shutil.copy2(
+         cls._copy( cls._source( artifact_root, path ), path )
+      cls._copy(
          cls._source_availability( artifact_root ),
          AvailabilityWeightStore.path() )
-      shutil.copy2( cls._source_leagues( artifact_root ), LeagueFactorStore.path() )
-      shutil.copy2( cls._source_arrivals( artifact_root ), LeagueArrivalStore.path() )
-      shutil.copy2( cls._source_teams( artifact_root ), TeamFactorStore.path() )
-      shutil.copy2( cls._source_charts( artifact_root ), DepthChartStore.path() )
-      shutil.copy2( cls._source_slots( artifact_root ), SlotAverageStore.path() )
-      shutil.copy2( cls._source_ice( artifact_root ), SkaterIceStore.path() )
-      shutil.copy2( cls._source_chosen( artifact_root ), IceChosenShareStore.path() )
-      shutil.copy2(
+      cls._copy( cls._source_leagues( artifact_root ), LeagueFactorStore.path() )
+      cls._copy( cls._source_arrivals( artifact_root ), LeagueArrivalStore.path() )
+      cls._copy( cls._source_teams( artifact_root ), TeamFactorStore.path() )
+      cls._copy( cls._source_charts( artifact_root ), DepthChartStore.path() )
+      cls._copy( cls._source_slots( artifact_root ), SlotAverageStore.path() )
+      cls._copy( cls._source_ice( artifact_root ), SkaterIceStore.path() )
+      cls._copy( cls._source_chosen( artifact_root ), IceChosenShareStore.path() )
+      cls._copy(
          cls._source( artifact_root, ProspectCalibrationStore.path() ),
          ProspectCalibrationStore.path() )
 
@@ -79,6 +79,12 @@ class IngestArtifactPuller():
          shutil.rmtree( Paths.RAW_DIR )
 
       shutil.copytree( cls._source_raw( artifact_root ), Paths.RAW_DIR )
+
+
+   @classmethod
+   def _copy( cls, source: Path, destination: Path ) -> None:
+      destination.parent.mkdir( parents=True, exist_ok=True )
+      shutil.copy2( source, destination )
 
 
    @classmethod
@@ -110,7 +116,7 @@ class IngestArtifactPuller():
             return False
 
          cls.install( artifact_root )
-         cls._stamp_path().write_text( run_id )
+         cls._write( cls._stamp_path(), run_id )
          return True
       finally:
          shutil.rmtree( download_dir, ignore_errors=True )
@@ -208,17 +214,23 @@ class IngestArtifactPuller():
 
    @classmethod
    def _mark_checked( cls ) -> None:
-      cls._checked_path().write_text( str( time.time() ) )
+      cls._write( cls._checked_path(), str( time.time() ) )
+
+
+   @classmethod
+   def _write( cls, path: Path, text: str ) -> None:
+      path.parent.mkdir( parents=True, exist_ok=True )
+      path.write_text( text )
 
 
    @classmethod
    def _stamp_path( cls ) -> Path:
-      return Paths.PROCESSED_DIR / cls.STAMP_NAME
+      return Paths.PROCESSED_DIR / Paths.INGEST / cls.STAMP_NAME
 
 
    @classmethod
    def _checked_path( cls ) -> Path:
-      return Paths.PROCESSED_DIR / cls.CHECKED_NAME
+      return Paths.PROCESSED_DIR / Paths.INGEST / cls.CHECKED_NAME
 
 
    @classmethod

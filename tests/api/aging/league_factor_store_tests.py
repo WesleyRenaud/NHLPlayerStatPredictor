@@ -24,4 +24,4 @@ def Test_Write_TestFactors_ExpectReadable(
    assert written == json.dumps(
       [ factor.to_dict() for factor in factors ],
       indent=2 )
-   assert LeagueFactorStore.path() == tmp_path / LeagueFactorStore.FILE_NAME
+   assert LeagueFactorStore.path() == tmp_path / Paths.MULTIPLIERS / LeagueFactorStore.FILE_NAME

@@ -21,4 +21,5 @@ def Test_Write_TestMultipliers_ExpectIndependentTypedRoundTrip(
    store.write( growth )
 
    assert store.read() == growth
-   assert list( tmp_path.iterdir() ) == [ store.path() ]
+   assert store.path().parent == tmp_path / Paths.MULTIPLIERS
+   assert list( store.path().parent.iterdir() ) == [ store.path() ]
