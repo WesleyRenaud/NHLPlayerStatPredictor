@@ -72,14 +72,16 @@ class ProductionHistoryPredictor():
          target_age: int,
          lookup: Callable[ [ int, int ], ProductionGrowth ],
          weight_lookup: Callable[ [ int, int ], ProductionWeight ],
-         trajectory: ProductionTrajectoryFit ) -> float:
+         trajectory: ProductionTrajectoryFit,
+         curve: list[ ProductionSeason ] | None = None ) -> float:
       latest = history[ Position.FIRST ]
       growth = cls.multiplier( lookup, latest.age, target_age )
       levels = [ cls._at_target_age( season, growth ) for season in history ]
       shares = ProductionTrajectory.shares(
          history,
          cls._weights( history, target_age, weight_lookup ),
-         trajectory )
+         trajectory,
+         curve )
       return cls._blend( levels, shares )
 
 

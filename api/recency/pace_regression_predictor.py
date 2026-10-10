@@ -36,10 +36,11 @@ class PaceRegressionPredictor():
       target_age = latest.age_in_year( year )
       projected_paces_by_stat: dict[ ScoringStat, float ] = {}
       nhl_priors = PriorYearBuilder.build( nhl_seasons, [], year, [], player_ice_scales )
+      curve = cls._scoring_curve( priors, nhl_seasons )
 
       for stat in ScoringStat:
          projected_paces_by_stat[ stat ] = cls._pace(
-            model, priors, target_age, stat, model.trajectory )
+            model, priors, target_age, stat, model.trajectory, curve )
 
       return PaceValues(
          **{ stat.value: pace for stat, pace in projected_paces_by_stat.items() },
@@ -72,7 +73,8 @@ class PaceRegressionPredictor():
          priors: list[ PriorYear ],
          target_age: int,
          stat: ScoringStat,
-         trajectory: ProductionTrajectoryFit ) -> float:
+         trajectory: ProductionTrajectoryFit,
+         curve: list[ ProductionSeason ] ) -> float:
       if not priors:
          return 0.0
 
@@ -86,4 +88,31 @@ class PaceRegressionPredictor():
          target_age,
          partial( ProductionHistoryPredictor.coefficient, model.scoring_growth ),
          partial( ProductionHistoryPredictor.weight, model.history_weights ),
-         trajectory )
+         trajectory,
+         curve )
+
+
+   @classmethod
+   def _scoring_curve(
+         cls,
+         priors: list[ PriorYear ],
+         nhl_seasons: list[ NhlSkaterSeason ] ) -> list[ ProductionSeason ]:
+      # Judge the scoring line the player actually had. Ice rescaling is a minutes
+      # adjustment and would redraw a level as a dip, or a dip as noise.
+      played = {
+         Season.start_year( season.season_id ): season.p_pace
+         for season in nhl_seasons
+      }
+      return [
+         ProductionSeason(
+            prior.age,
+            played.get( prior.year, cls._played_points( prior ) ),
+            prior.games )
+         for prior in priors
+      ]
+
+
+   @classmethod
+   def _played_points( cls, prior: PriorYear ) -> float:
+      scoring = prior.scoring if prior.arrival is None else prior.arrival
+      return scoring.goals + scoring.assists

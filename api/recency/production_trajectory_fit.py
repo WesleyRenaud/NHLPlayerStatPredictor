@@ -29,16 +29,3 @@ class ProductionTrajectoryFit():
    @classmethod
    def empty( cls ) -> ProductionTrajectoryFit:
       return cls( 0.0, [] )
-
-
-   def retained( self, age: int, rising: bool ) -> float | None:
-      usable = [
-         share for share in self.by_age
-         if ( share.rise_share if rising else share.drop_share ) is not None
-      ]
-
-      if not usable:
-         return None
-
-      nearest = min( usable, key=lambda share: abs( share.age - age ) )
-      return nearest.rise_share if rising else nearest.drop_share

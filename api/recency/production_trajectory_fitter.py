@@ -7,6 +7,7 @@ from .prior_year import PriorYear
 from .production_coefficient_fitter import ProductionCoefficientFitter
 from .production_growth import ProductionGrowth
 from .production_history_predictor import ProductionHistoryPredictor
+from .production_level_trust_fitter import ProductionLevelTrustFitter
 from .production_trajectory_change import ProductionTrajectoryChange
 from .production_trajectory_fit import ProductionTrajectoryFit
 from .production_trajectory_share import ProductionTrajectoryShare
@@ -37,7 +38,8 @@ class ProductionTrajectoryFitter():
             None if rise is None else cls._bounded( rise ),
             None if drop is None else cls._bounded( drop ) ) )
 
-      return ProductionTrajectoryFit( move, by_age )
+      return ProductionTrajectoryFit(
+         move, ProductionLevelTrustFitter.fit( by_age, changes, move ) )
 
 
    @classmethod
@@ -60,6 +62,7 @@ class ProductionTrajectoryFitter():
          qualified = sorted(
             ( prior for prior in history if prior.games >= PriorYear.MIN_GAMES ),
             key=lambda prior: prior.year )
+         by_year = { season.year: season for season in qualified }
 
          for index in range( len( qualified ) - 2 ):
             prior, latest, following = qualified[ index : index + 3 ]
@@ -67,7 +70,8 @@ class ProductionTrajectoryFitter():
             if latest.year != prior.year + 1 or following.year != latest.year + 1:
                continue
 
-            change = cls._change( prior, latest, following, lookup )
+            earlier = by_year.get( prior.year - 1 )
+            change = cls._change( prior, latest, following, lookup, earlier )
 
             if change is not None:
                changes.append( change )
@@ -81,7 +85,8 @@ class ProductionTrajectoryFitter():
          prior: PriorYear,
          latest: PriorYear,
          following: PriorYear,
-         lookup: Callable[ [ int, int ], ProductionGrowth ] ) -> ProductionTrajectoryChange | None:
+         lookup: Callable[ [ int, int ], ProductionGrowth ],
+         earlier: PriorYear | None = None ) -> ProductionTrajectoryChange | None:
       prior_pace = prior.scoring.goals + prior.scoring.assists
       latest_pace = latest.scoring.goals + latest.scoring.assists
       following_pace = following.scoring.goals + following.scoring.assists
@@ -97,7 +102,8 @@ class ProductionTrajectoryFitter():
          latest_pace,
          following_pace,
          multiplier,
-         min( prior.games, latest.games, following.games ) )
+         min( prior.games, latest.games, following.games ),
+         None if earlier is None else earlier.scoring.goals + earlier.scoring.assists )
 
 
    @classmethod
