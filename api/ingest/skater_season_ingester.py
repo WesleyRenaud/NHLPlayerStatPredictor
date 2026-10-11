@@ -22,7 +22,6 @@ from .nhl_client import NhlClient
 from .other_league_season_ingester import OtherLeagueSeasonIngester
 from ..paths import Paths
 from .player_landing_fetcher import PlayerLandingFetcher
-from .playoff_totals_merger import PlayoffTotalsMerger
 from .previous_team_factor_builder import PreviousTeamFactorBuilder
 from ..projections.prospect_calibration_fitter import ProspectCalibrationFitter
 from ..projections.prospect_calibration_store import ProspectCalibrationStore
@@ -55,7 +54,7 @@ class SkaterSeasonIngester():
       RosterSkaterStore.insert_rows( roster_rows, str( Paths.DB_PATH ) )
       player_ids = cls._player_ids( regular_rows, roster_rows )
       landings = PlayerLandingFetcher.fetch( player_ids, force=force )
-      rows = PlayoffTotalsMerger.merge( regular_rows, landings )
+      rows = regular_rows
       SkaterSeasonStore.insert_rows( rows, str( Paths.DB_PATH ) )
       other_rows = OtherLeagueSeasonIngester.build_rows(
          player_ids,

@@ -21,8 +21,8 @@ def _season() -> NhlSkaterSeason:
       goals=20, assists=30, points=50, g_pace=20.0, a_pace=30.0,
       position=SkaterPosition( 'C' ), player_name='Stub', birth_date=date( 1997, 1, 13 ),
       team=Team( 'COL' ), schedule_games=82, pace_games=82, p_pace=50.0,
-      penalty_minutes=20, gp_share=1.0, playoff_games=0, playoff_goals=0,
-      playoff_assists=0, power_play_goals=0, power_play_points=0,
+      penalty_minutes=20, gp_share=1.0,
+      power_play_goals=0, power_play_points=0,
       short_handed_goals=0, short_handed_points=0,
       even_strength_goals=20, even_strength_points=50, shots=200 )
 

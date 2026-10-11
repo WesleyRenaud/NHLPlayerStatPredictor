@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import replace
 from datetime import date
 from pathlib import Path
 
@@ -58,9 +57,6 @@ def _season(
       a_pace=half,
       p_pace=p_pace,
       gp_share=gp_share,
-      playoff_games=0,
-      playoff_goals=0,
-      playoff_assists=0,
       power_play_goals=0,
       power_play_points=0,
       short_handed_goals=0,
@@ -130,8 +126,6 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    ]
    roster_inserted: list[ tuple[ list[ RosterSkater ], str ] ] = []
    other_rows = []
-   merged_rows = [ replace( row, playoff_games=12, playoff_goals=3, playoff_assists=4 ) for row in rows ]
-   merged: list[ tuple[ list[ NhlSkaterSeason ], dict ] ] = []
    recorded_pace_games: list[ int ] = []
    previous_seasons: list[ int ] = []
    recorded: list[ bool ] = []
@@ -167,10 +161,6 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
       skater_season_ingester.OtherLeagueSeasonStore,
       'insert_rows',
       lambda written, path: None )
-   monkeypatch.setattr(
-      skater_season_ingester.PlayoffTotalsMerger,
-      'merge',
-      lambda regular, landings: merged.append( ( regular, landings ) ) or merged_rows )
    monkeypatch.setattr(
       skater_season_ingester.PlayerStatusStore,
       'insert_rows',
@@ -250,7 +240,7 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    stored_teams = TeamFactorStore.read()
    stored_ice_shares = IceChosenShareStore.read()
 
-   assert inserted == [ ( merged_rows, str( db_path ) ) ]
+   assert inserted == [ ( rows, str( db_path ) ) ]
    assert ProspectCalibrationStore.read() == ProspectCalibrationModel(
       20262027,
       [ ProspectProfile.from_landing( landings[ player_id ] ) for player_id in sorted( landings ) ],
@@ -265,13 +255,12 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
          str( db_path ) )
    ]
    assert stored_availability == AvailabilityDecayFitter.fit(
-      MixedSeasonShareBinder.bind( merged_rows, other_rows ) )
+      MixedSeasonShareBinder.bind( rows, other_rows ) )
    assert stored_leagues == LeagueFactorFitter.fit(
-      merged_rows,
+      rows,
       other_rows,
-      AgingCurveFitter.fit( merged_rows, other_rows ) )
-   assert merged == [ ( rows, landings ) ]
-   assert stored_model == PaceRegressionFitter.fit( merged_rows, other_rows, stored_leagues )
+      AgingCurveFitter.fit( rows, other_rows ) )
+   assert stored_model == PaceRegressionFitter.fit( rows, other_rows, stored_leagues )
    assert stored_teams == team_factors
    assert previous_seasons == last_played_ids
    assert recorded == [ False ]

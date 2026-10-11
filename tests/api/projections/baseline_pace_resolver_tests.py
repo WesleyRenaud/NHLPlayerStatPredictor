@@ -48,9 +48,6 @@ def _nhl( season_id: int, g_pace: float, a_pace: float, age: float ) -> NhlSkate
       a_pace=a_pace,
       p_pace=g_pace + a_pace,
       gp_share=1.0,
-      playoff_games=0,
-      playoff_goals=0,
-      playoff_assists=0,
       power_play_goals=0,
       power_play_points=0,
       short_handed_goals=0,
@@ -163,16 +160,6 @@ def Test_Resolve_TestDifferentPlayerIceScale_ExpectNoAdjustment() -> None:
    assert resolved is not None
    assert resolved.goals == pytest.approx( season.g_pace * SCORING_MULTIPLIER )
    assert resolved.assists == pytest.approx( season.a_pace * SCORING_MULTIPLIER )
-
-
-def Test_Resolve_TestPlayoffSurplus_ExpectRegularSeasonWorkflow() -> None:
-   regular = _nhl( 20242025, 20.0, 30.0, 27 )
-   playoffs = replace( regular, playoff_games=10, playoff_goals=5, playoff_assists=3 )
-
-   without = BaselinePaceResolver.resolve( Skater( [ regular ] ), 20252026, [], _model() )
-   resolved = BaselinePaceResolver.resolve( Skater( [ playoffs ] ), 20252026, [], _model() )
-
-   assert resolved == without
 
 
 def Test_Resolve_TestOtherLeagueOnly_ExpectTranslatedMultiplicativePace() -> None:
