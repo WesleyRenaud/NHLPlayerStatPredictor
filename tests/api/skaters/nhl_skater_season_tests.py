@@ -38,9 +38,6 @@ def _season( games_played: int, goals: int, assists: int ) -> NhlSkaterSeason:
       shots=200,
       penalty_minutes=0,
       gp_share=1.0,
-      playoff_games=0,
-      playoff_goals=0,
-      playoff_assists=0,
       power_play_goals=0,
       power_play_points=0,
       short_handed_goals=0,
@@ -74,9 +71,6 @@ def Test_FromRow_TestStoredFields_ExpectValues() -> None:
       shots=0,
       penalty_minutes=54,
       gp_share=1.0,
-      playoff_games=18,
-      playoff_goals=7,
-      playoff_assists=26,
       power_play_goals=20,
       power_play_points=35,
       short_handed_goals=3,
@@ -102,9 +96,6 @@ def Test_FromRow_TestStoredFields_ExpectValues() -> None:
       'A_PACE': season.a_pace,
       'P_PACE': season.p_pace,
       'GP_SHARE': season.gp_share,
-      'PLAYOFF_GAMES': season.playoff_games,
-      'PLAYOFF_GOALS': season.playoff_goals,
-      'PLAYOFF_ASSISTS': season.playoff_assists,
       'PP_GOALS': season.power_play_goals,
       'PP_POINTS': season.power_play_points,
       'SHORT_HANDED_GOALS': season.short_handed_goals,
@@ -140,9 +131,6 @@ def Test_Key_TestPlayerAndSeason_ExpectKey() -> None:
       shots=0,
       penalty_minutes=54,
       gp_share=1.0,
-      playoff_games=0,
-      playoff_goals=0,
-      playoff_assists=0,
       power_play_goals=0,
       power_play_points=0,
       short_handed_goals=0,
@@ -164,27 +152,3 @@ def Test_EvenStrengthPace_TestExplicitCounts_ExpectPacedSourceValues() -> None:
       Season.pace( season.even_strength_points - season.even_strength_goals, season.games_played, season.pace_games ) )
 
 
-def Test_PlayoffSurplus_TestAboveRegularRate_ExpectExtraScoring() -> None:
-   season = replace( _season( 60, 12, 18 ), playoff_games=20, playoff_goals=10, playoff_assists=9 )
-   share = season.playoff_games / season.games_played
-
-   surplus = season.playoff_surplus()
-
-   assert surplus.goals == pytest.approx( season.playoff_goals - share * season.goals )
-   assert surplus.assists == pytest.approx( season.playoff_assists - share * season.assists )
-
-
-def Test_PlayoffSurplus_TestBelowRegularRate_ExpectNoSurplus() -> None:
-   season = replace( _season( 80, 40, 40 ), playoff_games=10, playoff_goals=1, playoff_assists=2 )
-
-   surplus = season.playoff_surplus()
-
-   assert surplus.goals == 0.0
-   assert surplus.assists == 0.0
-
-
-def Test_PlayoffSurplus_TestNoPlayoffs_ExpectNoSurplus() -> None:
-   surplus = _season( 80, 40, 40 ).playoff_surplus()
-
-   assert surplus.goals == 0.0
-   assert surplus.assists == 0.0

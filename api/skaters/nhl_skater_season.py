@@ -27,9 +27,6 @@ class NhlSkaterSeason( SkaterSeason ):
    p_pace: float
    penalty_minutes: int
    gp_share: float | None
-   playoff_games: int
-   playoff_goals: int
-   playoff_assists: int
    power_play_goals: int
    power_play_points: int
    short_handed_goals: int
@@ -63,9 +60,6 @@ class NhlSkaterSeason( SkaterSeason ):
          p_pace=float( row[ 'P_PACE' ] ),
          penalty_minutes=int( row[ 'PIM' ] ),
          gp_share=None if gp_share is None else float( gp_share ),
-         playoff_games=int( row[ 'PLAYOFF_GAMES' ] ),
-         playoff_goals=int( row[ 'PLAYOFF_GOALS' ] ),
-         playoff_assists=int( row[ 'PLAYOFF_ASSISTS' ] ),
          power_play_goals=int( row[ 'PP_GOALS' ] ),
          power_play_points=int( row[ 'PP_POINTS' ] ),
          short_handed_goals=int( row[ 'SHORT_HANDED_GOALS' ] ),
@@ -134,10 +128,3 @@ class NhlSkaterSeason( SkaterSeason ):
             self.even_strength_points - self.even_strength_goals,
             self.games_played,
             self.pace_games ) )
-
-
-   def playoff_surplus( self ) -> SeasonPace:
-      share = self.playoff_games / self.games_played
-      return SeasonPace(
-         goals=max( self.playoff_goals - share * self.goals, 0.0 ),
-         assists=max( self.playoff_assists - share * self.assists, 0.0 ) )

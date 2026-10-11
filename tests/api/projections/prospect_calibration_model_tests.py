@@ -40,7 +40,6 @@ def _nhl( player_id: int, season_id: int ) -> NhlSkaterSeason:
       goals=10, assists=20, points=30, g_pace=21.0, a_pace=42.0,
       position=SkaterPosition.CENTER, player_name='Prospect', birth_date=date( 2000, 1, 1 ),
       team=Team.BOSTON_BRUINS, schedule_games=82, pace_games=84, p_pace=63.0, gp_share=0.5,
-      playoff_games=0, playoff_goals=0, playoff_assists=0,
       even_strength_goals=10, even_strength_points=30,
       power_play_goals=0, power_play_points=0, short_handed_goals=0,
       short_handed_points=0, shots=100, penalty_minutes=20 )
