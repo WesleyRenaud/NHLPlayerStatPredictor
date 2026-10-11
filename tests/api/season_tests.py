@@ -73,6 +73,14 @@ def Test_Prior_TestSeasons_ExpectSecondLastLength() -> None:
    assert prior == sorted( seasons )[ Position.SECOND_LAST ]
 
 
+def Test_AgeInYear_TestLaterYear_ExpectAgePlusElapsed() -> None:
+   age = 29
+   from_year = 2024
+   elapsed = 2
+
+   assert Season.age_in_year( age, from_year, from_year + elapsed ) == age + elapsed
+
+
 def Test_RecencyLag_TestImmediatePrior_ExpectZero() -> None:
    target_season_id = 20212022
    season_id = 20202021

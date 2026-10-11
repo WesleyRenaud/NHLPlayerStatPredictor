@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from ..projections.scoring_paces import ScoringPaces
+from ..season import Season
 
 
 @dataclass( frozen=True )
@@ -21,7 +22,7 @@ class PriorYear():
 
 
    def age_in_year( self, year: int ) -> int:
-      return self.age + year - self.year
+      return Season.age_in_year( self.age, self.year, year )
 
 
    @classmethod

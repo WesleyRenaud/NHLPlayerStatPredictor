@@ -7,9 +7,7 @@ from api.recency.prior_year import PriorYear
 from api.recency.production_coefficient_fitter import ProductionCoefficientFitter
 from api.recency.production_growth import ProductionGrowth
 from api.recency.production_trajectory_change import ProductionTrajectoryChange
-from api.recency.production_trajectory_fit import ProductionTrajectoryFit
 from api.recency.production_trajectory_fitter import ProductionTrajectoryFitter
-from api.recency.production_trajectory_share import ProductionTrajectoryShare
 from api.shared.enums.position import Position
 
 
@@ -19,9 +17,8 @@ def _change(
       latest: float,
       following: float,
       multiplier: float = 1.0,
-      games: int = 1,
-      earlier: float | None = None ) -> ProductionTrajectoryChange:
-   return ProductionTrajectoryChange( age, prior, latest, following, multiplier, games, earlier )
+      games: int = 1 ) -> ProductionTrajectoryChange:
+   return ProductionTrajectoryChange( age, prior, latest, following, multiplier, games )
 
 
 def _pace( prior: PriorYear ) -> float:
@@ -39,47 +36,49 @@ def _prior(
       0.0, games, games if nhl_games is None else nhl_games, age )
 
 
-def _at( fit: ProductionTrajectoryFit, age: int ) -> ProductionTrajectoryShare:
-   return next( share for share in fit.by_age if share.age == age )
-
-
 def Test_Fit_TestRetainedFraction_ExpectGamesWeightedShare() -> None:
    kept = [ _change( 24, 10.0, 20.0, 20.0 ) for _index in range( ProductionCoefficientFitter.MIN_SUPPORT - 1 ) ]
    given_back = _change( 24, 10.0, 20.0, 10.0, games=19 )
-
    changes = [ *kept, given_back ]
+   kept_gap = sum(
+      change.games * ( change.following_pace / change.multiplier - change.prior_pace )
+      for change in changes )
+   swing = sum(
+      change.games * ( change.latest_pace - change.prior_pace )
+      for change in changes )
+
    fit = ProductionTrajectoryFitter.fit( changes )
-   still_present = sum( change.games * change.still_present() for change in changes )
-   pace_change = sum( change.games * change.pace_change() for change in changes )
 
    assert fit is not None
-   assert _at( fit, 24 ).rise_share == pytest.approx( still_present / pace_change )
-   assert _at( fit, 24 ).drop_share is None
+   assert fit.retained( 24, True ) == pytest.approx( kept_gap / swing )
+   assert fit.retained( 24, False ) is None
 
 
 def Test_Fit_TestSmallSwing_ExpectExcluded() -> None:
    support = ProductionCoefficientFitter.MIN_SUPPORT
    loud = [ _change( 24, 40.0, 80.0, 140.0, multiplier=2.0 ) for _index in range( support ) ]
    tiny = [ _change( 24, 50.0, 50.5, 0.0 ) for _index in range( support ) ]
+   change = loud[ Position.FIRST ]
+   kept_gap = change.following_pace / change.multiplier - change.prior_pace
+   swing = change.latest_pace - change.prior_pace
 
    fit = ProductionTrajectoryFitter.fit( [ *loud, *tiny ] )
-   sample = loud[ 0 ]
 
    assert fit is not None
-   assert _at( fit, 24 ).rise_share == pytest.approx( sample.still_present() / sample.pace_change() )
+   assert fit.retained( 24, True ) == pytest.approx( kept_gap / swing )
 
 
 def Test_Fit_TestTypicalSwing_ExpectMedianMove() -> None:
+   repeated = _change( 24, 40.0, 80.0, 80.0 )
    changes = [
       _change( 24, 80.0, 100.0, 100.0 ),
       _change( 24, 50.0, 100.0, 100.0 ),
    ]
 
    for _index in range( ProductionCoefficientFitter.MIN_SUPPORT - 1 ):
-      changes.append( _change( 24, 40.0, 80.0, 80.0 ) )
+      changes.append( repeated )
 
    fit = ProductionTrajectoryFitter.fit( changes )
-   repeated = _change( 24, 40.0, 80.0, 80.0 )
 
    assert fit is not None
    assert fit.move == pytest.approx( repeated.relative() )
