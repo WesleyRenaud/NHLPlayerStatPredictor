@@ -8,9 +8,12 @@ from .nhl_production_stat import NhlProductionStat
 from .pace_regression_model import PaceRegressionModel
 from .prior_year import PriorYear
 from .prior_year_builder import PriorYearBuilder
+from .production_growth import ProductionGrowth
 from .production_history_predictor import ProductionHistoryPredictor
 from .production_season import ProductionSeason
 from .production_trajectory_fit import ProductionTrajectoryFit
+from .production_trend import ProductionTrend
+from .production_trend_line import ProductionTrendLine
 from ..projections.pace_values import PaceValues
 from ..projections.scoring_stat import ScoringStat
 from ..season import Season
@@ -36,11 +39,11 @@ class PaceRegressionPredictor():
       target_age = latest.age_in_year( year )
       projected_paces_by_stat: dict[ ScoringStat, float ] = {}
       nhl_priors = PriorYearBuilder.build( nhl_seasons, [], year, [], player_ice_scales )
-      curve = cls._scoring_curve( priors, nhl_seasons )
+      trend_seasons = ProductionTrend.seasons( nhl_seasons, year )
 
       for stat in ScoringStat:
          projected_paces_by_stat[ stat ] = cls._pace(
-            model, priors, target_age, stat, model.trajectory, curve )
+            model, priors, target_age, stat, model.trajectory, trend_seasons, year )
 
       return PaceValues(
          **{ stat.value: pace for stat, pace in projected_paces_by_stat.items() },
@@ -74,45 +77,49 @@ class PaceRegressionPredictor():
          target_age: int,
          stat: ScoringStat,
          trajectory: ProductionTrajectoryFit,
-         curve: list[ ProductionSeason ] ) -> float:
+         trend_seasons: list[ NhlSkaterSeason ] | None,
+         target_year: int ) -> float:
       if not priors:
          return 0.0
 
+      if trend_seasons is not None:
+         return cls._pace_from_trend( trend_seasons, stat, model.scoring_growth, target_year )
+
       return ProductionHistoryPredictor.pace(
-         [ ProductionSeason(
-            prior.age,
-            getattr( prior.scoring, stat.value ),
-            prior.games,
-            None if prior.arrival is None else getattr( prior.arrival, stat.value ) )
-            for prior in priors ],
+         [
+            ProductionSeason(
+               prior.age,
+               getattr( prior.scoring, stat.value ),
+               prior.games,
+               None if prior.arrival is None else getattr( prior.arrival, stat.value ) )
+            for prior in priors
+         ],
          target_age,
          partial( ProductionHistoryPredictor.coefficient, model.scoring_growth ),
          partial( ProductionHistoryPredictor.weight, model.history_weights ),
-         trajectory,
-         curve )
+         trajectory )
 
 
    @classmethod
-   def _scoring_curve(
+   def _pace_from_trend(
          cls,
-         priors: list[ PriorYear ],
-         nhl_seasons: list[ NhlSkaterSeason ] ) -> list[ ProductionSeason ]:
-      # Judge the scoring line the player actually had. Ice rescaling is a minutes
-      # adjustment and would redraw a level as a dip, or a dip as noise.
-      played = {
-         Season.start_year( season.season_id ): season.p_pace
-         for season in nhl_seasons
-      }
-      return [
-         ProductionSeason(
-            prior.age,
-            played.get( prior.year, cls._played_points( prior ) ),
-            prior.games )
-         for prior in priors
-      ]
+         seasons: list[ NhlSkaterSeason ],
+         stat: ScoringStat,
+         growth: list[ ProductionGrowth ],
+         target_year: int ) -> float:
+      prior_seasons = seasons[ : Position.LAST ]
+      latest = seasons[ Position.LAST ]
+      point_line = ProductionTrendLine.fit( [ season.p_pace for season in prior_seasons ] )
+      kept = ProductionTrend.kept( point_line.relative_slope )
+      component_line = ProductionTrendLine.fit( [
+         getattr( season.scoring_paces(), stat.value ) for season in prior_seasons
+      ] )
+      latest_pace = getattr( latest.scoring_paces(), stat.value )
+      at_latest_age = ProductionTrend.at_latest( component_line.level, latest_pace, kept )
+      target_age = latest.age_in_year( target_year )
+      multiplier = ProductionHistoryPredictor.multiplier(
+         partial( ProductionHistoryPredictor.coefficient, growth ),
+         latest.age,
+         target_age )
 
-
-   @classmethod
-   def _played_points( cls, prior: PriorYear ) -> float:
-      scoring = prior.scoring if prior.arrival is None else prior.arrival
-      return scoring.goals + scoring.assists
+      return max( 0.0, at_latest_age * multiplier )

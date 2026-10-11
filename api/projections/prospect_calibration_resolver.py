@@ -55,7 +55,7 @@ class ProspectCalibrationResolver():
       pick = profile.draft_pick_before( target_season_id ).value
       if pick is None or pick > cls.MAX_DRAFT_PICK:
          return None
-      age = source.age + Season.start_year( target_season_id ) - Season.start_year( source.season_id )
+      age = source.age_in_year( Season.start_year( target_season_id ) )
       if not ProspectEligibility.eligible( profile, target_season_id, age ):
          return None
       return pick

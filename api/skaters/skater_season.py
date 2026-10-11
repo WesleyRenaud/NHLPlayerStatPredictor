@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ..season import Season
 from .skater_position import SkaterPosition
 
 
@@ -17,3 +18,7 @@ class SkaterSeason():
    g_pace: float
    a_pace: float
    position: SkaterPosition
+
+
+   def age_in_year( self, year: int ) -> int:
+      return Season.age_in_year( self.age, Season.start_year( self.season_id ), year )

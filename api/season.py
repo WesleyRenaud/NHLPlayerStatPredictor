@@ -12,6 +12,11 @@ class Season():
 
 
    @classmethod
+   def age_in_year( cls, age: int, from_year: int, to_year: int ) -> int:
+      return age + to_year - from_year
+
+
+   @classmethod
    def recency_lag( cls, target_season_id: int, season_id: int ) -> int:
       return cls.start_year( target_season_id ) - cls.start_year( season_id ) - 1
 
