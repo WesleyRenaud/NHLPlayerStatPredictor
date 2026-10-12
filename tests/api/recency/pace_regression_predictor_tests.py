@@ -105,6 +105,66 @@ def Test_Paces_TestNoHistory_ExpectNone() -> None:
    assert PaceRegressionPredictor.paces( _model(), [], 20252026, [] ) is None
 
 
+def Test_Paces_TestShortNhlSeason_ExpectLeftOut() -> None:
+   games = PaceRegressionPredictor.INCLUDED_GAMES - 1
+   latest = _prior( 2024, 19, 40.0 )
+   older = PriorYear(
+      2023, ScoringPaces( 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 ), 0.0, games, games, 18 )
+
+   paced = PaceRegressionPredictor.paces( _model(), [ latest, older ], 20252026, [] )
+
+   assert paced is not None
+   assert paced.goals == pytest.approx( latest.scoring.goals * AGE_19_TO_20_MULTIPLIER )
+
+
+def Test_Paces_TestLatestShortNhlSeason_ExpectOlderSeason() -> None:
+   games = PaceRegressionPredictor.INCLUDED_GAMES - 1
+   latest = PriorYear(
+      2024, ScoringPaces( 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 ), 0.0, games, games, 19 )
+   older = _prior( 2023, 18, 10.0 )
+
+   paced = PaceRegressionPredictor.paces( _model(), [ latest, older ], 20252026, [] )
+
+   assert paced is not None
+   assert paced.goals == pytest.approx(
+      older.scoring.goals * AGE_18_TO_19_MULTIPLIER * AGE_19_TO_20_MULTIPLIER )
+
+
+def Test_Paces_TestOnlyShortNhlSeason_ExpectNone() -> None:
+   games = PaceRegressionPredictor.INCLUDED_GAMES - 1
+   prior = PriorYear(
+      2024, ScoringPaces( 20.0, 20.0, 0.0, 0.0, 0.0, 0.0 ), 0.0, games, games, 19 )
+
+   assert PaceRegressionPredictor.paces( _model(), [ prior ], 20252026, [] ) is None
+
+
+def Test_Paces_TestTenGameNhlSeason_ExpectPartialWeight() -> None:
+   games = PaceRegressionPredictor.INCLUDED_GAMES
+   latest = _prior( 2024, 19, 40.0 )
+   older = PriorYear(
+      2023, ScoringPaces( 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 ), 0.0, games, games, 18 )
+   model = replace( _model(), trajectory=ProductionTrajectoryFit.empty() )
+   reliability = PriorYear.reliability( games )
+   weight = LATEST_RELATIONSHIP_WEIGHT + OLDER_RELATIONSHIP_WEIGHT * reliability
+
+   paced = PaceRegressionPredictor.paces( model, [ latest, older ], 20252026, [] )
+
+   assert paced is not None
+   assert paced.goals == pytest.approx(
+      latest.scoring.goals * AGE_19_TO_20_MULTIPLIER * LATEST_RELATIONSHIP_WEIGHT / weight )
+
+
+def Test_Paces_TestShortOtherLeague_ExpectKept() -> None:
+   games = PaceRegressionPredictor.INCLUDED_GAMES - 1
+   prior = PriorYear(
+      2024, ScoringPaces( 20.0, 20.0, 0.0, 0.0, 0.0, 0.0 ), 0.0, games, 0, 19 )
+
+   paced = PaceRegressionPredictor.paces( _model(), [ prior ], 20252026, [] )
+
+   assert paced is not None
+   assert paced.goals == pytest.approx( prior.scoring.goals * AGE_19_TO_20_MULTIPLIER )
+
+
 def Test_Paces_TestNhlSeason_ExpectOlderOtherLeagueLeftOut() -> None:
    priors = [ _prior( 2024, 19, 60.0 ), _prior( 2023, 18, 5.0, nhl_games=0 ) ]
 

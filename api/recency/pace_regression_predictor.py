@@ -22,6 +22,9 @@ from ..skaters.nhl_skater_season import NhlSkaterSeason
 
 
 class PaceRegressionPredictor():
+   INCLUDED_GAMES = 10
+
+
    @classmethod
    def paces(
          cls,
@@ -34,6 +37,10 @@ class PaceRegressionPredictor():
          return None
 
       priors = cls._history( priors )
+
+      if not priors:
+         return None
+
       year = Season.start_year( target_season_id )
       latest = priors[ Position.FIRST ]
       target_age = latest.age_in_year( year )
@@ -61,8 +68,10 @@ class PaceRegressionPredictor():
 
       for index, prior in enumerate( priors ):
          if prior.nhl_games:
-            kept.append( prior )
             seen_nhl = True
+
+            if prior.nhl_games >= cls.INCLUDED_GAMES:
+               kept.append( prior )
          elif not seen_nhl and ( index == Position.FIRST or not arrived ):
             kept.append( prior )
 

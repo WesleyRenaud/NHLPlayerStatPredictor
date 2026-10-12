@@ -130,7 +130,7 @@ def Test_Fit_TestTranslatedPriors_ExpectNormalizedPointsGrowthAndReliability() -
    assert model.history_weights[ Position.FIRST ].weight == pytest.approx( 1.0 )
 
 
-def Test_Fit_TestSmallNhlStints_ExpectExcludedSpecialTeamsTraining() -> None:
+def Test_Fit_TestCallUpBesideFullSeason_ExpectNoScoringSample() -> None:
    seasons: list[ NhlSkaterSeason ] = []
    others: list[ OtherLeagueSkaterSeason ] = []
 
@@ -141,8 +141,8 @@ def Test_Fit_TestSmallNhlStints_ExpectExcludedSpecialTeamsTraining() -> None:
 
    model = PaceRegressionFitter.fit( seasons, others, [ LeagueFactor( 'AAA', 0.5 ) ] )
 
-   assert model.scoring_growth
-   assert model.history_weights
+   assert model.scoring_growth == []
+   assert model.history_weights == []
 
 
 def Test_Fit_TestNoSamples_ExpectEmptyModel() -> None:
