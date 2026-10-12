@@ -143,11 +143,8 @@ def Test_Resolve_TestMixedLeagueIceScale_ExpectOnlyNhlAdjusted() -> None:
       [ NhlPlayerSeasonIceScale( nhl.player_id, nhl.season_id, nhl_ice_scale ) ] )
 
    assert resolved is not None
-   expected = (
-      ( nhl.g_pace + nhl.a_pace ) * nhl_ice_scale * nhl.games_played
-      + ( other.g_pace + other.a_pace ) * factor.rate * other.games_played )
-   expected /= nhl.games_played + other.games_played
-   assert resolved.goals + resolved.assists == pytest.approx( expected * SCORING_MULTIPLIER )
+   assert resolved.goals + resolved.assists == pytest.approx(
+      ( nhl.g_pace + nhl.a_pace ) * nhl_ice_scale * SCORING_MULTIPLIER )
 
 
 def Test_Resolve_TestDifferentPlayerIceScale_ExpectNoAdjustment() -> None:
@@ -204,7 +201,7 @@ def Test_Resolve_TestTranslatedSeason_ExpectLeagueConversionOnceThenNhlGrowth() 
       assert getattr( resolved, stat.value ) == pytest.approx( translated_pace * SCORING_MULTIPLIER )
 
 
-def Test_Resolve_TestSmallNhlStint_ExpectObservedAndInferredComponents() -> None:
+def Test_Resolve_TestSmallNhlStint_ExpectOtherLeagueOnly() -> None:
    factor = LeagueFactor( 'AAA', 0.4 )
    nhl = replace( _nhl( 20242025, 20.0, 30.0, 18 ), games_played=9, power_play_goals=2, power_play_points=4 )
    other = _other( 20242025, 30.0, 50.0, factor.league )
@@ -212,13 +209,8 @@ def Test_Resolve_TestSmallNhlStint_ExpectObservedAndInferredComponents() -> None
    resolved = BaselinePaceResolver.resolve( Skater( [ nhl, other ] ), 20252026, [ factor ], _model() )
 
    assert resolved is not None
-   assert resolved.goals > 0.0
-   observed_pp_pace = nhl.power_play_goals * nhl.pace_games / nhl.games_played
    inferred_pp_pace = other.g_pace * factor.rate * OTHER_LEAGUE_SHARES.power_play_goals
-   expected_pp = (
-      observed_pp_pace * nhl.games_played + inferred_pp_pace * other.games_played
-   ) / ( nhl.games_played + other.games_played ) * SCORING_MULTIPLIER
-   assert resolved.power_play_goals == pytest.approx( expected_pp )
+   assert resolved.power_play_goals == pytest.approx( inferred_pp_pace * SCORING_MULTIPLIER )
    assert resolved.penalty_minutes == 0.0
    assert resolved.shots == 0.0
 
@@ -233,7 +225,7 @@ def Test_Resolve_TestMissedSeason_ExpectElapsedAgeGrowth() -> None:
    assert resolved.goals == pytest.approx( season.g_pace * SCORING_MULTIPLIER ** elapsed_seasons )
 
 
-def Test_Resolve_TestLatestOtherLeague_ExpectMixedComponentsAndNhlOnlyPim() -> None:
+def Test_Resolve_TestLaterOtherLeague_ExpectNhlSeasonOnly() -> None:
    factor = LeagueFactor( 'AAA', 0.4 )
    nhl = replace( _nhl( 20222023, 20.0, 30.0, 16 ), penalty_minutes=20, power_play_goals=2, power_play_points=4 )
    other = _other( 20242025, 30.0, 50.0, factor.league )
@@ -243,10 +235,8 @@ def Test_Resolve_TestLatestOtherLeague_ExpectMixedComponentsAndNhlOnlyPim() -> N
    assert resolved is not None
    elapsed_nhl_seasons = 2025 - 2022
    pace_scale = nhl.pace_games / nhl.games_played
-   inferred_pp_pace = other.g_pace * factor.rate * OTHER_LEAGUE_SHARES.power_play_goals
-   # This fixture has no multi-year relationship weights, so scoring uses the latest season.
-   expected_pp = inferred_pp_pace * SCORING_MULTIPLIER
-   assert resolved.power_play_goals == pytest.approx( expected_pp )
+   assert resolved.power_play_goals == pytest.approx(
+      nhl.power_play_goals * pace_scale * SCORING_MULTIPLIER ** elapsed_nhl_seasons )
    assert resolved.penalty_minutes == pytest.approx(
       nhl.penalty_minutes * pace_scale * PIM_MULTIPLIER ** elapsed_nhl_seasons )
 
