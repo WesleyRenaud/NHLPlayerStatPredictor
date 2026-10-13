@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pytest
 
-from api.recency.prior_year import PriorYear
 from api.recency.production_growth import ProductionGrowth
 from api.recency.production_history_predictor import ProductionHistoryPredictor
 from api.recency.production_season import ProductionSeason
@@ -35,11 +34,9 @@ def Test_Pace_TestHistory_ExpectRawAverageThenLatestAgeMultiplier() -> None:
    pace = ProductionHistoryPredictor.pace( history, 21, _lookup, _weight_lookup, EMPTY )
 
    latest, older = history
-   latest_weight = PriorYear.reliability( latest.games ) * LATEST_WEIGHT
-   older_weight = PriorYear.reliability( older.games ) * OLDER_WEIGHT
    weighted_average = (
-      latest.pace * latest_weight + older.pace * older_weight
-   ) / ( latest_weight + older_weight )
+      latest.pace * LATEST_WEIGHT + older.pace * OLDER_WEIGHT
+   ) / ( LATEST_WEIGHT + OLDER_WEIGHT )
    assert pace == pytest.approx( weighted_average * ANNUAL_MULTIPLIER )
 
 
@@ -62,16 +59,14 @@ def Test_Pace_TestQualifiedSeasonLengths_ExpectSameProjection(
 
 
 @pytest.mark.parametrize( 'games', [ 0, 5, 10, 19 ] )
-def Test_Pace_TestSmallSample_ExpectReducedSeasonWeight( games: int ) -> None:
+def Test_Pace_TestSmallSample_ExpectFullSeasonWeight( games: int ) -> None:
    history = [ _season( 20, 20.0, 60 ), _season( 19, 5.0, games ) ]
-   latest_weight = PriorYear.reliability( 60 ) * LATEST_WEIGHT
-   older_weight = PriorYear.reliability( games ) * OLDER_WEIGHT
 
    pace = ProductionHistoryPredictor.pace( history, 21, _lookup, _weight_lookup, EMPTY )
 
    assert pace == pytest.approx(
-      ( 20.0 * latest_weight + 5.0 * older_weight )
-      / ( latest_weight + older_weight ) * ANNUAL_MULTIPLIER )
+      ( 20.0 * LATEST_WEIGHT + 5.0 * OLDER_WEIGHT )
+      / ( LATEST_WEIGHT + OLDER_WEIGHT ) * ANNUAL_MULTIPLIER )
 
 
 def Test_Pace_TestArrival_ExpectLatestSeasonAlreadyAtTargetAge() -> None:
@@ -81,8 +76,8 @@ def Test_Pace_TestArrival_ExpectLatestSeasonAlreadyAtTargetAge() -> None:
 
    pace = ProductionHistoryPredictor.pace( history, 21, _lookup, _weight_lookup, EMPTY )
 
-   latest_weight = PriorYear.reliability( history[ 0 ].games ) * LATEST_WEIGHT
-   older_weight = PriorYear.reliability( history[ 1 ].games ) * OLDER_WEIGHT
+   latest_weight = LATEST_WEIGHT
+   older_weight = OLDER_WEIGHT
    assert pace == pytest.approx(
       ( arrival * latest_weight + older_pace * older_weight * ANNUAL_MULTIPLIER )
       / ( latest_weight + older_weight ) )
