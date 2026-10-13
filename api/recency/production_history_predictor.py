@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from .prior_year import PriorYear
 from .production_growth import ProductionGrowth
 from .production_season import ProductionSeason
 from .production_trajectory import ProductionTrajectory
@@ -98,7 +97,7 @@ class ProductionHistoryPredictor():
          target_age: int,
          weight_lookup: Callable[ [ int, int ], ProductionWeight ] ) -> list[ float ]:
       return [
-         weight_lookup( season.age, target_age ).weight * PriorYear.reliability( season.games )
+         weight_lookup( season.age, target_age ).weight
          for season in history
       ]
 

@@ -203,8 +203,8 @@ def Test_Pace_TestWeightedShotHistory_ExpectRawAverageThenGrowth( older_games: i
       ProductionCoefficient( 18, 20, 1.32, 0.5, 100 ),
    ]
    _older_to_latest, latest_relationship, older_relationship = coefficients
-   latest_weight = latest_relationship.weight * PriorYear.reliability( latest.games_played )
-   older_weight = older_relationship.weight * PriorYear.reliability( older.games_played )
+   latest_weight = latest_relationship.weight
+   older_weight = older_relationship.weight
    history = [
       ProductionSeason( int( latest.age ), latest.shots_pace(), latest.games_played ),
       ProductionSeason( int( older.age ), older.shots_pace(), older.games_played ),

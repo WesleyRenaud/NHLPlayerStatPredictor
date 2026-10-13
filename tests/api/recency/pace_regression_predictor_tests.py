@@ -59,10 +59,7 @@ def _trajectory_average(
       ProductionSeason( int( latest.age ), latest_value, latest.games ),
       ProductionSeason( int( older.age ), older_value, older.games ),
    ]
-   bases = [
-      latest_weight * PriorYear.reliability( latest.games ),
-      older_weight * PriorYear.reliability( older.games ),
-   ]
+   bases = [ latest_weight, older_weight ]
    shares = ProductionTrajectory.shares( history, bases, fit )
    return ( latest_value * shares[ 0 ] + older_value * shares[ 1 ] ) / sum( shares )
 
@@ -105,14 +102,13 @@ def Test_Paces_TestNoHistory_ExpectNone() -> None:
    assert PaceRegressionPredictor.paces( _model(), [], 20252026, [] ) is None
 
 
-def Test_Paces_TestShortNhlSeason_ExpectPartialWeight() -> None:
+def Test_Paces_TestShortNhlSeason_ExpectFullWeight() -> None:
    games = PriorYear.MIN_GAMES // 2 - 1
    latest = _prior( 2024, 19, 40.0 )
    older = PriorYear(
       2023, ScoringPaces( 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 ), 0.0, games, games, 18 )
    model = replace( _model(), trajectory=ProductionTrajectoryFit.empty() )
-   reliability = PriorYear.reliability( games )
-   weight = LATEST_RELATIONSHIP_WEIGHT + OLDER_RELATIONSHIP_WEIGHT * reliability
+   weight = LATEST_RELATIONSHIP_WEIGHT + OLDER_RELATIONSHIP_WEIGHT
 
    paced = PaceRegressionPredictor.paces( model, [ latest, older ], 20252026, [] )
 
@@ -121,14 +117,13 @@ def Test_Paces_TestShortNhlSeason_ExpectPartialWeight() -> None:
       latest.scoring.goals * AGE_19_TO_20_MULTIPLIER * LATEST_RELATIONSHIP_WEIGHT / weight )
 
 
-def Test_Paces_TestLatestShortNhlSeason_ExpectPartialWeight() -> None:
+def Test_Paces_TestLatestShortNhlSeason_ExpectFullWeight() -> None:
    games = PriorYear.MIN_GAMES // 2 - 1
    latest = PriorYear(
       2024, ScoringPaces( 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 ), 0.0, games, games, 19 )
    older = _prior( 2023, 18, 10.0 )
    model = replace( _model(), trajectory=ProductionTrajectoryFit.empty() )
-   reliability = PriorYear.reliability( games )
-   latest_weight = LATEST_RELATIONSHIP_WEIGHT * reliability
+   latest_weight = LATEST_RELATIONSHIP_WEIGHT
    older_weight = OLDER_RELATIONSHIP_WEIGHT
    older_goals = older.scoring.goals * AGE_19_TO_20_MULTIPLIER
 
@@ -149,14 +144,13 @@ def Test_Paces_TestOnlyShortNhlSeason_ExpectKept() -> None:
    assert paced.goals == pytest.approx( prior.scoring.goals * AGE_19_TO_20_MULTIPLIER )
 
 
-def Test_Paces_TestTenGameNhlSeason_ExpectPartialWeight() -> None:
+def Test_Paces_TestTenGameNhlSeason_ExpectFullWeight() -> None:
    games = PriorYear.MIN_GAMES // 2
    latest = _prior( 2024, 19, 40.0 )
    older = PriorYear(
       2023, ScoringPaces( 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 ), 0.0, games, games, 18 )
    model = replace( _model(), trajectory=ProductionTrajectoryFit.empty() )
-   reliability = PriorYear.reliability( games )
-   weight = LATEST_RELATIONSHIP_WEIGHT + OLDER_RELATIONSHIP_WEIGHT * reliability
+   weight = LATEST_RELATIONSHIP_WEIGHT + OLDER_RELATIONSHIP_WEIGHT
 
    paced = PaceRegressionPredictor.paces( model, [ latest, older ], 20252026, [] )
 
