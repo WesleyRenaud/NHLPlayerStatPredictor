@@ -10,6 +10,7 @@ from .prior_year import PriorYear
 from .prior_year_builder import PriorYearBuilder
 from .production_growth import ProductionGrowth
 from .production_history_predictor import ProductionHistoryPredictor
+from .production_keep_fit import ProductionKeepFit
 from .production_season import ProductionSeason
 from .production_trajectory_fit import ProductionTrajectoryFit
 from .production_trend import ProductionTrend
@@ -87,7 +88,8 @@ class PaceRegressionPredictor():
          return 0.0
 
       if trend_seasons is not None:
-         return cls._pace_from_trend( trend_seasons, stat, model.scoring_growth, target_year )
+         return cls._pace_from_trend(
+            trend_seasons, stat, model.scoring_growth, target_year, model.keep )
 
       return ProductionHistoryPredictor.pace(
          [
@@ -110,11 +112,12 @@ class PaceRegressionPredictor():
          seasons: list[ NhlSkaterSeason ],
          stat: ScoringStat,
          growth: list[ ProductionGrowth ],
-         target_year: int ) -> float:
+         target_year: int,
+         keep: ProductionKeepFit ) -> float:
       prior_seasons = seasons[ : Position.LAST ]
       latest = seasons[ Position.LAST ]
       point_line = ProductionTrendLine.fit( [ season.p_pace for season in prior_seasons ] )
-      kept = ProductionTrend.kept( point_line.relative_slope )
+      kept = keep.kept( point_line.relative_slope )
       component_line = ProductionTrendLine.fit( [
          getattr( season.scoring_paces(), stat.value ) for season in prior_seasons
       ] )

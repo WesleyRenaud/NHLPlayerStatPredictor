@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from .prior_year import PriorYear
-from .production_keep_band import ProductionKeepBand
 from ..season import Season
 from ..skaters.nhl_skater_season import NhlSkaterSeason
 
@@ -9,23 +8,6 @@ from ..skaters.nhl_skater_season import NhlSkaterSeason
 class ProductionTrend():
    # Seasons before the latest year. The line is fit on these, not on the latest year.
    PRIOR_SEASONS = 5
-
-   STEEP_KEPT = 0.80
-   STEEP_DECLINE = ProductionKeepBand( relative_slope_below=-0.078, kept_share=STEEP_KEPT )
-   FLAT = ProductionKeepBand( relative_slope_below=0.031, kept_share=0.55 )
-   MILD_RISE = ProductionKeepBand( relative_slope_below=0.096, kept_share=0.65 )
-   STEEP_RISE_KEPT = STEEP_KEPT
-
-
-   @classmethod
-   def kept( cls, relative_slope: float ) -> float:
-      bands = ( cls.STEEP_DECLINE, cls.FLAT, cls.MILD_RISE )
-
-      for band in bands:
-         if relative_slope < band.relative_slope_below:
-            return band.kept_share
-
-      return cls.STEEP_RISE_KEPT
 
 
    @classmethod
