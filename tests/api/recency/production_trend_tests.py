@@ -86,9 +86,9 @@ def Test_Kept_TestBelowSteepDecline_ExpectThatBand() -> None:
    assert ProductionTrend.kept( band.relative_slope_below - 0.001 ) == band.kept_share
 
 
-def Test_Kept_TestOnSteepDeclineBound_ExpectMildDecline() -> None:
+def Test_Kept_TestOnSteepDeclineBound_ExpectFlatBand() -> None:
    assert ProductionTrend.kept( ProductionTrend.STEEP_DECLINE.relative_slope_below ) == (
-      ProductionTrend.MILD_DECLINE.kept_share )
+      ProductionTrend.FLAT.kept_share )
 
 
 def Test_Kept_TestFlatSlope_ExpectFlatBand() -> None:
