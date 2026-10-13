@@ -8,8 +8,9 @@ from api.projections.scoring_paces import ScoringPaces
 from api.recency.pace_regression_model import PaceRegressionModel
 from api.recency.pace_regression_predictor import PaceRegressionPredictor
 from api.recency.prior_year import PriorYear
-from api.recency.prior_year import PriorYear
 from api.recency.production_growth import ProductionGrowth
+from api.recency.production_keep_band import ProductionKeepBand
+from api.recency.production_keep_fit import ProductionKeepFit
 from api.recency.production_trend import ProductionTrend
 from api.recency.production_trend_line import ProductionTrendLine
 from api.skaters.nhl_skater_season import NhlSkaterSeason
@@ -60,9 +61,17 @@ def _prior( year: int, age: int, pace: float ) -> PriorYear:
       age )
 
 
-def _kept_pace( prior_paces: list[ int ], latest_pace: int, growth: float ) -> float:
+def _keep( relative_slope: float, kept: float ) -> ProductionKeepFit:
+   return ProductionKeepFit( [ ProductionKeepBand( relative_slope + 1.0, kept ) ], kept )
+
+
+def _kept_pace(
+      prior_paces: list[ int ],
+      latest_pace: int,
+      growth: float,
+      keep: ProductionKeepFit ) -> float:
    line = _line( [ float( pace ) for pace in prior_paces ] )
-   kept = ProductionTrend.kept( line.relative_slope )
+   kept = keep.kept( line.relative_slope )
    at_latest_age = ProductionTrend.at_latest( line.level, float( latest_pace ), kept )
 
    return at_latest_age * growth
@@ -78,31 +87,6 @@ def Test_Fit_TestEvenSteps_ExpectNewestPaceAndStepOverLevel() -> None:
    assert line.level == pytest.approx( paces[ -1 ] )
    assert line.relative_slope == pytest.approx( step / mean_pace )
    assert line.level == pytest.approx( mean_pace + step * half_span )
-
-
-def Test_Kept_TestBelowSteepDecline_ExpectThatBand() -> None:
-   band = ProductionTrend.STEEP_DECLINE
-
-   assert ProductionTrend.kept( band.relative_slope_below - 0.001 ) == band.kept_share
-
-
-def Test_Kept_TestOnSteepDeclineBound_ExpectFlatBand() -> None:
-   assert ProductionTrend.kept( ProductionTrend.STEEP_DECLINE.relative_slope_below ) == (
-      ProductionTrend.FLAT.kept_share )
-
-
-def Test_Kept_TestFlatSlope_ExpectFlatBand() -> None:
-   assert ProductionTrend.kept( 0.0 ) == ProductionTrend.FLAT.kept_share
-
-
-def Test_Kept_TestSteepEnds_ExpectSameShare() -> None:
-   assert ProductionTrend.STEEP_DECLINE.kept_share == ProductionTrend.STEEP_KEPT
-   assert ProductionTrend.STEEP_RISE_KEPT == ProductionTrend.STEEP_KEPT
-
-
-def Test_Kept_TestSteepRise_ExpectRiseShare() -> None:
-   assert ProductionTrend.kept( ProductionTrend.MILD_RISE.relative_slope_below ) == (
-      ProductionTrend.STEEP_RISE_KEPT )
 
 
 def Test_Seasons_TestSixFullYears_ExpectOldestToNewest() -> None:
@@ -139,7 +123,7 @@ def Test_FullSeason_TestTwoFullSeasons_ExpectNone() -> None:
 def Test_AtLatest_TestPartialKeep_ExpectLevelPlusKeptGap() -> None:
    level = 94.0
    latest_pace = 66.0
-   kept = ProductionTrend.FLAT.kept_share
+   kept = 0.5
    gap = latest_pace - level
 
    assert ProductionTrend.at_latest( level, latest_pace, kept ) == pytest.approx(
@@ -150,6 +134,9 @@ def Test_Paces_TestFivePriorSeasons_ExpectKeptGapThenAgeGrowth() -> None:
    prior_paces = [ 72, 74, 97, 93, 90 ]
    latest_pace = 67
    growth = 0.9
+   kept = 0.5
+   line = _line( [ float( pace ) for pace in prior_paces ] )
+   keep = _keep( line.relative_slope, kept )
    seasons = [
       _nhl( year, age, pace )
       for year, age, pace in zip(
@@ -158,7 +145,7 @@ def Test_Paces_TestFivePriorSeasons_ExpectKeptGapThenAgeGrowth() -> None:
          prior_paces + [ latest_pace ],
          strict=True )
    ]
-   model = PaceRegressionModel( [ ProductionGrowth( 32, 33, growth, 20 ) ] )
+   model = PaceRegressionModel( [ ProductionGrowth( 32, 33, growth, 20 ) ], keep=keep )
 
    paced = PaceRegressionPredictor.paces(
       model,
@@ -168,7 +155,7 @@ def Test_Paces_TestFivePriorSeasons_ExpectKeptGapThenAgeGrowth() -> None:
 
    assert paced is not None
    assert paced.even_strength_goals == pytest.approx(
-      _kept_pace( prior_paces, latest_pace, growth ) )
+      _kept_pace( prior_paces, latest_pace, growth, keep ) )
 
 
 def Test_Paces_TestThreeSeasons_ExpectBlend() -> None:
