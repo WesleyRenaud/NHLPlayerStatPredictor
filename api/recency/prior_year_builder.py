@@ -70,6 +70,8 @@ class PriorYearBuilder():
             continue
 
          age = max( season.age for season in production )
+         stint = cls._partial_stint( year_seasons, production, established )
+         arrival_seasons = production if stint is None else [ stint, *production ]
          qualified.append(
             PriorYear(
                start_year,
@@ -80,7 +82,7 @@ class PriorYearBuilder():
                age=age,
                shots_pace=combined.shots,
                arrival=cls._arrival(
-                  production,
+                  arrival_seasons,
                   factors,
                   arrivals,
                   component_shares,
@@ -133,12 +135,31 @@ class PriorYearBuilder():
          if isinstance( season, OtherLeagueSkaterSeason ) and season.games_played ]
 
       if established and nhl:
+         if cls._nhl_games( seasons ) < PriorYear.MIN_GAMES:
+            return []
+
          return nhl
 
       if not established and other and cls._nhl_games( seasons ) < PriorYear.MIN_GAMES:
          return other
 
       return [ season for season in seasons if season.games_played ]
+
+
+   @classmethod
+   def _partial_stint(
+         cls,
+         year_seasons: list[ SkaterSeason ],
+         production: list[ SkaterSeason ],
+         established: bool ) -> NhlSkaterSeason | None:
+      if established or any( isinstance( season, NhlSkaterSeason ) for season in production ):
+         return None
+
+      for season in year_seasons:
+         if isinstance( season, NhlSkaterSeason ) and 0 < season.games_played < PriorYear.MIN_GAMES:
+            return season
+
+      return None
 
 
    @classmethod

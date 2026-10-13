@@ -7,6 +7,7 @@ from unittest.mock import Mock
 import pytest
 
 from api.aging.league_arrival import LeagueArrival
+from api.aging.league_arrival_averager import LeagueArrivalAverager
 from api.aging.league_factor import LeagueFactor
 from api.projections.scoring_component_shares import ScoringComponentShares
 from api.projections.scoring_paces import ScoringPaces
@@ -88,20 +89,20 @@ def Test_Build_TestTargetYearSeason_ExpectExcluded() -> None:
    assert [ prior.year for prior in priors ] == [ 2024 ]
 
 
-def Test_Build_TestSmallLatestSeason_ExpectIncluded() -> None:
+def Test_Build_TestSmallLatestSeason_ExpectLeftOut() -> None:
    seasons = [ _nhl( 2021, 82 ), _nhl( 2022, 82 ), _nhl( 2023, 10 ) ]
 
    priors = PriorYearBuilder.build( seasons, [], 2025, [] )
 
-   assert [ prior.year for prior in priors ] == [ 2023, 2022, 2021 ]
+   assert [ prior.year for prior in priors ] == [ 2022, 2021 ]
 
 
-def Test_Build_TestSmallSeasonInsideRun_ExpectIncluded() -> None:
+def Test_Build_TestSmallSeasonInsideRun_ExpectLeftOut() -> None:
    seasons = [ _nhl( 2021, 82 ), _nhl( 2022, PriorYear.MIN_GAMES - 1 ), _nhl( 2023, 82 ) ]
 
    priors = PriorYearBuilder.build( seasons, [], 2024, [] )
 
-   assert [ prior.year for prior in priors ] == [ 2023, 2022, 2021 ]
+   assert [ prior.year for prior in priors ] == [ 2023, 2021 ]
 
 
 @pytest.mark.parametrize( 'games', [ 1, 5, 10, 19, 20, 60 ] )
@@ -118,31 +119,67 @@ def Test_Build_TestZeroGames_ExpectExcluded() -> None:
    assert PriorYearBuilder.build( [ season ], [], 2025, [] ) == []
 
 
-def Test_Build_TestEnteringCallUp_ExpectOtherLeagueArrival() -> None:
+def Test_Build_TestEnteringCallUp_ExpectNhlStintInArrival() -> None:
    factor = LeagueFactor( 'AAA', 0.5 )
    rate = 0.9
+   age_step = 3.0
    shares = ScoringComponentShares( 25, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0 )
-   call_up_games = 5
+   call_up_games = PriorYear.MIN_GAMES // 2 - 1
    call_up = _nhl( 2024, call_up_games, goals=10, assists=10 )
    college = _other( 2024, 40 )
+   arrival = LeagueArrival( college.league, college.age, rate )
+   growth = ProductionGrowth( college.age, college.age + 1, age_step, 1 )
+   expected = LeagueArrivalAverager.scoring(
+      [ call_up, college ], [ factor ], [ arrival ], [ shares ], age_step )
 
    priors = PriorYearBuilder.build(
       [ call_up, college ],
       [ factor ],
       2025,
       [ shares ],
-      arrivals=[ LeagueArrival( college.league, college.age, rate ) ],
-      scoring_growth=[ ProductionGrowth( college.age, college.age + 1, 3.0, 1 ) ] )
+      arrivals=[ arrival ],
+      scoring_growth=[ growth ] )
 
    assert len( priors ) == 1
    prior = priors[ Position.FIRST ]
    assert prior.games == college.games_played
    assert prior.nhl_games == 0
+   assert expected is not None
    assert prior.arrival is not None
-   assert prior.arrival.goals == pytest.approx( college.g_pace * rate )
+   assert prior.arrival.goals == pytest.approx( expected.goals )
 
 
-def Test_Build_TestCallUpBesideFullSeason_ExpectNhlGamesOnly() -> None:
+def Test_Build_TestPartialStintOnArrival_ExpectNhlGamesInArrival() -> None:
+   stint_games = PriorYear.MIN_GAMES // 2
+   college_games = 40
+   rate = 0.9
+   age_step = 3.0
+   stint = _nhl( 2024, stint_games, goals=10, assists=0 )
+   college = _other( 2024, college_games )
+   factor = LeagueFactor( college.league, 0.5 )
+   shares = ScoringComponentShares( college.age, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0 )
+   growth = ProductionGrowth( college.age, college.age + 1, age_step, 1 )
+   arrival = LeagueArrival( college.league, college.age, rate )
+   expected = LeagueArrivalAverager.scoring(
+      [ stint, college ], [ factor ], [ arrival ], [ shares ], age_step )
+
+   priors = PriorYearBuilder.build(
+      [ stint, college ],
+      [ factor ],
+      2025,
+      [ shares ],
+      arrivals=[ arrival ],
+      scoring_growth=[ growth ] )
+
+   prior = priors[ Position.FIRST ]
+   assert prior.games == college_games
+   assert prior.nhl_games == 0
+   assert expected is not None
+   assert prior.arrival is not None
+   assert prior.arrival.goals == pytest.approx( expected.goals )
+
+
+def Test_Build_TestCallUpBesideFullSeason_ExpectCallUpLeftOut() -> None:
    call_up_games = 5
    college_games = 37
    full = _nhl( 2025, PriorYear.MIN_GAMES, age=21 )
@@ -155,13 +192,28 @@ def Test_Build_TestCallUpBesideFullSeason_ExpectNhlGamesOnly() -> None:
       [ full, call_up, college ], [ factor ], 2026, [ shares ] )
 
    by_year = { prior.year: prior for prior in priors }
-   call_up_year = Season.start_year( call_up.season_id )
    full_year = Season.start_year( full.season_id )
-   assert by_year[ call_up_year ].games == call_up.games_played
-   assert by_year[ call_up_year ].nhl_games == call_up.games_played
-   assert by_year[ call_up_year ].scoring.even_strength_goals == pytest.approx(
-      call_up.scoring_paces().even_strength_goals )
+   assert Season.start_year( call_up.season_id ) not in by_year
    assert by_year[ full_year ].games == full.games_played
+   assert by_year[ full_year ].nhl_games == full.games_played
+
+
+def Test_Build_TestPartialSeasonWithOtherLeague_ExpectLeftOut() -> None:
+   partial_games = PriorYear.MIN_GAMES // 2
+   other_games = 36
+   full = _nhl( 2025, PriorYear.MIN_GAMES, age=22 )
+   partial = _nhl( 2024, partial_games, age=21, goals=2, assists=0 )
+   other = _other( 2024, other_games )
+   factor = LeagueFactor( other.league, 0.5 )
+   shares = ScoringComponentShares( 21, 0.75, 0.68, 0.2, 0.3, 0.05, 0.02 )
+
+   priors = PriorYearBuilder.build(
+      [ full, partial, other ], [ factor ], 2026, [ shares ] )
+
+   by_year = { prior.year: prior for prior in priors }
+   assert Season.start_year( partial.season_id ) not in by_year
+   assert by_year[ Season.start_year( full.season_id ) ].games == full.games_played
+   assert by_year[ Season.start_year( full.season_id ) ].nhl_games == full.games_played
 
 
 def Test_Build_TestFullSeasonWithOtherLeague_ExpectNoArrival() -> None:
