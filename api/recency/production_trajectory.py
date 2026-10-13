@@ -38,10 +38,9 @@ class ProductionTrajectory():
       if min( latest.games, prior.games ) < PriorYear.MIN_GAMES:
          return None
 
-      peak = max( latest.pace, prior.pace )
       move = latest.pace - prior.pace
 
-      if peak == 0.0 or abs( move ) / peak < fit.move:
+      if max( latest.pace, prior.pace ) == 0.0 or move == 0.0:
          return None
 
       retained = fit.retained( latest.age, move > 0.0 )
