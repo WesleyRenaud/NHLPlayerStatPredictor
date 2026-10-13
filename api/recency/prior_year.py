@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import ClassVar
 
+from .games_reliability import GamesReliability
 from ..projections.scoring_paces import ScoringPaces
 from ..season import Season
 
@@ -30,4 +31,4 @@ class PriorYear():
       if games >= cls.MIN_GAMES:
          return 1.0
 
-      return games / cls.MIN_GAMES
+      return GamesReliability.from_full_season( cls.MIN_GAMES ).weight( games )

@@ -178,7 +178,22 @@ def Test_Pace_TestZeroShots_ExpectZeroNotMissing() -> None:
    assert _pace( [], [ season ], 20212022, NhlProductionStat.SHOTS ) == 0.0
 
 
-@pytest.mark.parametrize( 'older_games', [ 1, 5, 19, 20, 41 ] )
+@pytest.mark.parametrize( 'older_games', [ 1, 5, PriorYear.MIN_GAMES - 1 ] )
+def Test_Pace_TestShortPriorBesideFullSeason_ExpectFullSeasonOnly( older_games: int ) -> None:
+   latest = _season( 1, 2021, 19, 160 )
+   older = replace( _season( 1, 2020, 18, 50 ), games_played=older_games )
+   coefficients = [
+      ProductionCoefficient( 19, 20, 1.1, 0.9, 100 ),
+   ]
+   latest_relationship = coefficients[ Position.FIRST ]
+
+   projected = _pace(
+      coefficients, [ older, latest ], 20222023, NhlProductionStat.SHOTS )
+
+   assert projected == pytest.approx( latest.shots_pace() * latest_relationship.multiplier )
+
+
+@pytest.mark.parametrize( 'older_games', [ PriorYear.MIN_GAMES, 41 ] )
 def Test_Pace_TestWeightedShotHistory_ExpectRawAverageThenGrowth( older_games: int ) -> None:
    latest = _season( 1, 2021, 19, 160 )
    older = replace( _season( 1, 2020, 18, 50 ), games_played=older_games )
