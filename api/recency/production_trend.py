@@ -11,7 +11,6 @@ class ProductionTrend():
    PRIOR_SEASONS = 5
 
    STEEP_DECLINE = ProductionKeepBand( relative_slope_below=-0.078, kept_share=0.78 )
-   MILD_DECLINE = ProductionKeepBand( relative_slope_below=-0.017, kept_share=0.52 )
    FLAT = ProductionKeepBand( relative_slope_below=0.031, kept_share=0.55 )
    MILD_RISE = ProductionKeepBand( relative_slope_below=0.096, kept_share=0.65 )
    STEEP_RISE_KEPT = 0.82
@@ -19,7 +18,7 @@ class ProductionTrend():
 
    @classmethod
    def kept( cls, relative_slope: float ) -> float:
-      bands = ( cls.STEEP_DECLINE, cls.MILD_DECLINE, cls.FLAT, cls.MILD_RISE )
+      bands = ( cls.STEEP_DECLINE, cls.FLAT, cls.MILD_RISE )
 
       for band in bands:
          if relative_slope < band.relative_slope_below:
