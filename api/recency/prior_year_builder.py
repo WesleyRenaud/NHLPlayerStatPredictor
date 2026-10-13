@@ -135,8 +135,13 @@ class PriorYearBuilder():
          if isinstance( season, OtherLeagueSkaterSeason ) and season.games_played ]
 
       if established and nhl:
-         if cls._nhl_games( seasons ) < PriorYear.MIN_GAMES:
+         nhl_games = cls._nhl_games( seasons )
+         if nhl_games < PriorYear.MIN_GAMES:
             return []
+
+         other_games = sum( season.games_played for season in other )
+         if other_games >= nhl_games:
+            return [ *nhl, *other ]
 
          return nhl
 

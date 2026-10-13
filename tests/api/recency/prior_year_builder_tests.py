@@ -216,12 +216,12 @@ def Test_Build_TestPartialSeasonWithOtherLeague_ExpectLeftOut() -> None:
    assert by_year[ Season.start_year( full.season_id ) ].nhl_games == full.games_played
 
 
-def Test_Build_TestFullSeasonWithOtherLeague_ExpectNoArrival() -> None:
+def Test_Build_TestShorterOtherLeague_ExpectNhlSeasonOnly() -> None:
    factor = LeagueFactor( 'AAA', 0.5 )
    rate = 0.9
    shares = ScoringComponentShares( 25, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0 )
    nhl = _nhl( 2024, PriorYear.MIN_GAMES, goals=10, assists=10 )
-   other = _other( 2024, 20 )
+   other = _other( 2024, PriorYear.MIN_GAMES - 1 )
 
    priors = PriorYearBuilder.build(
       [ nhl, other ],
@@ -237,6 +237,32 @@ def Test_Build_TestFullSeasonWithOtherLeague_ExpectNoArrival() -> None:
    assert prior.arrival is None
    assert prior.scoring.even_strength_goals == pytest.approx(
       nhl.scoring_paces().even_strength_goals )
+
+
+@pytest.mark.parametrize( 'other_games', [ PriorYear.MIN_GAMES, PriorYear.MIN_GAMES * 2 ] )
+def Test_Build_TestOtherLeagueAtLeastAsLong_ExpectWeightedYear( other_games: int ) -> None:
+   factor = LeagueFactor( 'AAA', 0.5 )
+   rate = 0.9
+   shares = ScoringComponentShares( 25, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0 )
+   nhl = _nhl( 2024, PriorYear.MIN_GAMES, goals=10, assists=10 )
+   other = _other( 2024, other_games )
+   seasons = [ nhl, other ]
+   expected = TranslatedPaceAverager.year( seasons, [ factor ], [ shares ] )
+
+   priors = PriorYearBuilder.build(
+      seasons,
+      [ factor ],
+      2025,
+      [ shares ],
+      arrivals=[ LeagueArrival( other.league, other.age, rate ) ],
+      scoring_growth=[ ProductionGrowth( other.age, other.age + 1, 3.0, 1 ) ] )
+
+   prior = priors[ Position.FIRST ]
+   assert expected is not None
+   assert prior.games == nhl.games_played + other.games_played
+   assert prior.nhl_games == nhl.games_played
+   assert prior.arrival is None
+   assert prior.scoring == expected.scoring
 
 
 def Test_Build_TestLaterOtherLeague_ExpectNhlYearOnly() -> None:
