@@ -55,6 +55,18 @@ class NhlClient():
 
 
    @classmethod
+   def season_roster(
+         cls,
+         team_abbrev: str,
+         season_id: int,
+         force: bool = False ) -> Types.JsonObject:
+      return JsonFileCache().get_object(
+         f'roster_{ team_abbrev }_{ season_id }',
+         lambda: cls._fetch_season_roster( team_abbrev, season_id ),
+         force )
+
+
+   @classmethod
    def skater_timeonice(
          cls,
          season_id: int,
@@ -115,8 +127,17 @@ class NhlClient():
 
    @classmethod
    def _fetch_roster( cls, team_abbrev: str ) -> Types.JsonObject:
-      payload = JsonHttpClient.get_json(
-         f'{ NhlClient.WEB_BASE }/v1/roster/{ team_abbrev }/current' )
+      return cls._roster_payload( f'{ team_abbrev }/current' )
+
+
+   @classmethod
+   def _fetch_season_roster( cls, team_abbrev: str, season_id: int ) -> Types.JsonObject:
+      return cls._roster_payload( f'{ team_abbrev }/{ season_id }' )
+
+
+   @classmethod
+   def _roster_payload( cls, path: str ) -> Types.JsonObject:
+      payload = JsonHttpClient.get_json( f'{ NhlClient.WEB_BASE }/v1/roster/{ path }' )
 
       if isinstance( payload, dict ):
          return payload

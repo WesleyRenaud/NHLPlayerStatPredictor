@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from .nhl_client import NhlClient
 from .roster_skater_builder import RosterSkaterBuilder
+from ..season import Season
 from ..skaters.roster_skater import RosterSkater
 from ..skaters.team import Team
 from ..types import Types
@@ -12,20 +13,37 @@ class RosterSkaterIngester():
    def build_rows( cls, force: bool = False ) -> list[ RosterSkater ]:
       rows: list[ RosterSkater ] = []
       seen: set[ int ] = set()
+      teams = cls._teams( NhlClient.standings( force=force ) )
 
-      for team in cls._teams( NhlClient.standings( force=force ) ):
+      for team in teams:
          print( f'Fetching roster { team.value }...', flush=True )
+         cls._add( rows, seen, team, NhlClient.roster( team.value, force=force ) )
 
-         for row in RosterSkaterBuilder.build(
-               team,
-               NhlClient.roster( team.value, force=force ) ):
-            if row.player_id in seen:
-               continue
+      previous_season_id = Season.prior( NhlClient.seasons( force=force ) ).season_id
 
-            seen.add( row.player_id )
-            rows.append( row )
+      for team in teams:
+         cls._add(
+            rows,
+            seen,
+            team,
+            NhlClient.season_roster( team.value, previous_season_id, force=force ) )
 
       return rows
+
+
+   @classmethod
+   def _add(
+         cls,
+         rows: list[ RosterSkater ],
+         seen: set[ int ],
+         team: Team,
+         payload: Types.JsonObject ) -> None:
+      for row in RosterSkaterBuilder.build( team, payload ):
+         if row.player_id in seen:
+            continue
+
+         seen.add( row.player_id )
+         rows.append( row )
 
 
    @classmethod
