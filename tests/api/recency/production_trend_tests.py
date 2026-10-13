@@ -95,6 +95,11 @@ def Test_Kept_TestFlatSlope_ExpectFlatBand() -> None:
    assert ProductionTrend.kept( 0.0 ) == ProductionTrend.FLAT.kept_share
 
 
+def Test_Kept_TestSteepEnds_ExpectSameShare() -> None:
+   assert ProductionTrend.STEEP_DECLINE.kept_share == ProductionTrend.STEEP_KEPT
+   assert ProductionTrend.STEEP_RISE_KEPT == ProductionTrend.STEEP_KEPT
+
+
 def Test_Kept_TestSteepRise_ExpectRiseShare() -> None:
    assert ProductionTrend.kept( ProductionTrend.MILD_RISE.relative_slope_below ) == (
       ProductionTrend.STEEP_RISE_KEPT )

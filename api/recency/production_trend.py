@@ -10,10 +10,11 @@ class ProductionTrend():
    # Seasons before the latest year. The line is fit on these, not on the latest year.
    PRIOR_SEASONS = 5
 
-   STEEP_DECLINE = ProductionKeepBand( relative_slope_below=-0.078, kept_share=0.78 )
+   STEEP_KEPT = 0.80
+   STEEP_DECLINE = ProductionKeepBand( relative_slope_below=-0.078, kept_share=STEEP_KEPT )
    FLAT = ProductionKeepBand( relative_slope_below=0.031, kept_share=0.55 )
    MILD_RISE = ProductionKeepBand( relative_slope_below=0.096, kept_share=0.65 )
-   STEEP_RISE_KEPT = 0.82
+   STEEP_RISE_KEPT = STEEP_KEPT
 
 
    @classmethod
