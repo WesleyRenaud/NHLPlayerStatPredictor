@@ -15,13 +15,11 @@ from api.skaters.team import Team
 
 
 def _sample(
-      relative_slope: float,
       level: float,
       latest_pace: float,
       adjusted_following: float,
       games: int = 10 ) -> ProductionKeepSample:
-   return ProductionKeepSample(
-      relative_slope, level, latest_pace, adjusted_following, games )
+   return ProductionKeepSample( level, latest_pace, adjusted_following, games )
 
 
 def _share( samples: list[ ProductionKeepSample ] ) -> float:
@@ -82,32 +80,22 @@ def _window( following_games: int = 82, following_pace: int = 80 ) -> list[ NhlS
 
 def Test_Fit_TestKnownGaps_ExpectOneLeastSquaresShare() -> None:
    samples = [
-      _sample( -0.5, 80.0, 40.0, 60.0, 10 ),
-      _sample( -0.2, 50.0, 30.0, 40.0, 20 ),
-      _sample( -0.1, 40.0, 40.0, 10.0, 30 ),
-      _sample( 0.0, 40.0, 55.0, 46.0, 40 ),
-      _sample( 0.2, 40.0, 70.0, 60.0, 15 ),
-      _sample( 0.4, 40.0, 90.0, 50.0, 25 ),
+      _sample( 80.0, 40.0, 60.0, 10 ),
+      _sample( 50.0, 30.0, 40.0, 20 ),
+      _sample( 40.0, 40.0, 10.0, 30 ),
+      _sample( 40.0, 55.0, 46.0, 40 ),
+      _sample( 40.0, 70.0, 60.0, 15 ),
+      _sample( 40.0, 90.0, 50.0, 25 ),
    ]
    share = _share( samples )
-   decline = samples[ 0 ]
-   rise = samples[ -1 ]
 
    fit = ProductionKeepFitter.fit( samples )
 
-   assert fit.bands == []
    assert fit.kept_above == pytest.approx( share )
-   assert fit.kept( decline.relative_slope ) == pytest.approx( share )
-   assert fit.kept( rise.relative_slope ) == pytest.approx( share )
 
 
 def Test_Fit_TestNoGap_ExpectEmpty() -> None:
-   samples = [
-      _sample( slope, 40.0, 40.0, 50.0 )
-      for slope in ( -0.5, -0.2, -0.1, 0.0, 0.2, 0.4 )
-   ]
-
-   assert ProductionKeepFitter.fit( samples ) == ProductionKeepFit.empty()
+   assert ProductionKeepFitter.fit( [ _sample( 40.0, 40.0, 50.0 ) ] ) == ProductionKeepFit.empty()
 
 
 def Test_Observe_TestSevenFullSeasons_ExpectAgeAdjustedFollowing() -> None:
@@ -123,7 +111,6 @@ def Test_Observe_TestSevenFullSeasons_ExpectAgeAdjustedFollowing() -> None:
    assert len( samples ) == 1
    sample = samples[ 0 ]
    assert sample.level == pytest.approx( 40.0 )
-   assert sample.relative_slope == pytest.approx( 0.0 )
    assert sample.latest_pace == pytest.approx( latest_pace )
    assert sample.adjusted_following == pytest.approx( following_pace / multiplier )
    assert sample.games == min( 82, following_games )

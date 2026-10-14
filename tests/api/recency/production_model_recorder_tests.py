@@ -11,7 +11,6 @@ from api.recency.pim_multiplier_store import PimMultiplierStore
 from api.recency.pim_weight_store import PimWeightStore
 from api.recency.production_coefficient import ProductionCoefficient
 from api.recency.production_growth import ProductionGrowth
-from api.recency.production_keep_band import ProductionKeepBand
 from api.recency.production_keep_fit import ProductionKeepFit
 from api.recency.production_keep_store import ProductionKeepStore
 from api.recency.production_list_store import ProductionListStore
@@ -58,7 +57,7 @@ def Test_Write_TestModel_ExpectReadable(
       ],
       shots_coefficients=[ ProductionCoefficient( 18, 19, 1.3, 0.9, 100 ) ],
       history_weights=[ ProductionWeight( 18, 19, 0.8, 100 ) ],
-      keep=ProductionKeepFit( [ ProductionKeepBand( -0.2, 0.5 ) ], 0.7 ) )
+      keep=ProductionKeepFit( 0.7 ) )
 
    ProductionModelRecorder.write( model )
 
