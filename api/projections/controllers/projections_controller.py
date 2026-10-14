@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime
-from zoneinfo import ZoneInfo
-
 from ..coordinators.projection_coordinator import ProjectionCoordinator
 from ..player_history_resolver import PlayerHistoryResolver
 from ..season_stats_resolver import SeasonStatsResolver
 from ...server.json_request_handler import JsonRequestHandler
+from ...toronto_date import TorontoDate
 
 
 class ProjectionsController():
@@ -20,7 +18,7 @@ class ProjectionsController():
          handler._write_json( {}, 404 )
          return
 
-      on_date = datetime.now( ZoneInfo( 'America/Toronto' ) ).date()
+      on_date = TorontoDate.today()
       season_stats = SeasonStatsResolver.resolve( player_id, on_date )
       handler._write_json( {
          **projection.to_dict(),

@@ -45,12 +45,11 @@ def Test_Resolve_TestSeasonStart_ExpectCorrectObservedSeason(
    fetch = Mock( side_effect=lambda season_id: [ summaries[ season_id ] ] )
    monkeypatch.setattr( season_stats_resolver.NhlClient, 'seasons', _seasons )
    monkeypatch.setattr( season_stats_resolver.NhlClient, 'skater_summary', fetch )
-   monkeypatch.setattr( season_stats_resolver.RosterSkaterProvider, 'team', Mock( return_value=Team( 'COL' ) ) )
    team_games = 5
-   standings = Mock( return_value={
-      'standings': [ { 'seasonId': 20262027, 'teamAbbrev': { 'default': 'COL' }, 'gamesPlayed': team_games } ],
-   } )
-   monkeypatch.setattr( season_stats_resolver.NhlClient, 'standings', standings )
+   team = Team( 'COL' )
+   standings = Mock( return_value=team_games )
+   monkeypatch.setattr( season_stats_resolver.RosterSkaterProvider, 'team', Mock( return_value=team ) )
+   monkeypatch.setattr( season_stats_resolver.StandingsGamesFetcher, 'games_played', standings )
    remaining = 0 if expected_season_id == 20252026 else _seasons()[ 1 ].number_of_games - team_games
 
    stats = SeasonStatsResolver.resolve( 7, on_date )
@@ -64,6 +63,7 @@ def Test_Resolve_TestSeasonStart_ExpectCorrectObservedSeason(
    if expected_season_id == 20252026:
       standings.assert_not_called()
    else:
+      standings.assert_called_once_with( expected_season_id, team, on_date )
       assert stats[ 'fullSeasonPace' ][ 'gamesPlayed' ] == summaries[ expected_season_id ].games_played + remaining
       assert stats[ 'fullSeasonPace' ][ 'gamesPlayed' ] < _seasons()[ 1 ].number_of_games
 
@@ -75,15 +75,13 @@ def Test_Resolve_TestTradedPlayer_ExpectCurrentRosterTeamRemainingGames(
    team_games = 6
    monkeypatch.setattr( season_stats_resolver.NhlClient, 'seasons', _seasons )
    monkeypatch.setattr( season_stats_resolver.NhlClient, 'skater_summary', Mock( return_value=[ summary ] ) )
+   games = Mock( return_value=team_games )
    monkeypatch.setattr( season_stats_resolver.RosterSkaterProvider, 'team', Mock( return_value=current_team ) )
-   monkeypatch.setattr( season_stats_resolver.NhlClient, 'standings', Mock( return_value={
-      'standings': [
-         { 'seasonId': 20262027, 'teamAbbrev': { 'default': 'COL' }, 'gamesPlayed': 4 },
-         { 'seasonId': 20262027, 'teamAbbrev': { 'default': current_team.value }, 'gamesPlayed': team_games },
-      ],
-   } ) )
+   monkeypatch.setattr( season_stats_resolver.StandingsGamesFetcher, 'games_played', games )
 
    stats = SeasonStatsResolver.resolve( summary.player_id, date( 2026, 10, 2 ) )
+
+   games.assert_called_once_with( _seasons()[ 1 ].season_id, current_team, date( 2026, 10, 2 ) )
 
    remaining = _seasons()[ 1 ].number_of_games - team_games
    assert stats is not None

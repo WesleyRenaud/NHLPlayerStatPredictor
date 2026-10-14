@@ -2,12 +2,18 @@ from __future__ import annotations
 
 from .ingest.nhl_client import NhlClient
 from .season import Season
+from .season_length import SeasonLength
 
 
 class RecencyTargetResolver():
    @classmethod
+   def season( cls ) -> SeasonLength:
+      return Season.latest( NhlClient.seasons() )
+
+
+   @classmethod
    def resolve( cls ) -> int:
-      return Season.latest( NhlClient.seasons() ).season_id
+      return cls.season().season_id
 
 
    @classmethod

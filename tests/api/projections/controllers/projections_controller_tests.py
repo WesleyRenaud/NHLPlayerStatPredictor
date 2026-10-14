@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date
 from io import BytesIO
 import json
 from unittest.mock import Mock
-from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -58,13 +57,12 @@ def Test_GetProjection_TestCoordinatorProjection_ExpectJsonPayload(
       projected_toi=None )
    captured: list[ int ] = []
    season_stats = { 'seasonLabel': '2025-26', 'gamesPlayed': 80, 'goals': 40 }
-   now = datetime( 2026, 10, 2, tzinfo=ZoneInfo( 'America/Toronto' ) )
-   clock = Mock()
-   clock.now.return_value = now
+   on_date = date( 2026, 10, 2 )
+   today = Mock( return_value=on_date )
    resolver = Mock( return_value=season_stats )
    history = { 'seasons': [], 'career': {} }
    monkeypatch.setattr( projections_controller.PlayerHistoryResolver, 'resolve', Mock( return_value=history ) )
-   monkeypatch.setattr( projections_controller, 'datetime', clock )
+   monkeypatch.setattr( projections_controller.TorontoDate, 'today', today )
    monkeypatch.setattr(
       projections_controller.SeasonStatsResolver,
       'resolve',
@@ -83,8 +81,8 @@ def Test_GetProjection_TestCoordinatorProjection_ExpectJsonPayload(
    ProjectionsController.get_projection( handler )
 
    assert captured == [ player_id ]
-   resolver.assert_called_once_with( player_id, now.date() )
-   clock.now.assert_called_once_with( ZoneInfo( 'America/Toronto' ) )
+   resolver.assert_called_once_with( player_id, on_date )
+   today.assert_called_once_with()
    assert handler.status == 200
    assert json.loads( handler.body.decode( 'utf-8' ) ) == {
       **projection.to_dict(), 'seasonStats': season_stats, 'playerHistory': history,
@@ -95,9 +93,9 @@ def Test_GetProjection_TestMissingProjection_ExpectNotFound(
       monkeypatch: pytest.MonkeyPatch ) -> None:
    player_id = 7
    resolver = Mock()
-   clock = Mock()
+   today = Mock()
    monkeypatch.setattr( projections_controller.SeasonStatsResolver, 'resolve', resolver )
-   monkeypatch.setattr( projections_controller, 'datetime', clock )
+   monkeypatch.setattr( projections_controller.TorontoDate, 'today', today )
    monkeypatch.setattr(
       projections_controller.ProjectionCoordinator,
       'get_projection',
@@ -108,4 +106,4 @@ def Test_GetProjection_TestMissingProjection_ExpectNotFound(
 
    assert handler.status == 404
    resolver.assert_not_called()
-   clock.now.assert_not_called()
+   today.assert_not_called()
