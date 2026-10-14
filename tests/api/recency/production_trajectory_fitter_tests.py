@@ -68,22 +68,6 @@ def Test_Fit_TestSmallSwing_ExpectExcluded() -> None:
    assert fit.retained( 24, True ) == pytest.approx( kept_gap / swing )
 
 
-def Test_Fit_TestTypicalSwing_ExpectMedianMove() -> None:
-   repeated = _change( 24, 40.0, 80.0, 80.0 )
-   changes = [
-      _change( 24, 80.0, 100.0, 100.0 ),
-      _change( 24, 50.0, 100.0, 100.0 ),
-   ]
-
-   for _index in range( ProductionCoefficientFitter.MIN_SUPPORT - 1 ):
-      changes.append( repeated )
-
-   fit = ProductionTrajectoryFitter.fit( changes )
-
-   assert fit is not None
-   assert fit.move == pytest.approx( repeated.relative() )
-
-
 def Test_Fit_TestThinHistory_ExpectNoAgeShares() -> None:
    changes = [
       _change( 24, 10.0, 20.0, 20.0 )

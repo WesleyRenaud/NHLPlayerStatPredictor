@@ -30,7 +30,7 @@ def _prior( year: int, age: int, goals: float, nhl_games: int = 82 ) -> PriorYea
 
 
 def _fit() -> ProductionTrajectoryFit:
-   return ProductionTrajectoryFit( 0.15, [
+   return ProductionTrajectoryFit( [
       ProductionTrajectoryShare( age, 0.65, 0.40 ) for age in range( 15, 35 )
    ] )
 
@@ -224,7 +224,7 @@ def Test_Paces_TestSteadyIncline_ExpectOldestSeasonFaded() -> None:
       for age in prior_ages
    ], history_weights=[
       ProductionWeight( age, 18, 1.0, 100 ) for age in prior_ages
-   ], trajectory=ProductionTrajectoryFit( 0.15, [
+   ], trajectory=ProductionTrajectoryFit( [
       ProductionTrajectoryShare( age, rise, None ) for age in prior_ages
    ] ) )
    priors = [

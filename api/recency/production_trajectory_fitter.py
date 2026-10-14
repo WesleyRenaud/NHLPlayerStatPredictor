@@ -37,7 +37,7 @@ class ProductionTrajectoryFitter():
             None if rise is None else cls._bounded( rise ),
             None if drop is None else cls._bounded( drop ) ) )
 
-      return ProductionTrajectoryFit( move, by_age )
+      return ProductionTrajectoryFit( by_age )
 
 
    @classmethod
