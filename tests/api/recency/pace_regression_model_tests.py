@@ -12,10 +12,10 @@ from api.recency.production_weight import ProductionWeight
 
 def Test_FromRow_TestModel_ExpectRoundTrip() -> None:
    model = PaceRegressionModel(
-      [ ProductionGrowth( 18, 19, 1.2, 100 ) ], [ ScoringComponentShares( 18, 0.75, 0.68, 0.2, 0.3, 0.05, 0.02 ) ],
-      pim_coefficients=[ ProductionCoefficient( 18, 19, 1.1, 0.8, 100 ) ],
-      shots_coefficients=[ ProductionCoefficient( 18, 19, 1.2, 0.9, 100 ) ],
-      history_weights=[ ProductionWeight( 18, 19, 0.8, 100 ) ],
+      [ ProductionGrowth( 18, 19, 1.2 ) ], [ ScoringComponentShares( 18, 0.75, 0.68, 0.2, 0.3, 0.05, 0.02 ) ],
+      pim_coefficients=[ ProductionCoefficient( 18, 19, 1.1, 0.8 ) ],
+      shots_coefficients=[ ProductionCoefficient( 18, 19, 1.2, 0.9 ) ],
+      history_weights=[ ProductionWeight( 18, 19, 0.8 ) ],
       trajectory=ProductionTrajectoryFit( [ ProductionTrajectoryShare( 24, 0.7, 0.6 ) ] ),
       keep=ProductionKeepFit( 0.7 ) )
 

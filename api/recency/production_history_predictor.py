@@ -23,7 +23,7 @@ class ProductionHistoryPredictor():
       ]
 
       if not matching:
-         return ProductionGrowth( from_age, to_age, 1.0, 0 )
+         return ProductionGrowth( from_age, to_age, 1.0 )
 
       return min( matching, key=lambda coefficient: abs( coefficient.from_age - from_age ) )
 
@@ -37,7 +37,7 @@ class ProductionHistoryPredictor():
       matching = [ weight for weight in weights if weight.to_age - weight.from_age == to_age - from_age ]
 
       if not matching:
-         return ProductionWeight( from_age, to_age, 0.0, 0 )
+         return ProductionWeight( from_age, to_age, 0.0 )
 
       return min( matching, key=lambda weight: abs( weight.from_age - from_age ) )
 

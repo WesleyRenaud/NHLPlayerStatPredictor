@@ -48,15 +48,15 @@ def Test_Write_TestModel_ExpectReadable(
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
    monkeypatch.setattr( ProductionModelProvider, 'paths', classmethod( _paths ) )
    model = PaceRegressionModel( [
-      ProductionGrowth( 18, 19, 1.2, 100 )
+      ProductionGrowth( 18, 19, 1.2 )
    ],
       pim_coefficients=[
-         ProductionCoefficient( 18, 19, 1.1, 0.7, 100 ),
-         ProductionCoefficient( 18, 20, 1.1 * 1.2, 0.4, 80 ),
-         ProductionCoefficient( 19, 20, 1.2, 0.6, 90 ),
+         ProductionCoefficient( 18, 19, 1.1, 0.7 ),
+         ProductionCoefficient( 18, 20, 1.1 * 1.2, 0.4 ),
+         ProductionCoefficient( 19, 20, 1.2, 0.6 ),
       ],
-      shots_coefficients=[ ProductionCoefficient( 18, 19, 1.3, 0.9, 100 ) ],
-      history_weights=[ ProductionWeight( 18, 19, 0.8, 100 ) ],
+      shots_coefficients=[ ProductionCoefficient( 18, 19, 1.3, 0.9 ) ],
+      history_weights=[ ProductionWeight( 18, 19, 0.8 ) ],
       keep=ProductionKeepFit( 0.7 ) )
 
    ProductionModelRecorder.write( model )
@@ -68,5 +68,7 @@ def Test_Write_TestModel_ExpectReadable(
    multipliers = json.loads( PimMultiplierStore.path().read_text() )
    assert all( item[ 'to_age' ] == item[ 'from_age' ] + 1 for item in multipliers )
    assert all( 'weight' not in item for item in multipliers )
+   assert all( 'samples' not in item for item in multipliers )
    weights = json.loads( PimWeightStore.path().read_text() )
    assert all( 'multiplier' not in item for item in weights )
+   assert all( 'samples' not in item for item in weights )

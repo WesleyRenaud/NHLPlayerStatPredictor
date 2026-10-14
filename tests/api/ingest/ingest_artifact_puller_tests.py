@@ -33,8 +33,8 @@ _SQLITE_BYTES = b'sqlite'
 _EMPTY_JSON = '[]'
 _REGRESSION_MODEL = PaceRegressionModel(
    [],
-   pim_coefficients=[ ProductionCoefficient( 18, 19, 1.1, 0.8, 100 ) ],
-   shots_coefficients=[ ProductionCoefficient( 18, 19, 1.2, 0.9, 100 ) ] )
+   pim_coefficients=[ ProductionCoefficient( 18, 19, 1.1, 0.8 ) ],
+   shots_coefficients=[ ProductionCoefficient( 18, 19, 1.2, 0.9 ) ] )
 
 
 def _bind_paths( monkeypatch: pytest.MonkeyPatch, root: Path ) -> None:

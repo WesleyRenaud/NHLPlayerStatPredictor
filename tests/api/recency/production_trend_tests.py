@@ -137,7 +137,7 @@ def Test_Paces_TestFivePriorSeasons_ExpectKeptGapThenAgeGrowth() -> None:
          prior_paces + [ latest_pace ],
          strict=True )
    ]
-   model = PaceRegressionModel( [ ProductionGrowth( 32, 33, growth, 20 ) ], keep=keep )
+   model = PaceRegressionModel( [ ProductionGrowth( 32, 33, growth ) ], keep=keep )
 
    paced = PaceRegressionPredictor.paces(
       model,

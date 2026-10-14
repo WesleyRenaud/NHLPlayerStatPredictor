@@ -202,7 +202,6 @@ def Test_Fit_TestTotalOnlyPriors_ExpectNormalizedPointsGrowthAndReliability() ->
    model = PaceRegressionFitter.fit( nhl, other, [ league_factor ] )
    assert model.scoring_growth[ Position.FIRST ].multiplier == pytest.approx( 1.0 )
    assert model.history_weights[ Position.FIRST ].weight == pytest.approx( 1.0 )
-   assert model.history_weights[ Position.FIRST ].samples == len( other )
 
 
 @pytest.mark.parametrize( 'translated', [ False, True ] )
@@ -236,7 +235,6 @@ def Test_Fit_TestDifferentComponentRelationships_ExpectPointsGrowthAndWeights(
 
    assert model.history_weights[ Position.FIRST ].weight == points_weight
    assert model.scoring_growth[ Position.FIRST ].multiplier == pytest.approx( points_coefficient.multiplier )
-   assert model.scoring_growth[ Position.FIRST ].samples == points_coefficient.samples
 
    for stat in ScoringStat:
       component_pairs = [
@@ -294,5 +292,3 @@ def Test_Fit_TestNhlAndTranslatedPairs_ExpectOnePooledScoringFit() -> None:
    assert len( model.scoring_growth ) == 1
    assert len( model.history_weights ) == 1
    assert model.scoring_growth[ Position.FIRST ].multiplier == pytest.approx( expected_multiplier )
-   assert model.scoring_growth[ Position.FIRST ].samples == len( current ) + len( translated_current )
-   assert model.history_weights[ Position.FIRST ].samples == len( current ) + len( translated_current )

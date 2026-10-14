@@ -20,12 +20,12 @@ def _season( age: int, pace: float, games: int ) -> ProductionSeason:
 
 
 def _lookup( from_age: int, to_age: int ) -> ProductionGrowth:
-   return ProductionGrowth( from_age, to_age, ANNUAL_MULTIPLIER, 100 )
+   return ProductionGrowth( from_age, to_age, ANNUAL_MULTIPLIER )
 
 
 def _weight_lookup( from_age: int, to_age: int ) -> ProductionWeight:
    weight = LATEST_WEIGHT if from_age == 20 else OLDER_WEIGHT
-   return ProductionWeight( from_age, to_age, weight, 100 )
+   return ProductionWeight( from_age, to_age, weight )
 
 
 def Test_Pace_TestHistory_ExpectRawAverageThenLatestAgeMultiplier() -> None:
@@ -101,23 +101,23 @@ def Test_Pace_TestUnsupportedWeights_ExpectLatestSeasonFallback() -> None:
    latest_pace = 10.0
 
    def lookup( from_age: int, to_age: int ) -> ProductionGrowth:
-      return ProductionGrowth( from_age, to_age, annual_multiplier, 0 )
+      return ProductionGrowth( from_age, to_age, annual_multiplier )
 
    def weight_lookup( from_age: int, to_age: int ) -> ProductionWeight:
-      return ProductionWeight( from_age, to_age, 0.0, 0 )
+      return ProductionWeight( from_age, to_age, 0.0 )
 
    history = [ _season( 20, latest_pace, 82 ), _season( 19, 100.0, 82 ) ]
    assert ProductionHistoryPredictor.pace( history, 21, lookup, weight_lookup, EMPTY ) == pytest.approx( latest_pace * annual_multiplier )
 
 
 def Test_OneYearMultiplier_TestKnownStep_ExpectThatMultiplier() -> None:
-   coefficients = [ ProductionGrowth( 18, 19, 1.2, 100 ) ]
+   coefficients = [ ProductionGrowth( 18, 19, 1.2 ) ]
 
    assert ProductionHistoryPredictor.one_year_multiplier( coefficients, 18 ) == coefficients[ 0 ].multiplier
 
 
 def Test_Coefficient_TestUnknownAge_ExpectNearestAgeForSameLag() -> None:
-   coefficients = [ ProductionGrowth( 18, 19, 1.2, 100 ) ]
+   coefficients = [ ProductionGrowth( 18, 19, 1.2 ) ]
 
    coefficient = ProductionHistoryPredictor.coefficient( coefficients, 19, 20 )
    missing = ProductionHistoryPredictor.coefficient( coefficients, 19, 22 )
@@ -129,9 +129,9 @@ def Test_Coefficient_TestUnknownAge_ExpectNearestAgeForSameLag() -> None:
 
 def Test_Coefficient_TestUnsupportedOldAge_ExpectClosestSupportedAge() -> None:
    coefficients = [
-      ProductionGrowth( 25, 26, 0.99, 100 ),
-      ProductionGrowth( 40, 41, 0.87, 36 ),
-      ProductionGrowth( 41, 42, 0.83, 20 ),
+      ProductionGrowth( 25, 26, 0.99 ),
+      ProductionGrowth( 40, 41, 0.87 ),
+      ProductionGrowth( 41, 42, 0.83 ),
    ]
 
    assert ProductionHistoryPredictor.coefficient( coefficients, 42, 43 ) == coefficients[ 2 ]
@@ -139,7 +139,7 @@ def Test_Coefficient_TestUnsupportedOldAge_ExpectClosestSupportedAge() -> None:
 
 
 def Test_Weight_TestUnknownAge_ExpectNearestAgeForSameLag() -> None:
-   weights = [ ProductionWeight( 18, 19, 0.8, 100 ) ]
+   weights = [ ProductionWeight( 18, 19, 0.8 ) ]
 
    weight = ProductionHistoryPredictor.weight( weights, 19, 20 )
    missing = ProductionHistoryPredictor.weight( weights, 19, 22 )
@@ -154,10 +154,10 @@ def Test_Pace_TestSeparateUnsupportedWeights_ExpectLatestNhlGrowthFallback() -> 
    latest_pace = 10.0
 
    def lookup( from_age: int, to_age: int ) -> ProductionGrowth:
-      return ProductionGrowth( from_age, to_age, annual_multiplier, 100 )
+      return ProductionGrowth( from_age, to_age, annual_multiplier )
 
    def weight_lookup( from_age: int, to_age: int ) -> ProductionWeight:
-      return ProductionWeight( from_age, to_age, 0.0, 100 )
+      return ProductionWeight( from_age, to_age, 0.0 )
 
    history = [ _season( 18, latest_pace, 82 ), _season( 17, 100.0, 82 ) ]
    pace = ProductionHistoryPredictor.pace( history, 20, lookup, weight_lookup, EMPTY )

@@ -104,7 +104,7 @@ def Test_Observe_TestSevenFullSeasons_ExpectAgeAdjustedFollowing() -> None:
    following_games = 40
    multiplier = 2.0
    seasons = _window( following_games, int( following_pace ) )
-   growth = ProductionGrowth( 30, 31, multiplier, 10 )
+   growth = ProductionGrowth( 30, 31, multiplier )
 
    samples = ProductionKeepFitter.observe( seasons, [ growth ] )
 
@@ -131,6 +131,6 @@ def Test_Observe_TestShortSeason_ExpectNoSample() -> None:
 
 
 def Test_Observe_TestZeroMultiplier_ExpectNoSample() -> None:
-   growth = ProductionGrowth( 30, 31, 0.0, 10 )
+   growth = ProductionGrowth( 30, 31, 0.0 )
 
    assert ProductionKeepFitter.observe( _window(), [ growth ] ) == []

@@ -393,12 +393,12 @@ def Test_GetProjection_TestHistoricalRates_ExpectNormalizedThenProjectedStats(
       shots=200, penalty_minutes=20 )
    older = replace( latest, season_id=20232024, age=26 )
    drop = 0.40
-   model = PaceRegressionModel( [ ProductionGrowth( 27, 28, 1.0, 100 ) ],
-      history_weights=[ ProductionWeight( 27, 28, 1.0, 100 ), ProductionWeight( 26, 28, 1.0, 100 ) ],
-      pim_coefficients=[ ProductionCoefficient( 27, 28, 1.0, 1.0, 100 ),
-         ProductionCoefficient( 26, 28, 1.0, 1.0, 100 ) ],
-      shots_coefficients=[ ProductionCoefficient( 27, 28, 1.0, 1.0, 100 ),
-         ProductionCoefficient( 26, 28, 1.0, 1.0, 100 ) ],
+   model = PaceRegressionModel( [ ProductionGrowth( 27, 28, 1.0 ) ],
+      history_weights=[ ProductionWeight( 27, 28, 1.0 ), ProductionWeight( 26, 28, 1.0 ) ],
+      pim_coefficients=[ ProductionCoefficient( 27, 28, 1.0, 1.0 ),
+         ProductionCoefficient( 26, 28, 1.0, 1.0 ) ],
+      shots_coefficients=[ ProductionCoefficient( 27, 28, 1.0, 1.0 ),
+         ProductionCoefficient( 26, 28, 1.0, 1.0 ) ],
       trajectory=ProductionTrajectoryFit( [ ProductionTrajectoryShare( 27, None, drop ) ] ) )
    _stub_roster( monkeypatch )
    monkeypatch.setattr( projection_coordinator.SkaterSeasonProvider, 'seasons_for_player_id',

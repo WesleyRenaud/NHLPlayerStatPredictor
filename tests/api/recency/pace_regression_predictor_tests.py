@@ -37,13 +37,13 @@ def _fit() -> ProductionTrajectoryFit:
 
 def _model() -> PaceRegressionModel:
    return PaceRegressionModel( [
-      ProductionGrowth( 18, 19, AGE_18_TO_19_MULTIPLIER, 100 ),
-      ProductionGrowth( 19, 20, AGE_19_TO_20_MULTIPLIER, 100 ),
-      ProductionGrowth( 18, 20, AGE_18_TO_19_MULTIPLIER * AGE_19_TO_20_MULTIPLIER, 100 )
+      ProductionGrowth( 18, 19, AGE_18_TO_19_MULTIPLIER ),
+      ProductionGrowth( 19, 20, AGE_19_TO_20_MULTIPLIER ),
+      ProductionGrowth( 18, 20, AGE_18_TO_19_MULTIPLIER * AGE_19_TO_20_MULTIPLIER )
    ], history_weights=[
-      ProductionWeight( 18, 19, 0.8, 100 ),
-      ProductionWeight( 19, 20, LATEST_RELATIONSHIP_WEIGHT, 100 ),
-      ProductionWeight( 18, 20, OLDER_RELATIONSHIP_WEIGHT, 100 )
+      ProductionWeight( 18, 19, 0.8 ),
+      ProductionWeight( 19, 20, LATEST_RELATIONSHIP_WEIGHT ),
+      ProductionWeight( 18, 20, OLDER_RELATIONSHIP_WEIGHT )
    ], trajectory=_fit() )
 
 
@@ -182,9 +182,9 @@ def Test_Paces_TestNhlSeason_ExpectOlderOtherLeagueLeftOut() -> None:
 def Test_Paces_TestTranslatedMultiYearHistory_ExpectSameGrowthAsNhlHistory() -> None:
    annual_multiplier = 2.0
    model = PaceRegressionModel( [
-      ProductionGrowth( 18, 19, annual_multiplier, 100 ),
-      ProductionGrowth( 19, 20, annual_multiplier, 100 ),
-      ProductionGrowth( 18, 20, annual_multiplier ** 2, 100 )
+      ProductionGrowth( 18, 19, annual_multiplier ),
+      ProductionGrowth( 19, 20, annual_multiplier ),
+      ProductionGrowth( 18, 20, annual_multiplier ** 2 )
    ], history_weights=_model().history_weights )
    priors = [ _prior( 2024, 19, 20.0, nhl_games=0 ), _prior( 2023, 18, 10.0, nhl_games=0 ) ]
 
@@ -203,10 +203,10 @@ def Test_Paces_TestTranslatedMultiYearHistory_ExpectSameGrowthAsNhlHistory() -> 
 def Test_Paces_TestTranslatedMissedSeason_ExpectSharedAnnualAgeGrowth() -> None:
    annual_multiplier = 2.0
    model = PaceRegressionModel( [
-      ProductionGrowth( 18, 19, annual_multiplier, 100 ),
-      ProductionGrowth( 19, 20, annual_multiplier, 100 ),
-      ProductionGrowth( 18, 20, annual_multiplier ** 2, 100 )
-   ], history_weights=[ ProductionWeight( 18, 20, 1.0, 100 ) ] )
+      ProductionGrowth( 18, 19, annual_multiplier ),
+      ProductionGrowth( 19, 20, annual_multiplier ),
+      ProductionGrowth( 18, 20, annual_multiplier ** 2 )
+   ], history_weights=[ ProductionWeight( 18, 20, 1.0 ) ] )
    priors = [ _prior( 2023, 18, 10.0, nhl_games=0 ) ]
 
    paced = PaceRegressionPredictor.paces( model, priors, 20252026, [] )
@@ -220,10 +220,10 @@ def Test_Paces_TestSteadyIncline_ExpectOldestSeasonFaded() -> None:
    prior_ages = ( 15, 16, 17 )
    rise = 0.65
    model = PaceRegressionModel( [
-      ProductionGrowth( age, age + 1, annual_multiplier, 100 )
+      ProductionGrowth( age, age + 1, annual_multiplier )
       for age in prior_ages
    ], history_weights=[
-      ProductionWeight( age, 18, 1.0, 100 ) for age in prior_ages
+      ProductionWeight( age, 18, 1.0 ) for age in prior_ages
    ], trajectory=ProductionTrajectoryFit( [
       ProductionTrajectoryShare( age, rise, None ) for age in prior_ages
    ] ) )

@@ -16,7 +16,7 @@ def Test_Write_TestWeights_ExpectIndependentTypedRoundTrip(
       monkeypatch: pytest.MonkeyPatch,
       tmp_path: Path ) -> None:
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
-   weights = [ ProductionWeight( 18, 20, 0.4, 30 ) ]
+   weights = [ ProductionWeight( 18, 20, 0.4 ) ]
 
    store.write( weights )
 
