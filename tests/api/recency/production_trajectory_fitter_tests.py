@@ -82,7 +82,7 @@ def Test_Observe_TestConsecutiveSeasons_ExpectQualifiedChangesOnly() -> None:
    prior = _prior( 2020, 18, 30.0 )
    latest = _prior( 2021, 19, 60.0 )
    following = _prior( 2022, 20, 90.0 )
-   growth = ProductionGrowth( 19, 20, 2.0, 10 )
+   growth = ProductionGrowth( 19, 20, 2.0 )
    history = {
       1: [ prior, latest, following ],
       2: [ _prior( 2020, 18, 30.0 ), _prior( 2022, 20, 60.0 ), _prior( 2023, 21, 90.0 ) ],

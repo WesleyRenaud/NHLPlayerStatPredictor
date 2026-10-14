@@ -17,7 +17,6 @@ def Test_Fit_TestMultiplicativePairs_ExpectGrowthAndNormalizedWeight() -> None:
 
    assert coefficient.multiplier == pytest.approx( multiplier )
    assert coefficient.weight == 1.0
-   assert coefficient.samples == len( pairs )
 
 
 def Test_Fit_TestOffsetPairs_ExpectMatchedCohortGrowth() -> None:
@@ -47,7 +46,6 @@ def Test_Fit_TestSparseAge_ExpectNoNeighborOrAllAgePooling() -> None:
    assert len( coefficients ) == 1
    coefficient = coefficients[ Position.FIRST ]
    assert ( coefficient.from_age, coefficient.to_age ) == ( 19, 20 )
-   assert coefficient.samples == 30
    assert coefficient.multiplier == 1.0
 
 
@@ -63,7 +61,6 @@ def Test_FitGrowth_TestSupportThreshold_ExpectOnlySupportedTransitions( sample_c
 
    assert len( growth ) == ( 1 if sample_count == 20 else 0 )
    if growth:
-      assert growth[ 0 ].samples == sample_count
       assert growth[ 0 ].multiplier == pytest.approx( multiplier )
 
 
@@ -116,7 +113,6 @@ def Test_FitGrowth_TestSupportedPairs_ExpectNoReliabilityCalculation(
    growth = ProductionCoefficientFitter.fit_growth( pairs )[ Position.FIRST ]
 
    assert growth.multiplier == pytest.approx( multiplier )
-   assert growth.samples == len( pairs )
    weight.assert_not_called()
 
 
@@ -129,7 +125,6 @@ def Test_FitWeights_TestSupportedPairs_ExpectNoGrowthCalculation(
    weight = ProductionCoefficientFitter.fit_weights( pairs )[ Position.FIRST ]
 
    assert weight.weight == 1.0
-   assert weight.samples == len( pairs )
    multiplier.assert_not_called()
 
 
@@ -148,7 +143,6 @@ def Test_Fit_TestSeparateGrowthFit_ExpectSameGrowthAsCombinedFit( sample_count: 
       assert weight.weight == 0.0
    else:
       assert weight.weight == 1.0
-   assert growth.samples == weight.samples == combined.samples
 
 
 def Test_FitWeights_TestDifferentTransitions_ExpectTargetAgeThenPriorAgeOrder() -> None:

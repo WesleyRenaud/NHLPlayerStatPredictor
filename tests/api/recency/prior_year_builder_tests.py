@@ -128,7 +128,7 @@ def Test_Build_TestEnteringCallUp_ExpectNhlStintInArrival() -> None:
    call_up = _nhl( 2024, call_up_games, goals=10, assists=10 )
    college = _other( 2024, 40 )
    arrival = LeagueArrival( college.league, college.age, rate )
-   growth = ProductionGrowth( college.age, college.age + 1, age_step, 1 )
+   growth = ProductionGrowth( college.age, college.age + 1, age_step )
    expected = LeagueArrivalAverager.scoring(
       [ call_up, college ], [ factor ], [ arrival ], [ shares ], age_step )
 
@@ -158,7 +158,7 @@ def Test_Build_TestPartialStintOnArrival_ExpectNhlGamesInArrival() -> None:
    college = _other( 2024, college_games )
    factor = LeagueFactor( college.league, 0.5 )
    shares = ScoringComponentShares( college.age, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0 )
-   growth = ProductionGrowth( college.age, college.age + 1, age_step, 1 )
+   growth = ProductionGrowth( college.age, college.age + 1, age_step )
    arrival = LeagueArrival( college.league, college.age, rate )
    expected = LeagueArrivalAverager.scoring(
       [ stint, college ], [ factor ], [ arrival ], [ shares ], age_step )
@@ -229,7 +229,7 @@ def Test_Build_TestShorterOtherLeague_ExpectNhlSeasonOnly() -> None:
       2025,
       [ shares ],
       arrivals=[ LeagueArrival( other.league, other.age, rate ) ],
-      scoring_growth=[ ProductionGrowth( other.age, other.age + 1, 3.0, 1 ) ] )
+      scoring_growth=[ ProductionGrowth( other.age, other.age + 1, 3.0 ) ] )
 
    prior = priors[ Position.FIRST ]
    assert prior.games == nhl.games_played
@@ -255,7 +255,7 @@ def Test_Build_TestOtherLeagueAtLeastAsLong_ExpectWeightedYear( other_games: int
       2025,
       [ shares ],
       arrivals=[ LeagueArrival( other.league, other.age, rate ) ],
-      scoring_growth=[ ProductionGrowth( other.age, other.age + 1, 3.0, 1 ) ] )
+      scoring_growth=[ ProductionGrowth( other.age, other.age + 1, 3.0 ) ] )
 
    prior = priors[ Position.FIRST ]
    assert expected is not None
@@ -298,7 +298,7 @@ def Test_Build_TestEnteringYear_ExpectArrivalOnlyOnThatSeason() -> None:
       2025,
       [ shares ],
       arrivals=[ LeagueArrival( 'AAA', 25, rate ) ],
-      scoring_growth=[ ProductionGrowth( 25, 26, 3.0, 1 ) ] )
+      scoring_growth=[ ProductionGrowth( 25, 26, 3.0 ) ] )
 
    assert priors[ 0 ].year == 2024
    assert priors[ 0 ].arrival is not None

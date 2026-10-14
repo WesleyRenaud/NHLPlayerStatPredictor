@@ -73,14 +73,14 @@ def _other( season_id: int, g_pace: float, a_pace: float, league: str ) -> Other
 
 def _model() -> PaceRegressionModel:
    return PaceRegressionModel( [
-      ProductionGrowth( age, age + 1, SCORING_MULTIPLIER, 100 )
+      ProductionGrowth( age, age + 1, SCORING_MULTIPLIER )
       for age in range( 17, 40 )
    ], [ OTHER_LEAGUE_SHARES ], pim_coefficients=[
-      ProductionCoefficient( age, age + 1, PIM_MULTIPLIER, 0.8, 100 ) for age in range( 17, 40 )
+      ProductionCoefficient( age, age + 1, PIM_MULTIPLIER, 0.8 ) for age in range( 17, 40 )
    ], shots_coefficients=[
-      ProductionCoefficient( age, age + 1, SCORING_MULTIPLIER, 0.8, 100 ) for age in range( 17, 40 )
+      ProductionCoefficient( age, age + 1, SCORING_MULTIPLIER, 0.8 ) for age in range( 17, 40 )
    ], history_weights=[
-      ProductionWeight( age, age + 1, 0.8, 100 ) for age in range( 17, 40 )
+      ProductionWeight( age, age + 1, 0.8 ) for age in range( 17, 40 )
    ] )
 
 
@@ -109,12 +109,12 @@ def Test_Resolve_TestDifferentHistoricalToi_ExpectRateBlendForAllStats() -> None
       power_play_points=latest.power_play_points * older_production_scale,
       penalty_minutes=latest.penalty_minutes * older_production_scale,
       shots=latest.shots * older_production_scale )
-   model = PaceRegressionModel( [ ProductionGrowth( 27, 28, 1.0, 100 ) ],
-      history_weights=[ ProductionWeight( 27, 28, 1.0, 100 ), ProductionWeight( 26, 28, 1.0, 100 ) ],
-      pim_coefficients=[ ProductionCoefficient( 27, 28, 1.0, 1.0, 100 ),
-         ProductionCoefficient( 26, 28, 1.0, 1.0, 100 ) ],
-      shots_coefficients=[ ProductionCoefficient( 27, 28, 1.0, 1.0, 100 ),
-         ProductionCoefficient( 26, 28, 1.0, 1.0, 100 ) ] )
+   model = PaceRegressionModel( [ ProductionGrowth( 27, 28, 1.0 ) ],
+      history_weights=[ ProductionWeight( 27, 28, 1.0 ), ProductionWeight( 26, 28, 1.0 ) ],
+      pim_coefficients=[ ProductionCoefficient( 27, 28, 1.0, 1.0 ),
+         ProductionCoefficient( 26, 28, 1.0, 1.0 ) ],
+      shots_coefficients=[ ProductionCoefficient( 27, 28, 1.0, 1.0 ),
+         ProductionCoefficient( 26, 28, 1.0, 1.0 ) ] )
 
    resolved = BaselinePaceResolver.resolve(
       Skater( [ latest, older ] ), 20252026, [], model,
@@ -181,7 +181,7 @@ def Test_Resolve_TestTranslatedSeason_ExpectLeagueConversionOnceThenNhlGrowth() 
    factor = LeagueFactor( 'AAA', 0.4 )
    season = _other( 20242025, 30.0, 50.0, factor.league )
    model = PaceRegressionModel( [
-      ProductionGrowth( 18, 19, SCORING_MULTIPLIER, 100 )
+      ProductionGrowth( 18, 19, SCORING_MULTIPLIER )
    ], [ OTHER_LEAGUE_SHARES ] )
 
    resolved = BaselinePaceResolver.resolve( Skater( [ season ] ), 20252026, [ factor ], model )

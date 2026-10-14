@@ -26,8 +26,8 @@ class ProductionCoefficientFitter():
       coefficients = [
          ProductionCoefficient( from_age, to_age,
             ProductionHistoryPredictor.multiplier( lookup, from_age, to_age ),
-            weights[ ( from_age, to_age ) ].weight, len( selected ) )
-         for ( from_age, to_age ), selected in groups.items()
+            weights[ ( from_age, to_age ) ].weight )
+         for from_age, to_age in groups
       ]
       return sorted( coefficients, key=lambda coefficient: ( coefficient.to_age, coefficient.from_age ) )
 
@@ -37,7 +37,7 @@ class ProductionCoefficientFitter():
       """Fit annual growth only; the predictor compounds longer transitions."""
       annual_pairs = [ pair for pair in pairs if pair.to_age == pair.from_age + 1 ]
       growth = [
-         ProductionGrowth( from_age, to_age, cls._multiplier( selected ), len( selected ) )
+         ProductionGrowth( from_age, to_age, cls._multiplier( selected ) )
          for ( from_age, to_age ), selected in cls._training_groups( annual_pairs ).items()
       ]
       return sorted( growth, key=lambda coefficient: ( coefficient.to_age, coefficient.from_age ) )
@@ -56,8 +56,7 @@ class ProductionCoefficientFitter():
          cls,
          groups: dict[ tuple[ int, int ], list[ ProductionPair ] ] ) -> dict[ tuple[ int, int ], ProductionWeight ]:
       weights = {
-         transition: ProductionWeight(
-            *transition, cls._weight( selected ), len( selected ) )
+         transition: ProductionWeight( *transition, cls._weight( selected ) )
          for transition, selected in groups.items()
       }
       totals_by_target_age: dict[ int, float ] = {}
@@ -71,8 +70,7 @@ class ProductionCoefficientFitter():
             weight.from_age,
             weight.to_age,
             weight.weight / totals_by_target_age[ weight.to_age ]
-            if totals_by_target_age[ weight.to_age ] > 0.0 else weight.weight,
-            weight.samples )
+            if totals_by_target_age[ weight.to_age ] > 0.0 else weight.weight )
          for transition, weight in weights.items()
       }
 

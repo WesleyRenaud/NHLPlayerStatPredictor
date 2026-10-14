@@ -84,9 +84,9 @@ class NhlProductionRegression():
       target_age = priors[ Position.FIRST ].age_in_year( year )
 
       growth = [ ProductionGrowth( coefficient.from_age, coefficient.to_age,
-         coefficient.multiplier, coefficient.samples ) for coefficient in coefficients ]
+         coefficient.multiplier ) for coefficient in coefficients ]
       weights = [ ProductionWeight( coefficient.from_age, coefficient.to_age,
-         coefficient.weight, coefficient.samples ) for coefficient in coefficients ]
+         coefficient.weight ) for coefficient in coefficients ]
 
       return ProductionHistoryPredictor.pace(
          [ ProductionSeason( prior.age, getattr( prior, stat.value ), prior.games ) for prior in priors ],

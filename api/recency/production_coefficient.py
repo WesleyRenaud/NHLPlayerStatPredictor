@@ -11,7 +11,6 @@ class ProductionCoefficient():
    to_age: int
    multiplier: float
    weight: float
-   samples: int
 
 
    @classmethod
@@ -20,8 +19,7 @@ class ProductionCoefficient():
          from_age=int( row[ 'from_age' ] ),
          to_age=int( row[ 'to_age' ] ),
          multiplier=float( row[ 'multiplier' ] ),
-         weight=float( row[ 'weight' ] ),
-         samples=int( row[ 'samples' ] ) )
+         weight=float( row[ 'weight' ] ) )
 
 
    def to_dict( self ) -> dict[ str, int | float ]:
@@ -30,5 +28,4 @@ class ProductionCoefficient():
          'to_age': self.to_age,
          'multiplier': self.multiplier,
          'weight': self.weight,
-         'samples': self.samples,
       }

@@ -53,6 +53,6 @@ class ProductionModelProvider():
          ProductionCoefficient(
             weight.from_age, weight.to_age,
             ProductionHistoryPredictor.multiplier( lookup, weight.from_age, weight.to_age ),
-            weight.weight, weight.samples )
+            weight.weight )
          for weight in weights
       ]

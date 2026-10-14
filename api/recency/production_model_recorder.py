@@ -27,10 +27,10 @@ class ProductionModelRecorder():
             ( model.pim_coefficients, PimMultiplierStore, PimWeightStore ),
             ( model.shots_coefficients, ShotsMultiplierStore, ShotsWeightStore ) ):
          multiplier_store.write( [
-            ProductionGrowth( item.from_age, item.to_age, item.multiplier, item.samples )
+            ProductionGrowth( item.from_age, item.to_age, item.multiplier )
             for item in coefficients if item.to_age == item.from_age + 1
          ] )
          weight_store.write( [
-            ProductionWeight( item.from_age, item.to_age, item.weight, item.samples )
+            ProductionWeight( item.from_age, item.to_age, item.weight )
             for item in coefficients
          ] )

@@ -16,7 +16,7 @@ def Test_Write_TestMultipliers_ExpectIndependentTypedRoundTrip(
       monkeypatch: pytest.MonkeyPatch,
       tmp_path: Path ) -> None:
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
-   growth = [ ProductionGrowth( 18, 19, 1.2, 30 ) ]
+   growth = [ ProductionGrowth( 18, 19, 1.2 ) ]
 
    store.write( growth )
 

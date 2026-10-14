@@ -183,7 +183,7 @@ def Test_Pace_TestShortPriorBesideFullSeason_ExpectFullSeasonOnly( older_games: 
    latest = _season( 1, 2021, 19, 160 )
    older = replace( _season( 1, 2020, 18, 50 ), games_played=older_games )
    coefficients = [
-      ProductionCoefficient( 19, 20, 1.1, 0.9, 100 ),
+      ProductionCoefficient( 19, 20, 1.1, 0.9 ),
    ]
    latest_relationship = coefficients[ Position.FIRST ]
 
@@ -198,9 +198,9 @@ def Test_Pace_TestWeightedShotHistory_ExpectRawAverageThenGrowth( older_games: i
    latest = _season( 1, 2021, 19, 160 )
    older = replace( _season( 1, 2020, 18, 50 ), games_played=older_games )
    coefficients = [
-      ProductionCoefficient( 18, 19, 1.2, 0.8, 100 ),
-      ProductionCoefficient( 19, 20, 1.1, 0.9, 100 ),
-      ProductionCoefficient( 18, 20, 1.32, 0.5, 100 ),
+      ProductionCoefficient( 18, 19, 1.2, 0.8 ),
+      ProductionCoefficient( 19, 20, 1.1, 0.9 ),
+      ProductionCoefficient( 18, 20, 1.32, 0.5 ),
    ]
    _older_to_latest, latest_relationship, older_relationship = coefficients
    latest_weight = latest_relationship.weight
