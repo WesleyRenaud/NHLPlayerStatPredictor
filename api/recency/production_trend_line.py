@@ -6,7 +6,6 @@ from dataclasses import dataclass
 @dataclass( frozen=True )
 class ProductionTrendLine():
    level: float
-   relative_slope: float
 
 
    @classmethod
@@ -21,6 +20,5 @@ class ProductionTrendLine():
          for year, pace in zip( years, paces, strict=True ) ) / variance
       newest_year = count - 1
       level = mean_pace + slope * ( newest_year - mean_year )
-      relative_slope = 0.0 if mean_pace == 0.0 else slope / mean_pace
 
-      return cls( level, relative_slope )
+      return cls( level )

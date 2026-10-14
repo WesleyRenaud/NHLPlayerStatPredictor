@@ -79,7 +79,6 @@ def Test_Fit_TestEvenSteps_ExpectNewestPaceAndStepOverLevel() -> None:
    half_span = ( len( paces ) - 1 ) / 2.0
 
    assert line.level == pytest.approx( paces[ -1 ] )
-   assert line.relative_slope == pytest.approx( step / mean_pace )
    assert line.level == pytest.approx( mean_pace + step * half_span )
 
 
