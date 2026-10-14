@@ -116,13 +116,12 @@ class PaceRegressionPredictor():
          keep: ProductionKeepFit ) -> float:
       prior_seasons = seasons[ : Position.LAST ]
       latest = seasons[ Position.LAST ]
-      point_line = ProductionTrendLine.fit( [ season.p_pace for season in prior_seasons ] )
-      kept = keep.kept( point_line.relative_slope )
       component_line = ProductionTrendLine.fit( [
          getattr( season.scoring_paces(), stat.value ) for season in prior_seasons
       ] )
       latest_pace = getattr( latest.scoring_paces(), stat.value )
-      at_latest_age = ProductionTrend.at_latest( component_line.level, latest_pace, kept )
+      at_latest_age = ProductionTrend.at_latest(
+         component_line.level, latest_pace, keep.kept_above )
       target_age = latest.age_in_year( target_year )
       multiplier = ProductionHistoryPredictor.multiplier(
          partial( ProductionHistoryPredictor.coefficient, growth ),

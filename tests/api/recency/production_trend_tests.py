@@ -9,7 +9,6 @@ from api.recency.pace_regression_model import PaceRegressionModel
 from api.recency.pace_regression_predictor import PaceRegressionPredictor
 from api.recency.prior_year import PriorYear
 from api.recency.production_growth import ProductionGrowth
-from api.recency.production_keep_band import ProductionKeepBand
 from api.recency.production_keep_fit import ProductionKeepFit
 from api.recency.production_trend import ProductionTrend
 from api.recency.production_trend_line import ProductionTrendLine
@@ -61,18 +60,13 @@ def _prior( year: int, age: int, pace: float ) -> PriorYear:
       age )
 
 
-def _keep( relative_slope: float, kept: float ) -> ProductionKeepFit:
-   return ProductionKeepFit( [ ProductionKeepBand( relative_slope + 1.0, kept ) ], kept )
-
-
 def _kept_pace(
       prior_paces: list[ int ],
       latest_pace: int,
       growth: float,
       keep: ProductionKeepFit ) -> float:
    line = _line( [ float( pace ) for pace in prior_paces ] )
-   kept = keep.kept( line.relative_slope )
-   at_latest_age = ProductionTrend.at_latest( line.level, float( latest_pace ), kept )
+   at_latest_age = ProductionTrend.at_latest( line.level, float( latest_pace ), keep.kept_above )
 
    return at_latest_age * growth
 
@@ -135,8 +129,7 @@ def Test_Paces_TestFivePriorSeasons_ExpectKeptGapThenAgeGrowth() -> None:
    latest_pace = 67
    growth = 0.9
    kept = 0.5
-   line = _line( [ float( pace ) for pace in prior_paces ] )
-   keep = _keep( line.relative_slope, kept )
+   keep = ProductionKeepFit( kept_above=kept )
    seasons = [
       _nhl( year, age, pace )
       for year, age, pace in zip(
