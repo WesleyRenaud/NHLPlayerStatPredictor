@@ -102,7 +102,6 @@ class ProductionKeepFitter():
          return None
 
       return ProductionKeepSample(
-         line.relative_slope,
          line.level,
          latest.p_pace,
          following.p_pace / multiplier,
