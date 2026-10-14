@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date
 
 from ..ingest.nhl_client import NhlClient
+from ..ingest.standings_games_fetcher import StandingsGamesFetcher
 from ..paths import Paths
 from ..season import Season
 from ..season_length import SeasonLength
@@ -37,7 +38,5 @@ class SeasonStatsResolver():
          return 0
 
       team = RosterSkaterProvider.team( player_id, str( Paths.DB_PATH ) )
-      standing = next(
-         row for row in NhlClient.standings()[ 'standings' ]
-         if int( row[ 'seasonId' ] ) == season.season_id and row[ 'teamAbbrev' ][ 'default' ] == team.value )
-      return season.number_of_games - int( standing[ 'gamesPlayed' ] )
+      team_games = StandingsGamesFetcher.games_played( season.season_id, team, on_date )
+      return season.number_of_games - team_games

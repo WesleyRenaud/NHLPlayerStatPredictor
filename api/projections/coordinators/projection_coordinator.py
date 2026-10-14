@@ -16,6 +16,7 @@ from ...skaters.roster_skater_provider import RosterSkaterProvider
 from ...skaters.skater import Skater
 from ...skaters.skater_season_provider import SkaterSeasonProvider
 from ...skaters.skater_stat_rates import SkaterStatRates
+from ...toronto_date import TorontoDate
 
 
 class ProjectionCoordinator():
@@ -23,7 +24,9 @@ class ProjectionCoordinator():
    def get_projection( cls, player_id: int ) -> Projection | None:
       db_path = str( Paths.DB_PATH )
 
-      if RosterSkaterProvider.team( player_id, db_path ) is None:
+      team = RosterSkaterProvider.team( player_id, db_path )
+
+      if team is None:
          return None
 
       seasons = [
@@ -75,17 +78,25 @@ class ProjectionCoordinator():
          if shots_pace is not None:
             shots_pace *= IcePaceScaler.ratio( ice.last_toi, ice.projected_toi )
 
-      power_play_goals = round( power_play_pace.goals )
-      power_play_assists = round( power_play_pace.assists )
-      short_handed_goals = round( short_handed_pace.goals )
-      short_handed_assists = round( short_handed_pace.assists )
-      even_strength_goals = round( even_strength_pace.goals )
-      even_strength_assists = round( even_strength_pace.assists )
+      on_date = TorontoDate.today()
+      games_played = PaceGamesResolver.resolve( player_id, on_date, team )
+      season_games = RecencyTargetResolver.season().number_of_games
+      played_share = games_played / season_games
+      power_play_goals = round( power_play_pace.goals * played_share )
+      power_play_assists = round( power_play_pace.assists * played_share )
+      short_handed_goals = round( short_handed_pace.goals * played_share )
+      short_handed_assists = round( short_handed_pace.assists * played_share )
+      even_strength_goals = round( even_strength_pace.goals * played_share )
+      even_strength_assists = round( even_strength_pace.assists * played_share )
+      if pim_pace is not None:
+         pim_pace *= played_share
+      if shots_pace is not None:
+         shots_pace *= played_share
       return Projection(
          even_strength_goals=even_strength_goals,
          even_strength_points=even_strength_goals + even_strength_assists,
          penalty_minutes=None if pim_pace is None else round( pim_pace ),
-         games_played=PaceGamesResolver.resolve(),
+         games_played=games_played,
          projected_toi=None if ice is None else ice.projected_toi,
          power_play_goals=power_play_goals,
          power_play_points=power_play_goals + power_play_assists,
@@ -93,5 +104,5 @@ class ProjectionCoordinator():
          short_handed_points=short_handed_goals + short_handed_assists,
          shots=None if shots_pace is None else round( shots_pace ),
          shooting_percentage=SkaterStatRates.shooting_percentage_from_paces(
-            even_strength_pace.goals + power_play_pace.goals + short_handed_pace.goals,
+            ( even_strength_pace.goals + power_play_pace.goals + short_handed_pace.goals ) * played_share,
             shots_pace ) )

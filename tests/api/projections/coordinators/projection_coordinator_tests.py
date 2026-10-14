@@ -28,12 +28,20 @@ from api.recency.production_growth import ProductionGrowth
 from api.recency.production_trajectory_fit import ProductionTrajectoryFit
 from api.recency.production_trajectory_share import ProductionTrajectoryShare
 from api.recency.production_weight import ProductionWeight
+from api.season_length import SeasonLength
 from api.shared.enums.position import Position
 from api.skaters.nhl_skater_season import NhlSkaterSeason
 from api.skaters.other_league_skater_season import OtherLeagueSkaterSeason
 from api.skaters.skater import Skater
 from api.skaters.skater_position import SkaterPosition
 from api.skaters.team import Team
+
+
+def _stub_season( monkeypatch: pytest.MonkeyPatch, games: int ) -> None:
+   monkeypatch.setattr(
+      projection_coordinator.RecencyTargetResolver,
+      'season',
+      lambda: SeasonLength( 20262027, games, date( 2026, 10, 7 ), date( 2027, 4, 16 ) ) )
 
 
 def _stub_ice( monkeypatch: pytest.MonkeyPatch ) -> None:
@@ -113,7 +121,9 @@ def Test_GetProjection_TestProspectCurve_ExpectCalibrationBeforeIceAndRounding(
    monkeypatch.setattr( ProspectCalibrationStore, 'read', lambda: calibration )
    monkeypatch.setattr( projection_coordinator.SkaterIceStore, 'by_player',
       lambda: { 1: SkaterIce( 1, baseline_toi, baseline_toi, projected_toi ) } )
-   monkeypatch.setattr( projection_coordinator.PaceGamesResolver, 'resolve', lambda: pace_games )
+   monkeypatch.setattr(
+      projection_coordinator.PaceGamesResolver, 'resolve', lambda player_id, on_date, team: pace_games )
+   _stub_season( monkeypatch, pace_games )
 
    projection = ProjectionCoordinator.get_projection( 1 )
 
@@ -146,7 +156,9 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
    target_season_id = 20232024
    aged = SeasonPace( 10.4, 20.6 )
    pim_pace = 18.7
-   games_played = 70
+   season_games = 84
+   games_played = 42
+   share = games_played / season_games
    captured: list[ tuple[ int, str ] ] = []
    resolved: list[ tuple[
       Skater,
@@ -196,15 +208,16 @@ def Test_GetProjection_TestSeasons_ExpectAgedRoundedProjection(
    monkeypatch.setattr(
       projection_coordinator.PaceGamesResolver,
       'resolve',
-      lambda: games_played )
+      lambda player_id, on_date, team: games_played )
+   _stub_season( monkeypatch, season_games )
 
    projection = ProjectionCoordinator.get_projection( player_id )
 
    assert replace( projection, shooting_percentage=None ) == Projection(
-      even_strength_goals=round( aged.goals ),
-      even_strength_points=round( aged.goals ) + round( aged.assists ),
-      shots=None if shots_pace is None else round( shots_pace ),
-      penalty_minutes=round( pim_pace ),
+      even_strength_goals=round( aged.goals * share ),
+      even_strength_points=round( aged.goals * share ) + round( aged.assists * share ),
+      shots=None if shots_pace is None else round( shots_pace * share ),
+      penalty_minutes=round( pim_pace * share ),
       games_played=games_played,
       power_play_goals=0,
       power_play_points=0,
@@ -326,7 +339,8 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
    monkeypatch.setattr(
       projection_coordinator.PaceGamesResolver,
       'resolve',
-      lambda: games_played )
+      lambda player_id, on_date, team: games_played )
+   _stub_season( monkeypatch, games_played )
 
    projection = ProjectionCoordinator.get_projection( player_id )
 
@@ -396,7 +410,9 @@ def Test_GetProjection_TestHistoricalRates_ExpectNormalizedThenProjectedStats(
    monkeypatch.setattr( projection_coordinator.RecencyTargetResolver, 'resolve', lambda: 20252026 )
    monkeypatch.setattr( projection_coordinator.ProductionModelProvider, 'read', lambda: model )
    monkeypatch.setattr( projection_coordinator.LeagueFactorStore, 'read', lambda: [] )
-   monkeypatch.setattr( projection_coordinator.PaceGamesResolver, 'resolve', lambda: 82 )
+   monkeypatch.setattr(
+      projection_coordinator.PaceGamesResolver, 'resolve', lambda player_id, on_date, team: 82 )
+   _stub_season( monkeypatch, 82 )
    monkeypatch.setattr( NhlClient, 'skater_timeonice', lambda season_id: [
       { 'playerId': 1, 'timeOnIcePerGame': ( latest_toi if season_id == latest.season_id else older_toi ) * 60,
          'gamesPlayed': latest.games_played, 'teamAbbrevs': 'COL', 'positionCode': 'C' } ] )

@@ -10,7 +10,7 @@ from api.season import Season
 from api.season_length import SeasonLength
 
 
-def Test_Resolve_TestSeasons_ExpectLastSeasonId(
+def Test_Season_TestSeasons_ExpectLatestSeason(
       monkeypatch: pytest.MonkeyPatch ) -> None:
    seasons = [
       SeasonLength( 20202021, 56, date( 2021, 1, 13 ), date( 2021, 5, 19 ) ),
@@ -21,9 +21,10 @@ def Test_Resolve_TestSeasons_ExpectLastSeasonId(
       'seasons',
       lambda: seasons )
 
-   season_id = RecencyTargetResolver.resolve()
+   season = RecencyTargetResolver.season()
 
-   assert season_id == Season.latest( seasons ).season_id
+   assert season == Season.latest( seasons )
+   assert RecencyTargetResolver.resolve() == season.season_id
 
 
 def Test_Prior_TestSeasons_ExpectSecondLastSeasonId(
