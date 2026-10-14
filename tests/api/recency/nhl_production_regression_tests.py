@@ -209,7 +209,7 @@ def Test_Pace_TestWeightedShotHistory_ExpectRawAverageThenGrowth( older_games: i
       ProductionSeason( int( latest.age ), latest.shots_pace(), latest.games_played ),
       ProductionSeason( int( older.age ), older.shots_pace(), older.games_played ),
    ]
-   fit = ProductionTrajectoryFit( 0.15, [ ProductionTrajectoryShare( 19, 0.65, 0.40 ) ] )
+   fit = ProductionTrajectoryFit( [ ProductionTrajectoryShare( 19, 0.65, 0.40 ) ] )
    shares = ProductionTrajectory.shares( history, [ latest_weight, older_weight ], fit )
    expected = (
       latest.shots_pace() * shares[ 0 ] + older.shots_pace() * shares[ 1 ]

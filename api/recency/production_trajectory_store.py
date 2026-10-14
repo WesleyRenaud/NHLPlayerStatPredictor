@@ -19,13 +19,9 @@ class ProductionTrajectoryStore( ProductionListStore ):
          return ProductionTrajectoryFit.empty()
 
       return ProductionTrajectoryFit(
-         float( rows[ 0 ][ 'move' ] ),
          [ ProductionTrajectoryShare.from_row( row ) for row in rows ] )
 
 
    @classmethod
    def write( cls, fit: ProductionTrajectoryFit ) -> None:
-      cls.write_rows( [
-         { **share.to_dict(), 'move': fit.move }
-         for share in fit.by_age
-      ] )
+      cls.write_rows( [ share.to_dict() for share in fit.by_age ] )

@@ -399,7 +399,7 @@ def Test_GetProjection_TestHistoricalRates_ExpectNormalizedThenProjectedStats(
          ProductionCoefficient( 26, 28, 1.0, 1.0, 100 ) ],
       shots_coefficients=[ ProductionCoefficient( 27, 28, 1.0, 1.0, 100 ),
          ProductionCoefficient( 26, 28, 1.0, 1.0, 100 ) ],
-      trajectory=ProductionTrajectoryFit( 0.15, [ ProductionTrajectoryShare( 27, None, drop ) ] ) )
+      trajectory=ProductionTrajectoryFit( [ ProductionTrajectoryShare( 27, None, drop ) ] ) )
    _stub_roster( monkeypatch )
    monkeypatch.setattr( projection_coordinator.SkaterSeasonProvider, 'seasons_for_player_id',
       lambda player_id, path: [ latest, older ] )

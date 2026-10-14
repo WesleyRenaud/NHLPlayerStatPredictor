@@ -16,7 +16,7 @@ def Test_FromRow_TestModel_ExpectRoundTrip() -> None:
       pim_coefficients=[ ProductionCoefficient( 18, 19, 1.1, 0.8, 100 ) ],
       shots_coefficients=[ ProductionCoefficient( 18, 19, 1.2, 0.9, 100 ) ],
       history_weights=[ ProductionWeight( 18, 19, 0.8, 100 ) ],
-      trajectory=ProductionTrajectoryFit( 0.2, [ ProductionTrajectoryShare( 24, 0.7, 0.6 ) ] ),
+      trajectory=ProductionTrajectoryFit( [ ProductionTrajectoryShare( 24, 0.7, 0.6 ) ] ),
       keep=ProductionKeepFit( 0.7 ) )
 
    assert PaceRegressionModel.from_row( model.to_dict() ) == model

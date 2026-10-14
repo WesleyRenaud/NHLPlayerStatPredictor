@@ -13,7 +13,7 @@ def _season( age: int, pace: float, games: int = 82 ) -> ProductionSeason:
 
 
 def _fit( age: int, rise: float | None, drop: float | None ) -> ProductionTrajectoryFit:
-   return ProductionTrajectoryFit( 0.15, [ ProductionTrajectoryShare( age, rise, drop ) ] )
+   return ProductionTrajectoryFit( [ ProductionTrajectoryShare( age, rise, drop ) ] )
 
 
 def Test_Shares_TestStickyRise_ExpectLatestSeasonRaised() -> None:
@@ -88,7 +88,7 @@ def Test_Shares_TestUnfittedAge_ExpectNearestAge() -> None:
    history = [ _season( 36, 80.0 ), _season( 35, 50.0 ) ]
    bases = [ 1.0, 1.0 ]
    rise = 0.25
-   fit = ProductionTrajectoryFit( 0.15, [
+   fit = ProductionTrajectoryFit( [
       ProductionTrajectoryShare( 30, 0.80, None ),
       ProductionTrajectoryShare( 34, rise, None ),
    ] )
