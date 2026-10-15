@@ -35,6 +35,5 @@ class DepthChart():
    def _member( skater: IceSkater, toi: float ) -> Types.JsonObject:
       return {
          'player_id': skater.player_id,
-         'player_name': skater.player_name,
          'toi': round( toi, 2 ),
       }
