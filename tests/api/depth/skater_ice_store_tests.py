@@ -15,7 +15,7 @@ def Test_Write_TestRows_ExpectReadable(
       monkeypatch: pytest.MonkeyPatch,
       tmp_path: Path ) -> None:
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
-   rows = [ SkaterIce( 97, 21.5, 21.5, 22.0 ) ]
+   rows = [ SkaterIce( 97, 21.5, 22.0 ) ]
    SkaterIceStore.write( rows )
 
    loaded = SkaterIceStore.read()
@@ -26,6 +26,7 @@ def Test_Write_TestRows_ExpectReadable(
    assert written == json.dumps(
       [ rows[ Position.FIRST ].to_dict() ],
       indent=2 )
+   assert 'implied' not in rows[ Position.FIRST ].to_dict()
 
 
 def Test_Read_TestMissing_ExpectEmpty(
