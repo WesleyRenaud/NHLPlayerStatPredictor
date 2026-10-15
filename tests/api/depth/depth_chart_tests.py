@@ -23,12 +23,10 @@ def Test_ToDict_TestChart_ExpectTeamAndRegulars() -> None:
    team = list( Team )[ Position.FIRST ]
    regulars = [ ( _skater( 1 ), 25.0 ), ( _skater( 2 ), 23.0 ) ]
    extras = [ _skater( 3 ) ]
-   games_out = [ 42.0, 42.0 ]
    chart = DepthChart(
       team,
       regulars,
       extras,
-      games_out,
       SkaterGroup( 'D' ) )
 
    payload = chart.to_dict()
@@ -36,4 +34,4 @@ def Test_ToDict_TestChart_ExpectTeamAndRegulars() -> None:
    assert payload[ 'team' ] == team.value
    assert len( payload[ 'regulars' ] ) == len( regulars )
    assert len( payload[ 'extras' ] ) == len( extras )
-   assert payload[ 'games_out' ] == games_out
+   assert 'games_out' not in payload

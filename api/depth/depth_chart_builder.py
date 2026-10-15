@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from ..availability.availability_enumerator import AvailabilityEnumerator
 from .chosen_share_binder import ChosenShareBinder
 from .depth_chart import DepthChart
 from .depth_core_builder import DepthCoreBuilder
@@ -21,8 +20,7 @@ class DepthChartBuilder():
          skaters: list[ IceSkater ],
          slot_averages: list[ SlotAverage ],
          chosen_shares: list[ IceChosenShare ],
-         group: DepthGroup,
-         pace_games: int ) -> DepthChart:
+         group: DepthGroup ) -> DepthChart:
       core = DepthCoreBuilder.build( skaters, group, slot_averages )
       regulars = ChosenShareBinder.bind(
          core.regulars,
@@ -42,7 +40,4 @@ class DepthChartBuilder():
          team,
          projected,
          core.extras,
-         AvailabilityEnumerator.games_out(
-            [ skater for skater, _toi in projected ],
-            pace_games ),
          group.skater_group )

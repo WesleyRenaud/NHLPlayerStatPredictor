@@ -20,7 +20,6 @@ from api.ingest.roster_skater_ingester import RosterSkaterIngester
 from api.paths import Paths
 from api.recency.recency_weight import RecencyWeight
 from api.recency_target_resolver import RecencyTargetResolver
-from api.season_length import SeasonLength
 from api.shared.enums.position import Position
 from api.skaters.club_league import ClubLeague
 from api.skaters.nhl_skater_season import NhlSkaterSeason
@@ -30,13 +29,6 @@ from api.skaters.roster_skater import RosterSkater
 from api.skaters.skater_group import SkaterGroup
 from api.skaters.skater_position import SkaterPosition
 from api.skaters.team import Team
-
-
-def _seasons() -> list[ SeasonLength ]:
-   return [
-      SeasonLength( 20242025, 82, date( 2024, 10, 4 ), date( 2025, 4, 17 ) ),
-      SeasonLength( 20252026, 84, date( 2025, 10, 8 ), date( 2026, 4, 17 ) ),
-   ]
 
 
 def _ice( toi: float, team: Team ) -> UsableNhlIce:
@@ -97,11 +89,8 @@ def Test_Record_TestRosterAndUsage_ExpectStoredChart(
    monkeypatch.setattr(
       'api.depth.depth_chart_recorder.PlayerStatusStore.read',
       lambda db_path: [] )
-   monkeypatch.setattr(
-      'api.depth.depth_chart_recorder.NhlClient.seasons',
-      lambda force=False: _seasons() )
 
-   charts = DepthChartRecorder.record( Position.SECOND )
+   charts = DepthChartRecorder.record()
 
    defense = next(
       chart
@@ -141,7 +130,7 @@ def Test_Record_TestForwardAndDefense_ExpectBothCharts(
       'api.depth.depth_chart_recorder.PlayerStatusStore.read',
       lambda db_path: [] )
 
-   charts = DepthChartRecorder.record( Position.SECOND )
+   charts = DepthChartRecorder.record()
 
    assert len( charts ) == 2
    assert charts[ Position.FIRST ].skater_group is SkaterGroup( 'F' )
@@ -289,7 +278,7 @@ def Test_Record_TestInactiveUsage_ExpectOmitted(
       'api.depth.depth_chart_recorder.PlayerStatusStore.read',
       lambda db_path: [ PlayerStatus( retired_id, False ) ] )
 
-   charts = DepthChartRecorder.record( Position.SECOND )
+   charts = DepthChartRecorder.record()
 
    defense = next(
       chart

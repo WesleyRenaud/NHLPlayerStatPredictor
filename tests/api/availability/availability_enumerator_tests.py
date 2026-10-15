@@ -32,19 +32,3 @@ def Test_Resolve_TestOneHalfAvailable_ExpectInAndOut() -> None:
    assert abs( out_state.share - ( 1.0 - availability ) ) < 0.001
    assert in_state.playing == skaters
    assert out_state.playing == []
-
-
-def Test_GamesOut_TestTwoHalfAvailable_ExpectQuarterTwoOut() -> None:
-   availability = 0.5
-   pace_games = 4
-   skaters = [ _skater( 1, availability ), _skater( 2, availability ) ]
-
-   mix = AvailabilityEnumerator.games_out( skaters, pace_games )
-
-   neither_out = availability ** 2
-   one_out = 2 * availability * ( 1 - availability )
-   both_out = ( 1 - availability ) ** 2
-   assert abs( mix[ Position.FIRST ] - neither_out * pace_games ) < 0.001
-   assert abs( mix[ Position.SECOND ] - one_out * pace_games ) < 0.001
-   assert abs( mix[ Position.THIRD ] - both_out * pace_games ) < 0.001
-   assert abs( sum( mix ) - pace_games ) < 0.001

@@ -126,7 +126,6 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    ]
    roster_inserted: list[ tuple[ list[ RosterSkater ], str ] ] = []
    other_rows = []
-   recorded_pace_games: list[ int ] = []
    previous_seasons: list[ int ] = []
    recorded: list[ bool ] = []
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
@@ -216,10 +215,7 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    monkeypatch.setattr(
       skater_season_ingester.DepthChartRecorder,
       'record',
-      lambda pace_games, force=False: (
-         recorded.append( force )
-         or recorded_pace_games.append( pace_games )
-         or [] ) )
+      lambda force=False: recorded.append( force ) or [] )
    monkeypatch.setattr(
       skater_season_ingester.DepthChartStore,
       'write',
@@ -264,5 +260,4 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    assert stored_teams == team_factors
    assert previous_seasons == last_played_ids
    assert recorded == [ False ]
-   assert recorded_pace_games == [ pace_games ]
    assert stored_ice_shares == []

@@ -13,7 +13,6 @@ class DepthChart():
    team: Team
    regulars: list[ tuple[ IceSkater, float ] ]
    extras: list[ IceSkater ]
-   games_out: list[ float ]
    skater_group: SkaterGroup
 
 
@@ -25,7 +24,6 @@ class DepthChart():
             self._member( skater, toi )
             for skater, toi in self.regulars
          ],
-         'games_out': [ round( games, 1 ) for games in self.games_out ],
          'extras': [
             self._member( skater, skater.implied )
             for skater in self.extras
