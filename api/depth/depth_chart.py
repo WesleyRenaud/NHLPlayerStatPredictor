@@ -24,10 +24,6 @@ class DepthChart():
             self._member( skater, toi )
             for skater, toi in self.regulars
          ],
-         'extras': [
-            self._member( skater, skater.implied )
-            for skater in self.extras
-         ],
       }
 
 

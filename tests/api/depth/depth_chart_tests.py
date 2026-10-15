@@ -33,4 +33,3 @@ def Test_ToDict_TestChart_ExpectTeamAndRegulars() -> None:
 
    assert payload[ 'team' ] == team.value
    assert len( payload[ 'regulars' ] ) == len( regulars )
-   assert len( payload[ 'extras' ] ) == len( extras )
