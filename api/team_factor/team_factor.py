@@ -24,10 +24,7 @@ class TeamFactor():
       return cls(
          season=int( row[ 'season' ] ),
          team=Team( str( row[ 'team' ] ) ),
-         rate=float( row[ 'rate' ] ),
-         skaters=[
-            TeamFactorSkater.from_row( skater )
-            for skater in row[ 'skaters' ] ] )
+         rate=float( row[ 'rate' ] ) )
 
 
    def to_dict( self ) -> dict[ str, object ]:
@@ -35,7 +32,6 @@ class TeamFactor():
          'season': self.season,
          'team': self.team.value,
          'rate': self.rate,
-         'skaters': [ skater.to_dict() for skater in self.skaters ],
       }
 
 

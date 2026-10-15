@@ -8,7 +8,7 @@ from api.team_factor.team_factor import TeamFactor
 from api.team_factor.team_factor_skater import TeamFactorSkater
 
 
-def Test_ToDict_TestFactor_ExpectSeasonTeamRateAndSkaters() -> None:
+def Test_ToDict_TestFactor_ExpectSeasonTeamAndRate() -> None:
    skater = TeamFactorSkater( 97, 120.5, SkaterGroup( 'F' ), GamesShare.FULL, False, None )
    factor = TeamFactor(
       20252026,
@@ -22,7 +22,6 @@ def Test_ToDict_TestFactor_ExpectSeasonTeamRateAndSkaters() -> None:
       'season': factor.season,
       'team': factor.team.value,
       'rate': factor.rate,
-      'skaters': [ skater.to_dict() ],
    }
 
 
@@ -35,7 +34,9 @@ def Test_FromRow_TestDict_ExpectFactor() -> None:
 
    loaded = TeamFactor.from_row( factor.to_dict() )
 
-   assert loaded == factor
+   assert loaded.season == factor.season
+   assert loaded.team == factor.team
+   assert loaded.rate == factor.rate
 
 
 def Test_DressedTotal_TestHalfOut_ExpectCurrentMix() -> None:
