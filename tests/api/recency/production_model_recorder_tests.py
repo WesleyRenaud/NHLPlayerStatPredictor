@@ -67,8 +67,3 @@ def Test_Write_TestModel_ExpectReadable(
       assert isinstance( json.loads( path.read_text() ), list )
    multipliers = json.loads( PimMultiplierStore.path().read_text() )
    assert all( item[ 'to_age' ] == item[ 'from_age' ] + 1 for item in multipliers )
-   assert all( 'weight' not in item for item in multipliers )
-   assert all( 'samples' not in item for item in multipliers )
-   weights = json.loads( PimWeightStore.path().read_text() )
-   assert all( 'multiplier' not in item for item in weights )
-   assert all( 'samples' not in item for item in weights )

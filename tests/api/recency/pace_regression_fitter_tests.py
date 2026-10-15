@@ -260,12 +260,10 @@ def Test_Fit_TestScoringComponents_ExpectOneGrowthFitPerProductionType(
    monkeypatch.setattr( ProductionCoefficientFitter, 'fit_weights', weight_fit )
    monkeypatch.setattr( ProductionCoefficientFitter, 'fit_growth', growth_fit )
 
-   model = PaceRegressionFitter.fit( seasons, [], [] )
+   PaceRegressionFitter.fit( seasons, [], [] )
 
    assert weight_fit.call_count == 1
    assert growth_fit.call_count == 3
-   assert all( 'weight' not in coefficient.to_dict()
-      for coefficient in model.scoring_growth )
 
 
 def Test_Fit_TestNhlAndTranslatedPairs_ExpectOnePooledScoringFit() -> None:

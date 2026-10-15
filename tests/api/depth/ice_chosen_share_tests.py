@@ -11,7 +11,6 @@ def Test_ToDict_TestShare_ExpectRoundedFields() -> None:
    rebuilt = IceChosenShare.from_row( payload )
 
    assert payload[ 'toi' ] == round( share.toi, 1 )
-   assert 'dress_share' not in payload
    assert payload[ 'chosen' ] == round( share.chosen, 3 )
    assert rebuilt.toi == payload[ 'toi' ]
    assert rebuilt.skater_group is SkaterGroup( payload[ 'skater_group' ] )

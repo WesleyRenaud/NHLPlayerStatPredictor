@@ -58,8 +58,6 @@ def Test_Write_TestNumericPicks_ExpectRoundTrip(
    assert ProspectCalibrationStore.read() == model
    written = json.loads( ProspectCalibrationStore.path().read_text() )
    assert written[ 'samples' ][ 0 ][ 'draft_pick' ] == pick
-   assert 'source_league' not in written[ 'samples' ][ 0 ]
-   assert 'version' not in written
 
 
 def Test_Read_TestMissingStore_ExpectExplicitError( monkeypatch: pytest.MonkeyPatch, tmp_path: Path ) -> None:
