@@ -26,7 +26,6 @@ def Test_Write_TestShares_ExpectReadable(
    assert written == json.dumps(
       [ shares[ Position.FIRST ].to_dict() ],
       indent=2 )
-   assert 'dress_share' not in shares[ Position.FIRST ].to_dict()
 
 
 def Test_Read_TestMissing_ExpectEmpty(

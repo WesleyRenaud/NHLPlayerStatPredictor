@@ -37,7 +37,6 @@ class DepthChart():
          'player_id': skater.player_id,
          'player_name': skater.player_name,
          'toi': round( toi, 2 ),
-         'implied': round( skater.implied, 2 ),
          'last_toi': None if skater.last_toi is None else round( skater.last_toi, 2 ),
          'availability': round( skater.availability, 3 ),
       }

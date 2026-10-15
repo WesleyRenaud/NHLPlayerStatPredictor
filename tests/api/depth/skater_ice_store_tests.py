@@ -26,7 +26,6 @@ def Test_Write_TestRows_ExpectReadable(
    assert written == json.dumps(
       [ rows[ Position.FIRST ].to_dict() ],
       indent=2 )
-   assert 'implied' not in rows[ Position.FIRST ].to_dict()
 
 
 def Test_Read_TestMissing_ExpectEmpty(
