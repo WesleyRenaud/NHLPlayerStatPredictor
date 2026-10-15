@@ -36,7 +36,6 @@ def Test_Write_TestCharts_ExpectReadable(
          team,
          [ ( _skater( 1 ), 25.0 ), ( _skater( 2 ), 23.0 ) ],
          [],
-         [],
          SkaterGroup( 'D' ) ),
    ]
    DepthChartStore.write( charts )

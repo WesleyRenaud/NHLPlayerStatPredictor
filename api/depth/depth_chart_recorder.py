@@ -12,11 +12,9 @@ from .depth_group import DepthGroup
 from .ice_chosen_share import IceChosenShare
 from .ice_chosen_share_store import IceChosenShareStore
 from .ice_skater_assembler import IceSkaterAssembler
-from ..ingest.nhl_client import NhlClient
 from ..ingest.roster_skater_ingester import RosterSkaterIngester
 from ..paths import Paths
 from ..recency_target_resolver import RecencyTargetResolver
-from ..season import Season
 from ..skaters.other_league_season_provider import OtherLeagueSeasonProvider
 from ..skaters.player_status_store import PlayerStatusStore
 from ..skaters.roster_skater import RosterSkater
@@ -31,17 +29,12 @@ from .usable_nhl_ice import UsableNhlIce
 class DepthChartRecorder():
    @classmethod
    def main( cls, force: bool = False ) -> None:
-      seasons = NhlClient.seasons( force=force )
-      DepthChartStore.write(
-         cls.record(
-            Season.pace_games( seasons ),
-            force ) )
+      DepthChartStore.write( cls.record( force ) )
 
 
    @classmethod
    def record(
          cls,
-         pace_games: int,
          force: bool = False ) -> list[ DepthChart ]:
       roster = RosterSkaterIngester.build_rows( force=force )
       statuses = PlayerStatusStore.read( str( Paths.DB_PATH ) )
@@ -61,8 +54,7 @@ class DepthChartRecorder():
                ices_by_player,
                availabilities,
                slot_averages,
-               chosen_shares,
-               pace_games ) )
+               chosen_shares ) )
 
       return charts
 
@@ -75,8 +67,7 @@ class DepthChartRecorder():
          ices_by_player: dict[ int, UsableNhlIce | None ],
          availabilities: dict[ int, float ],
          slot_averages: list[ SlotAverage ],
-         chosen_shares: list[ IceChosenShare ],
-         pace_games: int ) -> list[ DepthChart ]:
+         chosen_shares: list[ IceChosenShare ] ) -> list[ DepthChart ]:
       charts = []
 
       for group in ( DepthGroup.forwards(), DepthGroup.defense() ):
@@ -92,8 +83,7 @@ class DepthChartRecorder():
                   availabilities ),
                slot_averages,
                chosen_shares,
-               group,
-               pace_games ) )
+               group ) )
 
       return charts
 

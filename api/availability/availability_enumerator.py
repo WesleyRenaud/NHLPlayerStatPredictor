@@ -20,19 +20,6 @@ class AvailabilityEnumerator():
 
 
    @classmethod
-   def games_out(
-         cls,
-         skaters: list[ IceAvailable ],
-         pace_games: int ) -> list[ float ]:
-      counts = [ 0.0 ] * ( len( skaters ) + 1 )
-
-      for state in cls.resolve( skaters ):
-         counts[ state.regulars_out ] += state.share * pace_games
-
-      return counts
-
-
-   @classmethod
    def _expand(
          cls,
          states: list[ AvailabilityState ],

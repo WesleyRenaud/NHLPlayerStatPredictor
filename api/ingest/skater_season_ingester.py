@@ -138,9 +138,7 @@ class SkaterSeasonIngester():
          usages_by_season,
          seasons,
          Season.pace_games( seasons ) )
-      charts = DepthChartRecorder.record(
-         Season.pace_games( seasons ),
-         force=force )
+      charts = DepthChartRecorder.record( force=force )
       DepthChartStore.write( charts )
       SkaterIceStore.write( SkaterIceRecorder.record( charts ) )
       TeamFactorStore.write( previous_factors )
