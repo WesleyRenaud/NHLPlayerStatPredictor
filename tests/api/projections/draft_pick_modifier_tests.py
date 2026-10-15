@@ -11,7 +11,7 @@ from api.projections.prospect_calibration_sample import ProspectCalibrationSampl
 
 
 def _sample( player_id: int, pick: int | None, predicted: float, actual: float ) -> ProspectCalibrationSample:
-   return ProspectCalibrationSample( player_id, 20242025, DraftPick( pick ), predicted, actual, 'SHL' )
+   return ProspectCalibrationSample( player_id, 20242025, DraftPick( pick ), predicted, actual )
 
 
 def Test_Fit_TestKnownCurve_ExpectRecoveredCoefficients() -> None:
@@ -59,7 +59,7 @@ def Test_Fit_TestFutureSelfUndraftedAndZeroBaseline_ExpectExcluded() -> None:
       _sample( 2, 10, second_baseline, second_baseline * expected_factor ),
    ]
    extra = [
-      ProspectCalibrationSample( 3, 20262027, DraftPick( 1 ), 100.0, 0.0, 'OHL' ),
+      ProspectCalibrationSample( 3, 20262027, DraftPick( 1 ), 100.0, 0.0 ),
       _sample( 4, 1, 100.0, 0.0 ), _sample( 5, None, 100.0, 0.0 ), _sample( 6, 1, 0.0, 100.0 ),
    ]
 

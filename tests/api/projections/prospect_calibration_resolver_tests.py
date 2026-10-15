@@ -30,10 +30,10 @@ def _model( scoring_factor: float = 1.5 ) -> ProspectCalibrationModel:
    return ProspectCalibrationModel(
       20262027, [ ProspectProfile( 1, 2025, DraftPick( 3 ), [] ) ],
       [
-         ProspectCalibrationSample( 2, 20242025, DraftPick( 1 ), 20.0, 20.0 * scoring_factor, 'SHL' ),
-         ProspectCalibrationSample( 3, 20242025, DraftPick( 20 ), 40.0, 40.0 * scoring_factor, 'OHL' ),
-         ProspectCalibrationSample( 1, 20242025, DraftPick( 3 ), 100.0, 0.0, 'SHL' ),
-         ProspectCalibrationSample( 4, 20262027, DraftPick( 3 ), 100.0, 0.0, 'SHL' ),
+         ProspectCalibrationSample( 2, 20242025, DraftPick( 1 ), 20.0, 20.0 * scoring_factor ),
+         ProspectCalibrationSample( 3, 20242025, DraftPick( 20 ), 40.0, 40.0 * scoring_factor ),
+         ProspectCalibrationSample( 1, 20242025, DraftPick( 3 ), 100.0, 0.0 ),
+         ProspectCalibrationSample( 4, 20262027, DraftPick( 3 ), 100.0, 0.0 ),
       ] )
 
 

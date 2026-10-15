@@ -13,7 +13,6 @@ class ProspectCalibrationSample():
    draft_pick: DraftPick
    predicted_points: float
    actual_points: float
-   source_league: str
 
 
    @classmethod
@@ -22,8 +21,7 @@ class ProspectCalibrationSample():
       return cls(
          int( row[ 'player_id' ] ), int( row[ 'season_id' ] ),
          DraftPick( None if pick is None else int( pick ) ),
-         float( row[ 'predicted_points' ] ), float( row[ 'actual_points' ] ),
-         str( row[ 'source_league' ] ) )
+         float( row[ 'predicted_points' ] ), float( row[ 'actual_points' ] ) )
 
 
    def to_dict( self ) -> Types.JsonObject:
@@ -33,5 +31,4 @@ class ProspectCalibrationSample():
          'draft_pick': self.draft_pick.value,
          'predicted_points': self.predicted_points,
          'actual_points': self.actual_points,
-         'source_league': self.source_league,
       }

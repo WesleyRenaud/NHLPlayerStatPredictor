@@ -51,13 +51,15 @@ def Test_Write_TestNumericPicks_ExpectRoundTrip(
    monkeypatch.setattr( Paths, 'PROCESSED_DIR', tmp_path )
    model = ProspectCalibrationModel(
       20262027, [ ProspectProfile( 1, None if pick is None else 2025, DraftPick( pick ), [ NhlSeasonGames( 20242025, 2 ) ] ) ],
-      [ ProspectCalibrationSample( 1, 20252026, DraftPick( pick ), 20.0, 30.0, 'SHL' ) ] )
+      [ ProspectCalibrationSample( 1, 20252026, DraftPick( pick ), 20.0, 30.0 ) ] )
 
    ProspectCalibrationStore.write( model )
 
    assert ProspectCalibrationStore.read() == model
-   assert json.loads( ProspectCalibrationStore.path().read_text() )[ 'samples' ][ 0 ][ 'draft_pick' ] == pick
-   assert 'version' not in json.loads( ProspectCalibrationStore.path().read_text() )
+   written = json.loads( ProspectCalibrationStore.path().read_text() )
+   assert written[ 'samples' ][ 0 ][ 'draft_pick' ] == pick
+   assert 'source_league' not in written[ 'samples' ][ 0 ]
+   assert 'version' not in written
 
 
 def Test_Read_TestMissingStore_ExpectExplicitError( monkeypatch: pytest.MonkeyPatch, tmp_path: Path ) -> None:
@@ -145,5 +147,5 @@ def Test_Fit_TestAllLeagues_ExpectOneOutcomePerLeague( monkeypatch: pytest.Monke
    model = ProspectCalibrationFitter.fit( SkaterHistoryBuilder.build( [ *nhl, *other ], profiles ), 20262027, 84 )
 
    assert len( model.samples ) == len( leagues )
-   assert { row.source_league for row in model.samples } == set( leagues )
+   assert { row.player_id for row in model.samples } == { row.player_id for row in other }
    assert all( row.predicted_points == 0.0 for row in model.samples )
