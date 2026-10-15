@@ -103,8 +103,8 @@ def Test_GetProjection_TestProspectCurve_ExpectCalibrationBeforeIceAndRounding(
    calibration = ProspectCalibrationModel(
       20262027, [ ProspectProfile( 1, 2025, DraftPick( 3 ), [] ) ],
       [
-         ProspectCalibrationSample( 2, 20242025, DraftPick( 1 ), 20.0, 20.0 * scoring_factor, 'SHL' ),
-         ProspectCalibrationSample( 3, 20242025, DraftPick( 20 ), 40.0, 40.0 * scoring_factor, 'OHL' ),
+         ProspectCalibrationSample( 2, 20242025, DraftPick( 1 ), 20.0, 20.0 * scoring_factor ),
+         ProspectCalibrationSample( 3, 20242025, DraftPick( 20 ), 40.0, 40.0 * scoring_factor ),
       ] )
    paces = PaceValues( 1.2, 2.4, 0.6, 1.4, 0.2, 0.4, 30.0, 200.0 )
    _stub_roster( monkeypatch )

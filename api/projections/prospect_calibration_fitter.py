@@ -78,5 +78,5 @@ class ProspectCalibrationFitter():
             samples.append( ProspectCalibrationSample(
                actual.player_id, season_id, profile.draft_pick_before( season_id ),
                paces.goals + paces.assists,
-               Season.pace( actual.points, actual.games_played, pace_games ), source.league ) )
+               Season.pace( actual.points, actual.games_played, pace_games ) ) )
       return ProspectCalibrationModel( target_season_id, profiles, samples )
