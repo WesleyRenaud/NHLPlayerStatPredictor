@@ -61,7 +61,11 @@ def _write_slots() -> None:
 
    for group in ( DepthGroup.forwards(), DepthGroup.defense() ):
       shares.append(
-         IceChosenShare( 0.0, group.skater_group, GamesShare.FULL ) )
+         IceChosenShare(
+            0.0,
+            group.skater_group,
+            GamesShare.FULL,
+            GamesShare.FULL ) )
 
    IceChosenShareStore.write( shares )
 

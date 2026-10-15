@@ -29,7 +29,11 @@ def _skater(
 
 def _chosen( group: DepthGroup ) -> list[ IceChosenShare ]:
    return [
-      IceChosenShare( 0.0, group.skater_group, GamesShare.FULL )
+      IceChosenShare(
+         0.0,
+         group.skater_group,
+         GamesShare.FULL,
+         GamesShare.FULL )
    ]
 
 
@@ -192,8 +196,8 @@ def Test_Build_TestBottomChosen_ExpectRegularScaledAndExtraFull() -> None:
    chosen = 0.5
    bottom_toi = 15.0
    shares = [
-      IceChosenShare( bottom_toi, group.skater_group, chosen ),
-      IceChosenShare( 16.0, group.skater_group, GamesShare.FULL ),
+      IceChosenShare( bottom_toi, group.skater_group, chosen, chosen ),
+      IceChosenShare( 16.0, group.skater_group, GamesShare.FULL, GamesShare.FULL ),
    ]
 
    chart = DepthChartBuilder.build(
@@ -235,8 +239,8 @@ def Test_Build_TestBottomChosen_ExpectTopGetsMore() -> None:
    ]
    team = list( Team )[ Position.FIRST ]
    shares = [
-      IceChosenShare( 15.0, group.skater_group, chosen ),
-      IceChosenShare( 16.0, group.skater_group, GamesShare.FULL ),
+      IceChosenShare( 15.0, group.skater_group, chosen, chosen ),
+      IceChosenShare( 16.0, group.skater_group, GamesShare.FULL, GamesShare.FULL ),
    ]
 
    full = DepthChartBuilder.build(

@@ -34,8 +34,8 @@ def Test_Bind_TestLastToi_ExpectAvailabilityTimesChosen() -> None:
    low = _skater( 2, low_toi, 24.0, injury )
    high = _skater( 1, high_toi, 16.0, injury )
    shares = [
-      IceChosenShare( low_toi, SkaterGroup( 'D' ), chosen ),
-      IceChosenShare( high_toi, SkaterGroup( 'D' ), GamesShare.FULL ),
+      IceChosenShare( low_toi, SkaterGroup( 'D' ), chosen, chosen ),
+      IceChosenShare( high_toi, SkaterGroup( 'D' ), GamesShare.FULL, GamesShare.FULL ),
    ]
 
    bound = ChosenShareBinder.bind( [ low, high ], shares, DepthGroup.defense() )
@@ -52,8 +52,8 @@ def Test_Bind_TestMidToi_ExpectInterpolatedChosen() -> None:
    high = GamesShare.FULL
    last_toi = 20.0
    shares = [
-      IceChosenShare( 16.0, SkaterGroup( 'D' ), low ),
-      IceChosenShare( 24.0, SkaterGroup( 'D' ), high ),
+      IceChosenShare( 16.0, SkaterGroup( 'D' ), low, low ),
+      IceChosenShare( 24.0, SkaterGroup( 'D' ), high, high ),
    ]
 
    bound = ChosenShareBinder.bind(
@@ -70,8 +70,8 @@ def Test_Bind_TestMissingLastToi_ExpectLowestChosen() -> None:
    injury = 0.8
    chosen = 0.5
    shares = [
-      IceChosenShare( 16.0, SkaterGroup( 'D' ), chosen ),
-      IceChosenShare( 24.0, SkaterGroup( 'D' ), GamesShare.FULL ),
+      IceChosenShare( 16.0, SkaterGroup( 'D' ), chosen, chosen ),
+      IceChosenShare( 24.0, SkaterGroup( 'D' ), GamesShare.FULL, GamesShare.FULL ),
    ]
 
    bound = ChosenShareBinder.bind(

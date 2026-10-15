@@ -40,7 +40,10 @@ def Test_Fit_TestTwoToi_ExpectDressMeansAndChosen() -> None:
    assert [ share.toi for share in shares ] == [ low_toi, high_toi ]
    assert shares[ Position.FIRST ].skater_group is SkaterGroup( 'D' )
    assert abs(
+      shares[ Position.FIRST ].dress_share - low_games / season_length ) < 0.001
+   assert abs(
       shares[ Position.FIRST ].chosen - low_games / high_games ) < 0.001
+   assert shares[ Position.LAST ].dress_share == GamesShare.FULL
    assert shares[ Position.LAST ].chosen == GamesShare.FULL
 
 
@@ -76,6 +79,8 @@ def Test_Fit_TestShortSample_ExpectOmitted() -> None:
       DepthGroup.defense() )
 
    assert [ share.toi for share in shares ] == [ toi ]
+   assert abs(
+      shares[ Position.FIRST ].dress_share - games / season_length ) < 0.001
    assert shares[ Position.FIRST ].chosen == GamesShare.FULL
 
 
@@ -96,8 +101,11 @@ def Test_Fit_TestNearbyToi_ExpectSameBin() -> None:
       season_length,
       DepthGroup.defense() )
 
+   dress_share = (
+      first_games / season_length + second_games / season_length
+   ) / 2
    assert [ share.toi for share in shares ] == [ float( round( first_toi ) ) ]
-   assert shares[ Position.FIRST ].chosen == GamesShare.FULL
+   assert abs( shares[ Position.FIRST ].dress_share - dress_share ) < 0.001
 
 
 def Test_Fit_TestEmpty_ExpectEmpty() -> None:
