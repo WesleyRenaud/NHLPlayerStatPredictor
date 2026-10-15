@@ -33,5 +33,4 @@ class SlotAverage():
          'toi': round( self.toi, 2 ),
          'goals': round( self.goals, 2 ),
          'assists': round( self.assists, 2 ),
-         'points': round( self.contribution, 2 ),
       }

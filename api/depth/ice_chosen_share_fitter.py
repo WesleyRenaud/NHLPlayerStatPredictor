@@ -52,7 +52,12 @@ class IceChosenShareFitter():
          dress_share = cls._mean( by_toi[ toi ] )
          chosen = cls._chosen( dress_share, reference, ceiling )
          ceiling = chosen
-         shares.append( IceChosenShare( toi, group.skater_group, chosen ) )
+         shares.append(
+            IceChosenShare(
+               toi,
+               group.skater_group,
+               dress_share,
+               chosen ) )
 
       return sorted( shares, key=lambda share: share.toi )
 

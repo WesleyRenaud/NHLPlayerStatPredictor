@@ -10,6 +10,6 @@ def Test_ToDict_TestSlot_ExpectRoundedFields() -> None:
    rebuilt = SlotAverage.from_row( payload )
 
    assert payload[ 'toi' ] == round( slot.toi, 2 )
-   assert payload[ 'points' ] == round( slot.contribution, 2 )
+   assert 'points' not in payload
    assert rebuilt.slot == payload[ 'slot' ]
    assert abs( rebuilt.contribution - rebuilt.goals - rebuilt.assists ) < 0.001
