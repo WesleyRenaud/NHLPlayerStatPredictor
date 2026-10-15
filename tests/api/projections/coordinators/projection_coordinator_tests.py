@@ -120,7 +120,7 @@ def Test_GetProjection_TestProspectCurve_ExpectCalibrationBeforeIceAndRounding(
       lambda skater, target, leagues, model, player_ice_scales: paces )
    monkeypatch.setattr( ProspectCalibrationStore, 'read', lambda: calibration )
    monkeypatch.setattr( projection_coordinator.SkaterIceStore, 'by_player',
-      lambda: { 1: SkaterIce( 1, baseline_toi, baseline_toi, projected_toi ) } )
+      lambda: { 1: SkaterIce( 1, baseline_toi, projected_toi ) } )
    monkeypatch.setattr(
       projection_coordinator.PaceGamesResolver, 'resolve', lambda player_id, on_date, team: pace_games )
    _stub_season( monkeypatch, pace_games )
@@ -294,7 +294,6 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
    shots_pace = 205.3
    games_played = 84
    last = 20.0
-   implied = 16.0
    projected = 24.0
    target_season_id = 20232024
    monkeypatch.setattr( Paths, 'DB_PATH', db_path )
@@ -303,7 +302,7 @@ def Test_GetProjection_TestIceChange_ExpectLastToiScale(
    monkeypatch.setattr(
       projection_coordinator.SkaterIceStore,
       'by_player',
-      lambda: { player_id: SkaterIce( player_id, last, implied, projected ) } )
+      lambda: { player_id: SkaterIce( player_id, last, projected ) } )
    monkeypatch.setattr(
       projection_coordinator.SkaterSeasonProvider,
       'seasons_for_player_id',
@@ -406,7 +405,7 @@ def Test_GetProjection_TestHistoricalRates_ExpectNormalizedThenProjectedStats(
    monkeypatch.setattr( projection_coordinator.OtherLeagueSeasonProvider, 'seasons_for_player_id',
       lambda player_id, path: [] )
    monkeypatch.setattr( projection_coordinator.SkaterIceStore, 'by_player',
-      lambda: { 1: SkaterIce( 1, latest_toi, latest_toi, projected_toi ) } )
+      lambda: { 1: SkaterIce( 1, latest_toi, projected_toi ) } )
    monkeypatch.setattr( projection_coordinator.RecencyTargetResolver, 'resolve', lambda: 20252026 )
    monkeypatch.setattr( projection_coordinator.ProductionModelProvider, 'read', lambda: model )
    monkeypatch.setattr( projection_coordinator.LeagueFactorStore, 'read', lambda: [] )
