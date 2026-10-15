@@ -36,7 +36,8 @@ def Test_Write_TestFactors_ExpectReadable(
    loaded = TeamFactorStore.read()
    written = TeamFactorStore.path().read_text()
 
-   assert loaded == factors
+   assert [ ( row.season, row.team, row.rate ) for row in loaded ] == [
+      ( factor.season, factor.team, factor.rate ) for factor in factors ]
    assert written == json.dumps(
       [ factor.to_dict() for factor in factors ],
       indent=2 )
