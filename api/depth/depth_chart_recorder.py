@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from ..availability.availability_projector import AvailabilityProjector
-from ..availability.availability_weight_store import AvailabilityWeightStore
 from ..availability.mixed_season_share_binder import MixedSeasonShareBinder
 from ..availability.retired_availability_binder import RetiredAvailabilityBinder
 from .club_ice_provider import ClubIceProvider
@@ -109,12 +108,10 @@ class DepthChartRecorder():
             OtherLeagueSeasonProvider.seasons_for_player_ids(
                player_ids,
                Paths.DB_PATH ) ) )
-      weights = AvailabilityWeightStore.read()
       target = RecencyTargetResolver.resolve()
       return {
          player_id: AvailabilityProjector.resolve(
             by_player.get( player_id, [] ),
-            weights,
             target )
          for player_id in player_ids
       }

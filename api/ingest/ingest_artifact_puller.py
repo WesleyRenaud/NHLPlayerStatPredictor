@@ -8,7 +8,6 @@ import time
 
 from ..aging.league_arrival_store import LeagueArrivalStore
 from ..aging.league_factor_store import LeagueFactorStore
-from ..availability.availability_weight_store import AvailabilityWeightStore
 from ..depth.depth_chart_store import DepthChartStore
 from ..depth.ice_chosen_share_store import IceChosenShareStore
 from ..depth.skater_ice_store import SkaterIceStore
@@ -60,9 +59,6 @@ class IngestArtifactPuller():
       cls._copy( cls._source_db( artifact_root ), Paths.DB_PATH )
       for path in ProductionModelProvider.paths():
          cls._copy( cls._source( artifact_root, path ), path )
-      cls._copy(
-         cls._source_availability( artifact_root ),
-         AvailabilityWeightStore.path() )
       cls._copy( cls._source_leagues( artifact_root ), LeagueFactorStore.path() )
       cls._copy( cls._source_arrivals( artifact_root ), LeagueArrivalStore.path() )
       cls._copy( cls._source_teams( artifact_root ), TeamFactorStore.path() )
@@ -99,7 +95,6 @@ class IngestArtifactPuller():
                or any(
                   not cls._source( artifact_root, path ).is_file()
                   for path in ProductionModelProvider.paths() )
-               or not cls._source_availability( artifact_root ).is_file()
                or not cls._source_leagues( artifact_root ).is_file()
                or not cls._source_arrivals( artifact_root ).is_file()
                or not cls._source_teams( artifact_root ).is_file()
@@ -270,11 +265,6 @@ class IngestArtifactPuller():
    @classmethod
    def _source_raw( cls, artifact_root: Path ) -> Path:
       return cls._source( artifact_root, Paths.RAW_DIR )
-
-
-   @classmethod
-   def _source_availability( cls, artifact_root: Path ) -> Path:
-      return cls._source( artifact_root, AvailabilityWeightStore.path() )
 
 
    @classmethod

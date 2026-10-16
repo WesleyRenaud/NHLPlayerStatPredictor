@@ -8,9 +8,6 @@ import pytest
 from api.aging.aging_curve_fitter import AgingCurveFitter
 from api.aging.league_factor_fitter import LeagueFactorFitter
 from api.aging.league_factor_store import LeagueFactorStore
-from api.availability.availability_decay_fitter import AvailabilityDecayFitter
-from api.availability.availability_weight_store import AvailabilityWeightStore
-from api.availability.mixed_season_share_binder import MixedSeasonShareBinder
 from api.depth.ice_chosen_share_store import IceChosenShareStore
 import api.ingest.skater_season_ingester as skater_season_ingester
 from api.ingest.skater_season_ingester import SkaterSeasonIngester
@@ -62,19 +59,20 @@ def _season(
       penalty_minutes=0 )
 
 
-def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
+def Test_Main_TestRows_ExpectInsertedAndFactorsStored(
       monkeypatch: pytest.MonkeyPatch,
       tmp_path: Path ) -> None:
+   history_span = 6
    rows: list[ NhlSkaterSeason ] = []
 
-   for lag in range( AvailabilityDecayFitter.WINDOW ):
-      shares = [ 0.0 ] * ( AvailabilityDecayFitter.WINDOW + 1 )
+   for lag in range( history_span ):
+      shares = [ 0.0 ] * ( history_span + 1 )
       current = 0.10 * ( lag + 1 )
-      shares[ AvailabilityDecayFitter.WINDOW ] = current
-      shares[ AvailabilityDecayFitter.WINDOW - 1 ] = current
+      shares[ history_span ] = current
+      shares[ history_span - 1 ] = current
 
       if lag:
-         shares[ AvailabilityDecayFitter.WINDOW - 1 - lag ] = 0.05
+         shares[ history_span - 1 - lag ] = 0.05
 
       for offset, share in enumerate( shares ):
          year = 2010 + offset
@@ -109,7 +107,7 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    }
    landings = {
       player_id: { **landing, 'playerId': player_id }
-      for player_id in range( 1, AvailabilityDecayFitter.WINDOW + 1 )
+      for player_id in range( 1, history_span + 1 )
    }
    landings[ roster_player_id ] = roster_landing
    statuses: list[ tuple[ list[ object ], str ] ] = []
@@ -228,14 +226,13 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
 
    SkaterSeasonIngester.main()
    stored_model = ProductionModelProvider.read()
-   stored_availability = AvailabilityWeightStore.read()
    stored_leagues = LeagueFactorStore.read()
    stored_teams = TeamFactorStore.read()
    stored_ice_shares = IceChosenShareStore.read()
 
    assert inserted == [ ( rows, str( db_path ) ) ]
    assert roster_inserted == [ ( roster_rows, str( db_path ) ) ]
-   assert fetched == [ list( range( season_player_id, AvailabilityDecayFitter.WINDOW + 1 ) ) ]
+   assert fetched == [ list( range( season_player_id, history_span + 1 ) ) ]
    assert statuses == [
       (
          [
@@ -243,8 +240,6 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
          ],
          str( db_path ) )
    ]
-   assert stored_availability == AvailabilityDecayFitter.fit(
-      MixedSeasonShareBinder.bind( rows, other_rows ) )
    assert stored_leagues == LeagueFactorFitter.fit(
       rows,
       other_rows,
