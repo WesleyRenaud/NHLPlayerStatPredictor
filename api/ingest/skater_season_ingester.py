@@ -21,6 +21,8 @@ from ..paths import Paths
 from .player_landing_fetcher import PlayerLandingFetcher
 from .previous_team_factor_builder import PreviousTeamFactorBuilder
 from ..projections.season_pace import SeasonPace
+from ..recency.current_season_weight_fitter import CurrentSeasonWeightFitter
+from ..recency.current_season_weight_store import CurrentSeasonWeightStore
 from ..recency.pace_regression_fitter import PaceRegressionFitter
 from ..recency.production_model_recorder import ProductionModelRecorder
 from ..recency_target_resolver import RecencyTargetResolver
@@ -49,11 +51,12 @@ class SkaterSeasonIngester():
       landings = PlayerLandingFetcher.fetch( player_ids, force=force )
       rows = regular_rows
       SkaterSeasonStore.insert_rows( rows, str( Paths.DB_PATH ) )
+      seasons = NhlClient.seasons( force=force )
       other_rows = OtherLeagueSeasonIngester.build_rows(
          player_ids,
          landings,
-         NhlClient.seasons( force=force ),
-         Season.pace_games( NhlClient.seasons( force=force ) ) )
+         seasons,
+         Season.pace_games( seasons ) )
       OtherLeagueSeasonStore.insert_rows( other_rows, str( Paths.DB_PATH ) )
       PlayerStatusStore.insert_rows(
          PlayerStatusBuilder.build_all( player_ids, landings ),
@@ -65,8 +68,9 @@ class SkaterSeasonIngester():
       LeagueFactorStore.write( league_factors )
       LeagueArrivalStore.write( LeagueArrivalFitter.fit( rows, other_rows ) )
       ProductionModelRecorder.write( PaceRegressionFitter.fit( rows, other_rows, league_factors ) )
+      CurrentSeasonWeightStore.write(
+         CurrentSeasonWeightFitter.fit( rows ) )
       previous_season_id = RecencyTargetResolver.prior()
-      seasons = NhlClient.seasons( force=force )
       last_played_ids = sorted( {
          previous_season_id,
          *(

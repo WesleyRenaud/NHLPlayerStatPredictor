@@ -14,6 +14,7 @@ from ..depth.skater_ice_store import SkaterIceStore
 from ..depth.slot_average_store import SlotAverageStore
 from .github_cli import GithubCli
 from ..paths import Paths
+from ..recency.current_season_weight_store import CurrentSeasonWeightStore
 from ..recency.production_model_provider import ProductionModelProvider
 from ..shared.enums.position import Position
 from ..team_factor.team_factor_store import TeamFactorStore
@@ -59,6 +60,9 @@ class IngestArtifactPuller():
       cls._copy( cls._source_db( artifact_root ), Paths.DB_PATH )
       for path in ProductionModelProvider.paths():
          cls._copy( cls._source( artifact_root, path ), path )
+      cls._copy(
+         cls._source_current_season_weights( artifact_root ),
+         CurrentSeasonWeightStore.path() )
       cls._copy( cls._source_leagues( artifact_root ), LeagueFactorStore.path() )
       cls._copy( cls._source_arrivals( artifact_root ), LeagueArrivalStore.path() )
       cls._copy( cls._source_teams( artifact_root ), TeamFactorStore.path() )
@@ -95,6 +99,7 @@ class IngestArtifactPuller():
                or any(
                   not cls._source( artifact_root, path ).is_file()
                   for path in ProductionModelProvider.paths() )
+               or not cls._source_current_season_weights( artifact_root ).is_file()
                or not cls._source_leagues( artifact_root ).is_file()
                or not cls._source_arrivals( artifact_root ).is_file()
                or not cls._source_teams( artifact_root ).is_file()
@@ -184,6 +189,7 @@ class IngestArtifactPuller():
       return (
          not Paths.DB_PATH.is_file()
          or not LeagueArrivalStore.path().is_file()
+         or not CurrentSeasonWeightStore.path().is_file()
          or any( not path.is_file() for path in ProductionModelProvider.paths() ) )
 
 
@@ -265,6 +271,11 @@ class IngestArtifactPuller():
    @classmethod
    def _source_raw( cls, artifact_root: Path ) -> Path:
       return cls._source( artifact_root, Paths.RAW_DIR )
+
+
+   @classmethod
+   def _source_current_season_weights( cls, artifact_root: Path ) -> Path:
+      return cls._source( artifact_root, CurrentSeasonWeightStore.path() )
 
 
    @classmethod

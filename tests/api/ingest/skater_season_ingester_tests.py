@@ -12,6 +12,8 @@ from api.depth.ice_chosen_share_store import IceChosenShareStore
 import api.ingest.skater_season_ingester as skater_season_ingester
 from api.ingest.skater_season_ingester import SkaterSeasonIngester
 from api.paths import Paths
+from api.recency.current_season_weight_fitter import CurrentSeasonWeightFitter
+from api.recency.current_season_weight_store import CurrentSeasonWeightStore
 from api.recency.pace_regression_fitter import PaceRegressionFitter
 from api.recency.production_model_provider import ProductionModelProvider
 from api.season_length import SeasonLength
@@ -35,7 +37,7 @@ def _season(
       player_id=player_id,
       season_id=season_id,
       player_name='Stub Skater',
-      position=SkaterPosition( 'C' ),
+      position=list( SkaterPosition )[ Position.FIRST ],
       birth_date=date( 1997, 1, 13 ),
       age=28,
       team=list( Team )[ Position.FIRST ],
@@ -85,7 +87,7 @@ def Test_Main_TestRows_ExpectInsertedAndFactorsStored(
 
    season_player_id = 1
    roster_player_id = 2
-   position = SkaterPosition( 'C' )
+   position = list( SkaterPosition )[ Position.FIRST ]
    team = list( Team )[ Position.FIRST ]
    previous_rate = 0.87
    default_rate = 1.0
@@ -223,12 +225,12 @@ def Test_Main_TestRows_ExpectInsertedAndFactorsStored(
       skater_season_ingester.SkaterIceStore,
       'write',
       lambda rows: None )
-
    SkaterSeasonIngester.main()
    stored_model = ProductionModelProvider.read()
    stored_leagues = LeagueFactorStore.read()
    stored_teams = TeamFactorStore.read()
    stored_ice_shares = IceChosenShareStore.read()
+   stored_weights = CurrentSeasonWeightStore.read()
 
    assert inserted == [ ( rows, str( db_path ) ) ]
    assert roster_inserted == [ ( roster_rows, str( db_path ) ) ]
@@ -249,3 +251,4 @@ def Test_Main_TestRows_ExpectInsertedAndFactorsStored(
    assert previous_seasons == last_played_ids
    assert recorded == [ False ]
    assert stored_ice_shares == []
+   assert stored_weights == CurrentSeasonWeightFitter.fit( rows )

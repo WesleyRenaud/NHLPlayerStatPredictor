@@ -75,6 +75,18 @@ class NhlClient():
 
 
    @classmethod
+   def skater_games(
+         cls,
+         season_id: int,
+         team_abbrev: str,
+         force: bool = False ) -> Types.JsonObjectList:
+      return JsonFileCache().get_list(
+         f'skater_games_{ season_id }_{ team_abbrev }',
+         lambda: cls._fetch_skater_games( season_id, team_abbrev ),
+         force )
+
+
+   @classmethod
    def _skater_report(
          cls,
          report: str,
@@ -93,7 +105,7 @@ class NhlClient():
          season_id: int ) -> Types.JsonObjectList:
       return cls._fetch_all_rows(
          f'{ NhlClient.STATS_BASE }/skater/{ report }',
-         (
+         cls._page_params(
             f'gameTypeId={ NhlClient.REGULAR_SEASON_GAME_TYPE_ID } '
             f'and seasonId={ season_id }' ) )
 
@@ -146,10 +158,23 @@ class NhlClient():
 
 
    @classmethod
+   def _fetch_skater_games(
+         cls,
+         season_id: int,
+         team_abbrev: str ) -> Types.JsonObjectList:
+      return cls._fetch_all_rows(
+         f'{ NhlClient.STATS_BASE }/skater/summary',
+         cls._game_page_params(
+            f'gameTypeId={ NhlClient.REGULAR_SEASON_GAME_TYPE_ID } '
+            f'and seasonId={ season_id } '
+            f'and teamAbbrev="{ team_abbrev }"' ) )
+
+
+   @classmethod
    def _fetch_all_rows(
          cls,
          report_url: str,
-         cayenne_exp: str ) -> Types.JsonObjectList:
+         params: dict[ str, str | int ] ) -> Types.JsonObjectList:
       rows: Types.JsonObjectList = []
       start = 0
       total: int | None = None
@@ -157,7 +182,7 @@ class NhlClient():
       while total is None or start < total:
          payload = JsonHttpClient.get_json(
             report_url,
-            params=cls._page_params( start, cayenne_exp ) )
+            params={ **params, 'start': start, 'limit': NhlClient.PAGE_SIZE } )
          batch = cls._data_rows( payload )
          total = cls._total( payload )
 
@@ -171,16 +196,21 @@ class NhlClient():
 
 
    @classmethod
-   def _page_params(
-         cls,
-         start: int,
-         cayenne_exp: str ) -> dict[ str, str | int ]:
+   def _page_params( cls, cayenne_exp: str ) -> dict[ str, str | int ]:
       return {
          'isAggregate': 'false',
          'isGame': 'false',
-         'start': start,
-         'limit': NhlClient.PAGE_SIZE,
          'sort': 'playerId',
+         'cayenneExp': cayenne_exp,
+      }
+
+
+   @classmethod
+   def _game_page_params( cls, cayenne_exp: str ) -> dict[ str, str | int ]:
+      return {
+         'isAggregate': 'false',
+         'isGame': 'true',
+         'sort': 'gameDate',
          'cayenneExp': cayenne_exp,
       }
 
