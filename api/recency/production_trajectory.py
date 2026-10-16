@@ -49,12 +49,11 @@ class ProductionTrajectory():
          return None
 
       raw = bases[ Position.FIRST ] / total
-      target = cls._target( raw, retained )
 
-      if target == raw:
+      if retained == raw:
          return None
 
-      return target
+      return retained
 
 
    @classmethod
@@ -67,13 +66,3 @@ class ProductionTrajectory():
 
       rest = total - latest_share * total
       return [ latest_share * total ] + [ rest * base / older for base in bases[ 1 : ] ]
-
-
-   @classmethod
-   def _target( cls, raw: float, retained: float ) -> float:
-      # Mostly kept next season: do not put less than that on the latest season.
-      # Mostly given back: do not put more than that on it.
-      if retained >= 0.5:
-         return max( raw, retained )
-
-      return min( raw, retained )

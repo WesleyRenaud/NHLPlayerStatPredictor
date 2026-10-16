@@ -60,6 +60,26 @@ def Test_Shares_TestStickyDrop_ExpectDropKept() -> None:
    assert shares[ 0 ] > sum( shares[ 1 : ] )
 
 
+def Test_Shares_TestAgeWeightAboveRetained_ExpectRetainedShare() -> None:
+   history = [ _season( 28, 80.0 ), _season( 27, 50.0 ) ]
+   bases = [ 0.8, 0.2 ]
+   rise = 0.55
+
+   shares = ProductionTrajectory.shares( history, bases, _fit( 28, rise, None ) )
+
+   assert shares[ 0 ] == pytest.approx( rise * sum( bases ) )
+
+
+def Test_Shares_TestAgeWeightBelowFadedDrop_ExpectRetainedShare() -> None:
+   history = [ _season( 30, 40.0 ), _season( 29, 80.0 ) ]
+   bases = [ 0.2, 0.8 ]
+   drop = 0.40
+
+   shares = ProductionTrajectory.shares( history, bases, _fit( 30, None, drop ) )
+
+   assert shares[ 0 ] == pytest.approx( drop * sum( bases ) )
+
+
 def Test_Shares_TestSmallMove_ExpectLatestSeasonRaised() -> None:
    history = [ _season( 28, 52.0 ), _season( 27, 50.0 ) ]
    bases = [ 0.6, 0.4 ]
