@@ -9,7 +9,6 @@ import pytest
 
 from api.aging.league_arrival_store import LeagueArrivalStore
 from api.aging.league_factor_store import LeagueFactorStore
-from api.availability.availability_weight_store import AvailabilityWeightStore
 from api.depth.depth_chart_store import DepthChartStore
 from api.depth.ice_chosen_share_store import IceChosenShareStore
 from api.depth.skater_ice_store import SkaterIceStore
@@ -63,10 +62,6 @@ def _write_artifact( root: Path ) -> None:
    model_directory = db_path.parent
    with patch.object( ingest_artifact_puller.Paths, 'PROCESSED_DIR', model_directory ):
       ProductionModelRecorder.write( _REGRESSION_MODEL )
-   availability_path = root / AvailabilityWeightStore.path().relative_to(
-      ingest_artifact_puller.Paths.ROOT )
-   availability_path.parent.mkdir( parents=True, exist_ok=True )
-   availability_path.write_text( _EMPTY_JSON )
    leagues_path = root / LeagueFactorStore.path().relative_to(
       ingest_artifact_puller.Paths.ROOT )
    leagues_path.parent.mkdir( parents=True, exist_ok=True )
@@ -155,7 +150,6 @@ def Test_Install_TestArtifactTree_ExpectCopiedDbAndRaw(
    IngestArtifactPuller.install( artifact_root )
    stored_db = ingest_artifact_puller.Paths.DB_PATH.read_bytes()
    stored_seasons = ( ingest_artifact_puller.Paths.RAW_DIR / 'seasons.json' ).read_text()
-   stored_availability = AvailabilityWeightStore.path().read_text()
    stored_leagues = LeagueFactorStore.path().read_text()
    stored_arrivals = LeagueArrivalStore.path().read_text()
    stored_teams = TeamFactorStore.path().read_text()
@@ -167,7 +161,6 @@ def Test_Install_TestArtifactTree_ExpectCopiedDbAndRaw(
    assert stored_seasons == _EMPTY_JSON
    assert all( path.is_file() for path in ProductionModelProvider.paths() )
    assert ProductionModelProvider.read() == _REGRESSION_MODEL
-   assert stored_availability == _EMPTY_JSON
    assert stored_leagues == _EMPTY_JSON
    assert stored_arrivals == _EMPTY_JSON
    assert stored_teams == _EMPTY_JSON

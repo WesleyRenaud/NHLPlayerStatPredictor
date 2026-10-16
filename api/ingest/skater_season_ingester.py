@@ -5,9 +5,6 @@ from ..aging.league_arrival_fitter import LeagueArrivalFitter
 from ..aging.league_arrival_store import LeagueArrivalStore
 from ..aging.league_factor_fitter import LeagueFactorFitter
 from ..aging.league_factor_store import LeagueFactorStore
-from ..availability.availability_decay_fitter import AvailabilityDecayFitter
-from ..availability.availability_weight_store import AvailabilityWeightStore
-from ..availability.mixed_season_share_binder import MixedSeasonShareBinder
 from ..depth.depth_chart_recorder import DepthChartRecorder
 from ..depth.depth_chart_store import DepthChartStore
 from ..depth.depth_group import DepthGroup
@@ -61,9 +58,6 @@ class SkaterSeasonIngester():
       PlayerStatusStore.insert_rows(
          PlayerStatusBuilder.build_all( player_ids, landings ),
          str( Paths.DB_PATH ) )
-      AvailabilityWeightStore.write(
-         AvailabilityDecayFitter.fit(
-            MixedSeasonShareBinder.bind( rows, other_rows ) ) )
       league_factors = LeagueFactorFitter.fit(
          rows,
          other_rows,

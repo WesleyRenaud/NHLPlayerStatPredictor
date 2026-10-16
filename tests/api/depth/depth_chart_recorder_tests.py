@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 
-from api.availability.availability_weight_store import AvailabilityWeightStore
 from api.availability.games_share import GamesShare
 from api.depth.club_ice import ClubIce
 from api.depth.depth_chart_recorder import DepthChartRecorder
@@ -18,7 +17,6 @@ from api.depth.slot_average_store import SlotAverageStore
 from api.depth.usable_nhl_ice import UsableNhlIce
 from api.ingest.roster_skater_ingester import RosterSkaterIngester
 from api.paths import Paths
-from api.recency.recency_weight import RecencyWeight
 from api.recency_target_resolver import RecencyTargetResolver
 from api.shared.enums.position import Position
 from api.skaters.club_league import ClubLeague
@@ -170,10 +168,6 @@ def Test_Availabilities_TestNhlGames_ExpectShare(
    monkeypatch.setattr(
       'api.depth.depth_chart_recorder.OtherLeagueSeasonProvider.seasons_for_player_ids',
       lambda player_ids, db_path: [] )
-   monkeypatch.setattr(
-      AvailabilityWeightStore,
-      'read',
-      lambda: [ RecencyWeight( 0, 1.0 ) ] )
    monkeypatch.setattr( RecencyTargetResolver, 'resolve', lambda: 20262027 )
    roster = [ RosterSkater( 1, 'Stub', SkaterPosition( 'D' ), team ) ]
 
@@ -231,10 +225,6 @@ def Test_Availabilities_TestMixedYear_ExpectFull(
             g_pace=0.0,
             a_pace=0.0 )
       ] )
-   monkeypatch.setattr(
-      AvailabilityWeightStore,
-      'read',
-      lambda: [ RecencyWeight( 0, 1.0 ) ] )
    monkeypatch.setattr( RecencyTargetResolver, 'resolve', lambda: 20262027 )
    roster = [ RosterSkater( 1, 'Stub', SkaterPosition( 'C' ), team ) ]
 

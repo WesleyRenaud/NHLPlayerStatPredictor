@@ -90,6 +90,29 @@ def Test_RecencyLag_TestImmediatePrior_ExpectZero() -> None:
    assert lag == 0
 
 
+def Test_Years_TestSeasonId_ExpectBothYears() -> None:
+   season_id = 20202021
+   first_year = 2020
+   second_year = 2021
+
+   assert Season.years( season_id ) == ( first_year, second_year )
+
+
+def Test_FromYears_TestBothYears_ExpectJoinedSeasonId() -> None:
+   first_year = 2020
+   second_year = 2021
+   season_id = 20202021
+
+   assert Season.from_years( first_year, second_year ) == season_id
+
+
+def Test_SeasonBefore_TestProjectionSeason_ExpectSeasonBeforeIt() -> None:
+   projection_season_id = 20212022
+   season_before_projection = 20202021
+
+   assert Season.season_before( projection_season_id ) == season_before_projection
+
+
 def Test_RecencyLag_TestSkippedYear_ExpectOne() -> None:
    target_season_id = 20222023
    season_id = 20202021
