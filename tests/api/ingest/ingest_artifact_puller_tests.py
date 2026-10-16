@@ -16,6 +16,7 @@ from api.depth.slot_average_store import SlotAverageStore
 from api.ingest.github_cli_result import GithubCliResult
 import api.ingest.ingest_artifact_puller as ingest_artifact_puller
 from api.ingest.ingest_artifact_puller import IngestArtifactPuller
+from api.recency.current_season_weight_store import CurrentSeasonWeightStore
 from api.recency.pace_regression_model import PaceRegressionModel
 from api.recency.pim_weight_store import PimWeightStore
 from api.recency.production_coefficient import ProductionCoefficient
@@ -90,6 +91,10 @@ def _write_artifact( root: Path ) -> None:
       ingest_artifact_puller.Paths.ROOT )
    chosen_path.parent.mkdir( parents=True, exist_ok=True )
    chosen_path.write_text( _EMPTY_JSON )
+   weights_path = root / CurrentSeasonWeightStore.path().relative_to(
+      ingest_artifact_puller.Paths.ROOT )
+   weights_path.parent.mkdir( parents=True, exist_ok=True )
+   weights_path.write_text( _EMPTY_JSON )
 
 
 def _write_current( run_id: str ) -> None:
@@ -97,6 +102,8 @@ def _write_current( run_id: str ) -> None:
    ingest_artifact_puller.Paths.DB_PATH.write_bytes( _SQLITE_BYTES )
    ProductionModelRecorder.write( _REGRESSION_MODEL )
    LeagueArrivalStore.path().write_text( _EMPTY_JSON )
+   CurrentSeasonWeightStore.path().parent.mkdir( parents=True, exist_ok=True )
+   CurrentSeasonWeightStore.path().write_text( _EMPTY_JSON )
    IngestArtifactPuller._write( IngestArtifactPuller._stamp_path(), run_id )
 
 
@@ -156,6 +163,7 @@ def Test_Install_TestArtifactTree_ExpectCopiedDbAndRaw(
    stored_charts = DepthChartStore.path().read_text()
    stored_slots = SlotAverageStore.path().read_text()
    stored_chosen = IceChosenShareStore.path().read_text()
+   stored_weights = CurrentSeasonWeightStore.path().read_text()
 
    assert stored_db == _SQLITE_BYTES
    assert stored_seasons == _EMPTY_JSON
@@ -167,6 +175,7 @@ def Test_Install_TestArtifactTree_ExpectCopiedDbAndRaw(
    assert stored_charts == _EMPTY_JSON
    assert stored_slots == _EMPTY_JSON
    assert stored_chosen == _EMPTY_JSON
+   assert stored_weights == _EMPTY_JSON
 
 
 def Test_ArtifactRoot_TestNestedArtifactDir_ExpectNested(
@@ -241,6 +250,7 @@ def Test_Sync_TestMatchingStamp_ExpectDownloadSkipped(
    ingest_artifact_puller.Paths.DB_PATH.write_bytes( _SQLITE_BYTES )
    ProductionModelRecorder.write( _REGRESSION_MODEL )
    LeagueArrivalStore.path().write_text( _EMPTY_JSON )
+   CurrentSeasonWeightStore.path().write_text( _EMPTY_JSON )
    IngestArtifactPuller._write( IngestArtifactPuller._stamp_path(), run_id )
    downloaded: list[ str ] = []
 

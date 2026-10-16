@@ -10,15 +10,17 @@ from api.season import Season
 from api.season_length import SeasonLength
 from api.shared.enums.position import Position
 from api.skaters.skater_bio import SkaterBio
+from api.skaters.skater_game import SkaterGame
 from api.skaters.skater_position import SkaterPosition
 from api.skaters.skater_summary import SkaterSummary
 from api.skaters.team import Team
+from api.types import Types
 
 
 def Test_BuildRows_TestRegularSeason_ExpectPacedTotals() -> None:
    player_id = 8478402
    team = list( Team )[ Position.FIRST ]
-   position = SkaterPosition( 'C' )
+   position = list( SkaterPosition )[ Position.FIRST ]
    games_played = 82
    goals = 44
    assists = 79
@@ -55,7 +57,7 @@ def Test_BuildRows_TestRegularSeason_ExpectPacedTotals() -> None:
    ]
    bios = [ SkaterBio( player_id, date( 1997, 1, 13 ) ) ]
 
-   rows = SkaterSeasonBuilder.build_rows( summaries, bios, season, pace_games )
+   rows = SkaterSeasonBuilder.build_rows( summaries, bios, season, pace_games, { player_id: [] } )
    row = rows[ Position.FIRST ]
 
    assert len( rows ) == 1
@@ -84,7 +86,7 @@ def Test_BuildRows_TestShortSeason_ExpectPacedTotals() -> None:
       SkaterSummary(
          player_id,
          'Sample Player',
-         SkaterPosition( 'D' ),
+         list( SkaterPosition )[ Position.SECOND ],
          [ list( Team )[ Position.SECOND ] ],
          games_played,
          1,
@@ -103,7 +105,7 @@ def Test_BuildRows_TestShortSeason_ExpectPacedTotals() -> None:
    bios = [ SkaterBio( player_id, date( 1999, 1, 1 ) ) ]
    season = SeasonLength( 20242025, 82, date( 2024, 10, 4 ), date( 2025, 4, 17 ) )
 
-   rows = SkaterSeasonBuilder.build_rows( summaries, bios, season, pace_games )
+   rows = SkaterSeasonBuilder.build_rows( summaries, bios, season, pace_games, { player_id: [] } )
 
    assert rows[ Position.FIRST ].p_pace == Season.pace(
       float( points ),
@@ -113,7 +115,7 @@ def Test_BuildRows_TestShortSeason_ExpectPacedTotals() -> None:
 
 def Test_BuildRows_TestMissingBio_ExpectSkipped() -> None:
    team = list( Team )[ Position.FIRST ]
-   position = SkaterPosition( 'C' )
+   position = list( SkaterPosition )[ Position.FIRST ]
    kept_id = 1
    missing_id = 2
    games_played = 82
@@ -125,10 +127,78 @@ def Test_BuildRows_TestMissingBio_ExpectSkipped() -> None:
    bios = [ SkaterBio( kept_id, date( 1999, 1, 1 ) ) ]
    season = SeasonLength( 20242025, 82, date( 2024, 10, 4 ), date( 2025, 4, 17 ) )
 
-   rows = SkaterSeasonBuilder.build_rows( summaries, bios, season, pace_games )
+   rows = SkaterSeasonBuilder.build_rows(
+      summaries,
+      bios,
+      season,
+      pace_games,
+      { kept_id: [], missing_id: [] } )
 
    assert len( rows ) == 1
    assert rows[ Position.FIRST ].player_id == kept_id
+
+
+def Test_RowsForSeason_TestGameRow_ExpectNumberedPoints(
+      monkeypatch: pytest.MonkeyPatch ) -> None:
+   season_id = 20242025
+   player_id = 7
+   first_points = 2
+   later_points = 1
+   repeated_points = 9
+   pace_games = 84
+   position = list( SkaterPosition )[ Position.FIRST ]
+   calls: list[ tuple[ int, str ] ] = []
+
+   def fake( season: int, team: str, force: bool = False ) -> Types.JsonObjectList:
+      calls.append( ( season, team ) )
+
+      if season == season_id and team == 'TOR':
+         return [
+            { 'playerId': player_id, 'gameDate': '2024-10-11', 'points': later_points },
+            { 'playerId': player_id, 'gameDate': '2024-10-09', 'points': first_points },
+            { 'playerId': player_id, 'gameDate': '2024-10-09', 'points': repeated_points },
+            { 'playerId': player_id, 'gameDate': '2024-10-13' },
+         ]
+
+      return []
+
+   monkeypatch.setattr(
+      skater_season_builder.NhlClient,
+      'skater_summary',
+      lambda requested_id, force=False: [
+         SkaterSummary(
+            player_id,
+            'Stub Skater',
+            position,
+            [ list( Team )[ Position.FIRST ] ],
+            2,
+            1,
+            1,
+            first_points + later_points,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            2,
+            4,
+            1200.0 ),
+      ] )
+   monkeypatch.setattr(
+      skater_season_builder.NhlClient,
+      'skater_bios',
+      lambda requested_id, force=False: [ SkaterBio( player_id, date( 1997, 1, 13 ) ) ] )
+   monkeypatch.setattr( skater_season_builder.NhlClient, 'skater_games', fake )
+   season = SeasonLength( season_id, 82, date( 2024, 10, 4 ), date( 2025, 4, 17 ) )
+
+   rows = SkaterSeasonBuilder._rows_for_season( season, pace_games, False )
+
+   assert rows[ Position.FIRST ].games == [
+      SkaterGame( 1, first_points ),
+      SkaterGame( 2, later_points ),
+   ]
+   assert calls == [ ( season_id, team.value ) for team in Team ]
 
 
 def Test_Seasons_TestBeforeFirstSeason_ExpectExcluded(

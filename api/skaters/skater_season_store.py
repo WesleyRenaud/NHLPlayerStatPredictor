@@ -36,8 +36,15 @@ class SkaterSeasonStore():
                   :even_strength_goals, :even_strength_points, :shots
                )
                ''',
-               [ asdict( row ) for row in rows ] )
+               [ cls._stored( row ) for row in rows ] )
 
          conn.commit()
       finally:
          DatabaseConnectionProvider.close( conn )
+
+
+   @classmethod
+   def _stored( cls, row: NhlSkaterSeason ) -> dict[ str, object ]:
+      stored = asdict( row )
+      del stored[ 'games' ]
+      return stored

@@ -53,6 +53,7 @@ jobs:
             data/processed/multipliers/shots_multipliers.json
             data/processed/recency/scoring_component_shares.json
             data/processed/recency/production_trajectory.json
+            data/processed/recency/current_season_weights.json
             data/processed/multipliers/league_factors.json
             data/processed/multipliers/league_arrivals.json
             data/processed/teams/team_factors.json

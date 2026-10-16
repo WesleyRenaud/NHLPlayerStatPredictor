@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 
 from ..draft_class import DraftClass
@@ -10,6 +10,7 @@ from ..projections.scoring_paces import ScoringPaces
 from ..projections.season_pace import SeasonPace
 from ..projections.short_handed_pace import ShortHandedPace
 from ..season import Season
+from .skater_game import SkaterGame
 from .skater_position import SkaterPosition
 from .skater_season import SkaterSeason
 from .skater_season_key import SkaterSeasonKey
@@ -34,6 +35,7 @@ class NhlSkaterSeason( SkaterSeason ):
    even_strength_goals: int
    even_strength_points: int
    shots: int
+   games: list[ SkaterGame ] = field( default_factory=list )
 
 
    @classmethod

@@ -7,10 +7,13 @@ from ..draft_class import DraftClass
 from .nhl_client import NhlClient
 from ..season import Season
 from ..season_length import SeasonLength
+from .skater_game_log import SkaterGameLog
 from ..skaters.nhl_skater_season import NhlSkaterSeason
 from ..skaters.skater_bio import SkaterBio
+from ..skaters.skater_game import SkaterGame
 from ..skaters.skater_season_key import SkaterSeasonKey
 from ..skaters.skater_summary import SkaterSummary
+from ..skaters.team import Team
 
 
 class SkaterSeasonBuilder():
@@ -43,7 +46,8 @@ class SkaterSeasonBuilder():
          summaries: list[ SkaterSummary ],
          bios: list[ SkaterBio ],
          season: SeasonLength,
-         pace_games: int ) -> list[ NhlSkaterSeason ]:
+         pace_games: int,
+         games_by_player: dict[ int, list[ SkaterGame ] ] ) -> list[ NhlSkaterSeason ]:
       bios_by_player = { bio.player_id: bio for bio in bios }
       rows: list[ NhlSkaterSeason ] = []
 
@@ -85,7 +89,8 @@ class SkaterSeasonBuilder():
             short_handed_points=summary.short_handed_points,
             even_strength_goals=summary.even_strength_goals,
             even_strength_points=summary.even_strength_points,
-            shots=summary.shots ) )
+            shots=summary.shots,
+            games=games_by_player[ summary.player_id ] ) )
 
       return rows
 
@@ -110,11 +115,46 @@ class SkaterSeasonBuilder():
          pace_games: int,
          force: bool ) -> list[ NhlSkaterSeason ]:
       print( f'Fetching skaters { Season.label( season.season_id ) }...', flush=True )
+      summaries = NhlClient.skater_summary( season.season_id, force=force )
       return cls.build_rows(
-         NhlClient.skater_summary( season.season_id, force=force ),
+         summaries,
          NhlClient.skater_bios( season.season_id, force=force ),
          season,
-         pace_games )
+         pace_games,
+         cls._games_by_player( season.season_id, summaries, force ) )
+
+
+   @classmethod
+   def _games_by_player(
+         cls,
+         season_id: int,
+         summaries: list[ SkaterSummary ],
+         force: bool ) -> dict[ int, list[ SkaterGame ] ]:
+      logs: dict[ int, list[ SkaterGameLog ] ] = {
+         summary.player_id: []
+         for summary in summaries
+      }
+
+      for team in Team:
+         for row in NhlClient.skater_games( season_id, team.value, force ):
+            log = SkaterGameLog.from_row( row )
+
+            if log is None or log.player_id not in logs:
+               continue
+
+            logs[ log.player_id ].append( log )
+
+      games: dict[ int, list[ SkaterGame ] ] = {}
+
+      for player_id, player_logs in logs.items():
+         games[ player_id ] = [
+            SkaterGame( game_number, log.points )
+            for game_number, log in enumerate(
+               SkaterGameLog.in_played_order( player_logs ),
+               start=1 )
+         ]
+
+      return games
 
 
    @classmethod
