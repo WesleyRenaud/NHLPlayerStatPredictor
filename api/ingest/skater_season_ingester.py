@@ -23,9 +23,6 @@ from .other_league_season_ingester import OtherLeagueSeasonIngester
 from ..paths import Paths
 from .player_landing_fetcher import PlayerLandingFetcher
 from .previous_team_factor_builder import PreviousTeamFactorBuilder
-from ..projections.prospect_calibration_fitter import ProspectCalibrationFitter
-from ..projections.prospect_calibration_store import ProspectCalibrationStore
-from ..projections.prospect_profile import ProspectProfile
 from ..projections.season_pace import SeasonPace
 from ..recency.pace_regression_fitter import PaceRegressionFitter
 from ..recency.production_model_recorder import ProductionModelRecorder
@@ -39,7 +36,6 @@ from ..skaters.player_status_builder import PlayerStatusBuilder
 from ..skaters.player_status_store import PlayerStatusStore
 from ..skaters.roster_skater import RosterSkater
 from ..skaters.roster_skater_store import RosterSkaterStore
-from ..skaters.skater_history_builder import SkaterHistoryBuilder
 from ..skaters.skater_season_store import SkaterSeasonStore
 from ..team_factor.team_factor_store import TeamFactorStore
 
@@ -75,15 +71,6 @@ class SkaterSeasonIngester():
       LeagueFactorStore.write( league_factors )
       LeagueArrivalStore.write( LeagueArrivalFitter.fit( rows, other_rows ) )
       ProductionModelRecorder.write( PaceRegressionFitter.fit( rows, other_rows, league_factors ) )
-      target_season_id = RecencyTargetResolver.resolve()
-      prospect_profiles = [
-         ProspectProfile.from_landing( landing )
-         for landing in landings.values()
-      ]
-      histories = SkaterHistoryBuilder.build( [ *rows, *other_rows ], prospect_profiles )
-      ProspectCalibrationStore.write( ProspectCalibrationFitter.fit(
-         histories, target_season_id,
-         Season.pace_games( NhlClient.seasons( force=force ) ) ) )
       previous_season_id = RecencyTargetResolver.prior()
       seasons = NhlClient.seasons( force=force )
       last_played_ids = sorted( {

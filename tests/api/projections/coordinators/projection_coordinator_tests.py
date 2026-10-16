@@ -13,14 +13,9 @@ from api.ingest.nhl_client import NhlClient
 from api.paths import Paths
 import api.projections.coordinators.projection_coordinator as projection_coordinator
 from api.projections.coordinators.projection_coordinator import ProjectionCoordinator
-from api.projections.draft_pick import DraftPick
 from api.projections.pace_values import PaceValues
 from api.projections.power_play_pace import PowerPlayPace
 from api.projections.projection import Projection
-from api.projections.prospect_calibration_model import ProspectCalibrationModel
-from api.projections.prospect_calibration_sample import ProspectCalibrationSample
-from api.projections.prospect_calibration_store import ProspectCalibrationStore
-from api.projections.prospect_profile import ProspectProfile
 from api.projections.season_pace import SeasonPace
 from api.recency.pace_regression_model import PaceRegressionModel
 from api.recency.production_coefficient import ProductionCoefficient
@@ -45,8 +40,6 @@ def _stub_season( monkeypatch: pytest.MonkeyPatch, games: int ) -> None:
 
 
 def _stub_ice( monkeypatch: pytest.MonkeyPatch ) -> None:
-   monkeypatch.setattr( ProspectCalibrationStore, 'read',
-      Mock( side_effect=AssertionError( 'Non-prospect projections must not read calibration.' ) ) )
    monkeypatch.setattr(
       projection_coordinator.SkaterIceStore,
       'by_player',
@@ -89,9 +82,8 @@ def _season( age: int ) -> NhlSkaterSeason:
       penalty_minutes=0 )
 
 
-def Test_GetProjection_TestProspectCurve_ExpectCalibrationBeforeIceAndRounding(
+def Test_GetProjection_TestProspect_ExpectIceScaleWithoutDraftAdjustment(
       monkeypatch: pytest.MonkeyPatch ) -> None:
-   scoring_factor = 1.5
    baseline_toi = 10.0
    projected_toi = 20.0
    ice_scale = projected_toi / baseline_toi
@@ -100,12 +92,6 @@ def Test_GetProjection_TestProspectCurve_ExpectCalibrationBeforeIceAndRounding(
       player_id=1, season_id=20252026, age=18, games_played=40,
       goals=10, assists=20, points=30, g_pace=21.0, a_pace=42.0,
       position=SkaterPosition.CENTER, league='SHL' )
-   calibration = ProspectCalibrationModel(
-      20262027, [ ProspectProfile( 1, 2025, DraftPick( 3 ), [] ) ],
-      [
-         ProspectCalibrationSample( 2, 20242025, DraftPick( 1 ), 20.0, 20.0 * scoring_factor ),
-         ProspectCalibrationSample( 3, 20242025, DraftPick( 20 ), 40.0, 40.0 * scoring_factor ),
-      ] )
    paces = PaceValues( 1.2, 2.4, 0.6, 1.4, 0.2, 0.4, 30.0, 200.0 )
    _stub_roster( monkeypatch )
    _stub_ice( monkeypatch )
@@ -118,7 +104,6 @@ def Test_GetProjection_TestProspectCurve_ExpectCalibrationBeforeIceAndRounding(
    monkeypatch.setattr( projection_coordinator.ProductionModelProvider, 'read', lambda: PaceRegressionModel( [] ) )
    monkeypatch.setattr( projection_coordinator.BaselinePaceResolver, 'resolve',
       lambda skater, target, leagues, model, player_ice_scales: paces )
-   monkeypatch.setattr( ProspectCalibrationStore, 'read', lambda: calibration )
    monkeypatch.setattr( projection_coordinator.SkaterIceStore, 'by_player',
       lambda: { 1: SkaterIce( 1, baseline_toi, projected_toi ) } )
    monkeypatch.setattr(
@@ -128,21 +113,21 @@ def Test_GetProjection_TestProspectCurve_ExpectCalibrationBeforeIceAndRounding(
    projection = ProjectionCoordinator.get_projection( 1 )
 
    assert projection is not None
-   assert projection.even_strength_goals == round( paces.even_strength_goals * scoring_factor * ice_scale )
+   assert projection.even_strength_goals == round( paces.even_strength_goals * ice_scale )
    assert projection.even_strength_points == (
-      round( paces.even_strength_goals * scoring_factor * ice_scale )
-      + round( paces.even_strength_assists * scoring_factor * ice_scale ) )
+      round( paces.even_strength_goals * ice_scale )
+      + round( paces.even_strength_assists * ice_scale ) )
    assert projection.power_play_points == (
-      round( paces.power_play_goals * scoring_factor * ice_scale )
-      + round( paces.power_play_assists * scoring_factor * ice_scale ) )
+      round( paces.power_play_goals * ice_scale )
+      + round( paces.power_play_assists * ice_scale ) )
    assert projection.short_handed_points == (
-      round( paces.short_handed_goals * scoring_factor * ice_scale )
-      + round( paces.short_handed_assists * scoring_factor * ice_scale ) )
+      round( paces.short_handed_goals * ice_scale )
+      + round( paces.short_handed_assists * ice_scale ) )
    assert projection.shots == round( paces.shots * ice_scale )
    assert projection.penalty_minutes == round( paces.penalty_minutes * ice_scale )
    assert projection.games_played == pace_games
    assert projection.projected_toi == projected_toi
-   assert projection.shooting_percentage == pytest.approx( 100 * paces.goals * scoring_factor / paces.shots )
+   assert projection.shooting_percentage == pytest.approx( 100 * paces.goals / paces.shots )
 
 
 @pytest.mark.parametrize( 'shots_pace', [ None, 0.0, 205.3 ] )

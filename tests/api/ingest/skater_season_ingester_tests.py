@@ -15,9 +15,6 @@ from api.depth.ice_chosen_share_store import IceChosenShareStore
 import api.ingest.skater_season_ingester as skater_season_ingester
 from api.ingest.skater_season_ingester import SkaterSeasonIngester
 from api.paths import Paths
-from api.projections.prospect_calibration_model import ProspectCalibrationModel
-from api.projections.prospect_calibration_store import ProspectCalibrationStore
-from api.projections.prospect_profile import ProspectProfile
 from api.recency.pace_regression_fitter import PaceRegressionFitter
 from api.recency.production_model_provider import ProductionModelProvider
 from api.season_length import SeasonLength
@@ -237,10 +234,6 @@ def Test_Main_TestRows_ExpectInsertedAndWeightsAndFactorsStored(
    stored_ice_shares = IceChosenShareStore.read()
 
    assert inserted == [ ( rows, str( db_path ) ) ]
-   assert ProspectCalibrationStore.read() == ProspectCalibrationModel(
-      20262027,
-      [ ProspectProfile.from_landing( landings[ player_id ] ) for player_id in sorted( landings ) ],
-      [] )
    assert roster_inserted == [ ( roster_rows, str( db_path ) ) ]
    assert fetched == [ list( range( season_player_id, AvailabilityDecayFitter.WINDOW + 1 ) ) ]
    assert statuses == [
